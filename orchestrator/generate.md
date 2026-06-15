@@ -95,7 +95,17 @@ Non-Functional Requirements, Logical Architecture, Public Interface, Verificatio
 |---|---|
 | `templates/.github/PULL_REQUEST_TEMPLATE.md.tmpl` | `.github/PULL_REQUEST_TEMPLATE.md` |
 | `templates/.github/workflows/ci.yml.tmpl` | `.github/workflows/ci.yml` |
+| `templates/.github/workflows/release.yml.tmpl` | `.github/workflows/release.yml` |
+| `templates/.github/dependabot.yml.tmpl` | `.github/dependabot.yml` |
+| `templates/.github/CODEOWNERS.tmpl` | `.github/CODEOWNERS` |
+| `templates/.github/labels.yml.tmpl` | `.github/labels.yml` |
+| `templates/.github/ISSUE_TEMPLATE/*.tmpl` | `.github/ISSUE_TEMPLATE/*` (bug_report, feature_request, config) |
 | `templates/tools/consistency_lint.py` | `tools/consistency_lint.py` (set its `CONFIG` block from the manifest) |
+
+`docs/workflow/github-setup.md` (rendered in Step 4) carries the one-time, admin-only repo
+configuration that cannot be a committed file — branch protection / ruleset for
+`{{DEFAULT_BRANCH}}`, squash-only merge, Discussions, Pages, label import, the first
+milestone. Surface it in the hand-off report so the maintainer runs it once.
 
 The CI workflow's setup steps and extra jobs come from the profile's `ci.setup_steps` /
 `ci.extra_jobs`; the build/test/format/lint commands come from `toolchain.commands`. Drop

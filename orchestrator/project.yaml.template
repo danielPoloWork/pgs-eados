@@ -50,6 +50,7 @@ toolchain:                   # defaults pulled from profiles/<lang>.yaml, overri
   doc_tool:        ""        # -> {{DOC_TOOL}}
   version_file:    ""        # -> {{VERSION_FILE}}
   version_const_hint: ""     # -> {{VERSION_CONST_HINT}}
+  package_ecosystem: ""      # Dependabot ecosystem (from profile) -> {{PKG_ECOSYSTEM}}
   commands:
     build:        ""         # -> {{CMD_BUILD}}
     test:         ""         # -> {{CMD_TEST}}

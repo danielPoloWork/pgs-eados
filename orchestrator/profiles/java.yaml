@@ -23,6 +23,7 @@ toolchain:
   doc_tool:        "Javadoc"
   version_file:    "Version.java"         # under src_main; mirrors the build version
   version_const_hint: "public static final String VERSION = \"X.Y.Z\""
+  package_ecosystem: "gradle"             # Dependabot ecosystem (use "maven" if Maven-built)
 
 commands:
   build:        "./gradlew build"

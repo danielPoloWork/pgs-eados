@@ -22,6 +22,7 @@ toolchain:
   doc_tool:        "TypeDoc"
   version_file:    "version.ts"           # under src_main; mirrors package.json version
   version_const_hint: "export const VERSION = 'X.Y.Z'"
+  package_ecosystem: "npm"                # Dependabot ecosystem
 
 commands:
   build:        "pnpm build"

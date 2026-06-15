@@ -23,6 +23,7 @@ toolchain:
   doc_tool:        "godoc / pkg.go.dev"
   version_file:    "version.go"           # under src_main
   version_const_hint: "const Version = \"X.Y.Z\""
+  package_ecosystem: "gomod"              # Dependabot ecosystem
 
 commands:
   build:        "go build ./..."

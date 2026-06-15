@@ -30,6 +30,7 @@ toolchain:
   doc_tool:        <e.g. "Doxygen">
   version_file:    <relative path under src_main holding the version constant>
   version_const_hint: <how the version constant is named/expressed>
+  package_ecosystem: <Dependabot ecosystem id, e.g. cargo|pip|npm|gomod|gradle|maven; "" if the language has none>
 
 # Canonical commands. Keep them copy-pasteable; CI and the local-build doc reuse them.
 commands:

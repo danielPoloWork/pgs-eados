@@ -23,6 +23,7 @@ toolchain:
   doc_tool:        "Doxygen"
   version_file:    "version.hpp"          # under src_main
   version_const_hint: "PBR_<SLUG>_VERSION_{MAJOR,MINOR,PATCH,STRING}"
+  package_ecosystem: ""                    # Dependabot has no vcpkg/Conan ecosystem; github-actions is still covered
 
 commands:
   build:        "cmake --build --preset debug"

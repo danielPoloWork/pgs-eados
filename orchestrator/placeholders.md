@@ -74,6 +74,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{CMD_BENCH}}` | Benchmark command (blank if N/A) | `cmake --build --preset bench` |
 | `{{VERSION_FILE}}` | File holding the version constant | `src/main/cpp/it/d4np/memorypool/version.hpp` |
 | `{{VERSION_CONST_HINT}}` | How the version constant is named | `PBR_MEMORY_POOL_VERSION_*` |
+| `{{PKG_ECOSYSTEM}}` | Dependabot package ecosystem id (blank if none) | `cargo` |
 
 ## 5. CI matrix (from the language profile)
 
@@ -114,6 +115,7 @@ These gate optional sections so a CLI does not ship a library's packaging docs, 
 | `{{#IF_PACKAGING}}` | The project is distributed via a package registry |
 | `{{#IF_SERVICE}}` | The project is a long-running service (enables deploy/runtime ADR seeds) |
 | `{{#IF_ANNOUNCE}}` | Releases/news are announced on social channels (enables the announcements workflow) |
+| `{{#IF_PKG_ECOSYSTEM}}` | The language has a Dependabot ecosystem (derived: `PKG_ECOSYSTEM` non-empty) |
 
 ## 9. Documentation i18n & announcements
 

@@ -23,6 +23,7 @@ toolchain:
   doc_tool:        "mkdocs-material (or Sphinx for API-heavy libs)"
   version_file:    "__about__.py"         # under src_main
   version_const_hint: "__version__ = 'X.Y.Z'"
+  package_ecosystem: "pip"                # Dependabot ecosystem
 
 commands:
   build:        "hatch build"

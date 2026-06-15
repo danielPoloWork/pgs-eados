@@ -23,6 +23,7 @@ toolchain:
   doc_tool:        "rustdoc (cargo doc)"
   version_file:    "lib.rs"               # version asserted equal to Cargo.toml [package].version
   version_const_hint: "pub const VERSION: &str = env!(\"CARGO_PKG_VERSION\")"
+  package_ecosystem: "cargo"              # Dependabot ecosystem
 
 commands:
   build:        "cargo build"
