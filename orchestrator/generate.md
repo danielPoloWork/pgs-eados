@@ -81,7 +81,8 @@ Render, stripping the `.tmpl` suffix and substituting placeholders:
 | `templates/docs/bugs/template.md` | `docs/bugs/template.md` | verbatim |
 | `templates/docs/bugs/README.md.tmpl` | `docs/bugs/README.md` | empty ledger index |
 | `templates/docs/journal/README.md.tmpl` | `docs/journal/README.md` | empty journal index |
-| `templates/docs/workflow/*.tmpl` | `docs/workflow/*` | git-workflow, documentation, release, maintenance |
+| `templates/docs/development/local-build.md.tmpl` | `docs/development/local-build.md` | local build/test guide (linked from README) |
+| `templates/docs/workflow/*.tmpl` | `docs/workflow/*` | git-workflow, documentation, release, maintenance, announcements, github-setup |
 
 Seed the **spec** (`docs/specs/01_spec_<slug>.md`) from `spec.*`: Objective, Functional &
 Non-Functional Requirements, Logical Architecture, Public Interface, Verification Strategy
@@ -104,8 +105,10 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
 - `ROADMAP.md`: render **Milestone 1** from `spec.milestone1_items`, plus the *Spec
   Coverage Map* skeleton (one row per spec section) so the lint's `spec-map` check passes.
 - `CHANGELOG.md`: a single `[Unreleased]` block + an empty *Released versions* index.
-- The version constant in `version_file` set to the project's start version
-  (`0.0.0` pre-1.0, or as decided in Q4.4).
+- The version constant in `version_file` set to `{{START_VERSION}}` (the same value the
+  README `Status-vX.Y.Z` badge renders) — `0.0.0` pre-1.0, or as decided in Q4.4. Keeping
+  the constant and the badge equal is what makes the lint's `version-lockstep` pass on day
+  zero.
 - `docs/adr/README.md`: index rows for ADR-0001 and ADR-0002 only.
 - `docs/patterns/README.md`: empty *Adopted* table + the candidate-pattern scaffold.
 

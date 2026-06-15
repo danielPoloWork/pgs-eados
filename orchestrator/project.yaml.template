@@ -66,6 +66,7 @@ ci:                          # from profiles/<lang>.yaml
 governance:
   scopes: [api, build, tests, docs, ci]          # -> {{#EACH_SCOPE}}
   version_start: "pre-1.0 milestone-driven"
+  start_version: "0.0.0"                          # numeric seed -> {{START_VERSION}}
   capabilities:                                   # the {{#IF_*}} flags
     bench:      false
     threading:  false

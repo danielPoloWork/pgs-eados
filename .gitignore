@@ -1,0 +1,14 @@
+# Python tooling artifacts (consistency_lint, eaao_lint, render)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Per-run project manifest: filled from project.yaml.template for one generation run,
+# it is transient working state and must not be version-controlled in the factory.
+/orchestrator/project.yaml
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

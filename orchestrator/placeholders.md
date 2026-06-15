@@ -37,6 +37,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{DEFAULT_BRANCH}}` | Mainline branch | `master` |
 | `{{ASSIGNEE}}` | PR assignee handle (often `@me`) | `@me` |
 | `{{PROJECT_KIND}}` | `library` \| `service` \| `cli` \| `app` | `library` |
+| `{{START_VERSION}}` | Numeric start version (drives the README badge + day-zero version constant) | `0.0.0` |
 
 ## 3. Source tree & language
 
