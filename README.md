@@ -19,6 +19,9 @@ It exists to answer one question:
 The answer: point the **Enterprise Project Architect** agent at EAAO, run the
 **intake interview**, and let it generate the new repository.
 
+> **New here?** Read [`.eaao-core/docs/USAGE.md`](.eaao-core/docs/USAGE.md) — the full map of
+> what EAAO can do, how it works, and what is fixed vs. what you can customize.
+
 ---
 
 ## What you get out of it
