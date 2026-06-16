@@ -93,7 +93,7 @@ The toolchain the profile pre-fills; confirm or override per project.
 How the repository is run — reproduces the reference project's GitHub rules.
 
 - **Q4.1 — GitHub owner/org and default branch?** → `OWNER`, `DEFAULT_BRANCH` (default
-  `master`). Maintainer display name and copyright holder → `MAINTAINER`, `AUTHOR`.
+  `main`). Maintainer display name and copyright holder → `MAINTAINER`, `AUTHOR`.
 - **Q4.2 — License?** Default `MIT`. → `LICENSE_ID`, `YEAR`.
 - **Q4.3 — Conventional-commit scopes?** Propose a set from the architecture's components
   plus the standard `build, tests, docs, ci`. → the `EACH_SCOPE` list.

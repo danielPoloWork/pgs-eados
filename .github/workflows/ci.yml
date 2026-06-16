@@ -7,7 +7,7 @@ name: eaao-ci
 on:
   pull_request:
   push:
-    branches: [master, main]
+    branches: [main]
 
 permissions:
   contents: read

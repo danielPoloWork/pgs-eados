@@ -16,7 +16,7 @@ ownership:
   author: Daniel Polo
   year: "2026"
   license_id: MIT
-  default_branch: master
+  default_branch: main
   assignee: "@me"
 
 language:

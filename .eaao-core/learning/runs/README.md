@@ -14,9 +14,9 @@ lang: <lang>
 kind: <library|service|cli|app>
 # Values the maintainer changed away from the built-in/profile default, as default -> chosen:
 overrides:
-  - key: ownership.default_branch
-    default: master
-    chosen: main
+  - key: ownership.license_id
+    default: MIT
+    chosen: Apache-2.0
   - key: toolchain.coverage_target
     default: 80
     chosen: 90

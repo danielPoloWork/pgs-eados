@@ -34,7 +34,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{AUTHOR}}` | Copyright holder | `Daniel Polo` |
 | `{{YEAR}}` | Copyright year | `2026` |
 | `{{LICENSE_ID}}` | SPDX license id | `MIT` |
-| `{{DEFAULT_BRANCH}}` | Mainline branch | `master` |
+| `{{DEFAULT_BRANCH}}` | Mainline branch | `main` |
 | `{{ASSIGNEE}}` | PR assignee handle (often `@me`) | `@me` |
 | `{{PROJECT_KIND}}` | `library` \| `service` \| `cli` \| `app` | `library` |
 | `{{START_VERSION}}` | Numeric start version (drives the README badge + day-zero version constant) | `0.0.0` |

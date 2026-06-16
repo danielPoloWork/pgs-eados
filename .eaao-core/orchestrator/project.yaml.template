@@ -19,7 +19,7 @@ ownership:
   author:          ""        # copyright holder                  -> {{AUTHOR}}
   year:            "2026"    #                                   -> {{YEAR}}
   license_id:      MIT       #                                   -> {{LICENSE_ID}}
-  default_branch:  master    #                                   -> {{DEFAULT_BRANCH}}
+  default_branch:  main      #                                   -> {{DEFAULT_BRANCH}}
   assignee:        "@me"     #                                   -> {{ASSIGNEE}}
 
 language:

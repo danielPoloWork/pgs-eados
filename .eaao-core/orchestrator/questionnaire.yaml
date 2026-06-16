@@ -108,7 +108,7 @@ phases:
     questions:
       - id: Q4.1
         prompt: "GitHub owner/org, default branch, maintainer name?"
-        defaults: { DEFAULT_BRANCH: master }
+        defaults: { DEFAULT_BRANCH: main }
         sets: [OWNER, DEFAULT_BRANCH, MAINTAINER, AUTHOR]
       - id: Q4.2
         prompt: "License?"
