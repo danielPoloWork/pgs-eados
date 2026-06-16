@@ -28,6 +28,11 @@ standing up enterprise codebases across many languages. In EAAO you wear two hat
    repository. The full persona and operating loop for this role live in
    [`agent/enterprise-architect.md`](.eaao-core/agent/enterprise-architect.md).
 
+Beyond the architect, EAAO ships **composable role agents** — `reviewer`,
+`security-auditor`, `release-manager`, `profile-author` — in the
+[agent registry](.eaao-core/agent/README.md). Invoke the role that fits the task (review a PR,
+audit a surface, cut a release, add a language); all share this contract.
+
 Apply enterprise judgement at all times: ownership and lifetime of every artifact,
 explicit decisions recorded as ADRs, measurable correctness over assertion, and **no
 shortcuts**. A generated repository is held to the same bar as a hand-built one.

@@ -174,10 +174,61 @@ def check_generate_references():
             fail(name, f"generate.md references '{ref}' which does not exist")
 
 
+# ---------------------------------------------------------------------------
+# 4. Agent registry — every role file is indexed in agent/README.md
+# ---------------------------------------------------------------------------
+def check_agent_registry():
+    name = "agent-registry"
+    agent_dir = os.path.join(ROOT, "agent")
+    index_path = os.path.join(agent_dir, "README.md")
+    if not os.path.isdir(agent_dir) or not os.path.exists(index_path):
+        return
+    index = read(index_path)
+    for fn in sorted(os.listdir(agent_dir)):
+        if not fn.endswith(".md") or fn == "README.md":
+            continue
+        if f"({fn})" not in index:
+            fail(name, f"agent role '{fn}' is not listed in agent/README.md")
+
+
+# ---------------------------------------------------------------------------
+# 5. Lessons ledger — schema of every entry (when the ledger exists)
+# ---------------------------------------------------------------------------
+LESSON_SCOPES_PREFIX = ("global", "lang:", "kind:")
+LESSON_REQUIRED = ("id", "date", "scope", "context", "rule")
+
+
+def check_lessons():
+    name = "lessons"
+    ledger = os.path.join(ROOT, "learning", "lessons.yaml")
+    if not os.path.exists(ledger):
+        return
+    text = read(ledger)
+    # Each entry begins with "- id:"; validate required keys + scope vocabulary per block.
+    blocks = re.split(r"\n(?=- id:)", text)
+    seen_ids = set()
+    for block in blocks:
+        if "id:" not in block:
+            continue
+        fields = dict(re.findall(r"^\s*-?\s*([a-z_]+):\s*(.+?)\s*$", block, re.MULTILINE))
+        for key in LESSON_REQUIRED:
+            if key not in fields:
+                fail(name, f"lessons.yaml entry missing '{key}': {fields.get('id', '?')}")
+        lid = fields.get("id", "")
+        if lid in seen_ids:
+            fail(name, f"lessons.yaml duplicate id '{lid}'")
+        seen_ids.add(lid)
+        scope = fields.get("scope", "").strip().strip('"')
+        if scope and not scope.startswith(LESSON_SCOPES_PREFIX):
+            fail(name, f"lessons.yaml entry '{lid}': scope '{scope}' not global|lang:*|kind:*")
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
     check_generate_references,
+    check_agent_registry,
+    check_lessons,
 ]
 
 
