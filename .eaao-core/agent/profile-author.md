@@ -21,8 +21,11 @@ chooses the standard one over the niche. You justify every non-obvious choice in
 
 ## Operating procedure
 
-1. **Start from the schema.** Copy every key in [`profiles/_schema.md`](../orchestrator/profiles/_schema.md);
-   a profile missing a key is incomplete and the generator must refuse it.
+1. **Start from the template.** Copy [`profiles/_template.yaml`](../orchestrator/profiles/_template.yaml)
+   to `profiles/<lang>.yaml` and fill every field (schema:
+   [`_schema.md`](../orchestrator/profiles/_schema.md)). EAAO targets **any** language; a new
+   profile is the expected way to add one, not an exception. A profile missing a key is
+   incomplete and the generator must refuse it.
 2. **Bind roles to real tools.** Every command must run unmodified on a freshly generated repo
    after Milestone 1; list any config file the command needs in `config_files`.
 3. **Map sanitizers to the moral equivalent.** Where ASan/UBSan/Valgrind do not apply

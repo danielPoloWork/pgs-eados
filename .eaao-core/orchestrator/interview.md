@@ -40,10 +40,15 @@ Establish the one-liner so every later question has context.
 
 The single most structural choice — it selects the profile and the source-tree segment.
 
+**EAAO is open to *any* programming language.** The six shipped profiles are seeds, not the
+allowed set — there is no "unsupported language", only "language not yet profiled".
+
 - **Q1.1 — Primary implementation language (and standard/edition)?** → `LANG`, `LANG_NAME`,
-  `LANG_STANDARD`. Confirm against available profiles in
-  [`profiles/`](profiles/). **If no profile exists for it, stop and author one** from
-  [`profiles/_schema.md`](profiles/_schema.md) plus an ADR, then resume.
+  `LANG_STANDARD`. If a profile already exists in [`profiles/`](profiles/), use it. **If not,
+  that is the normal path, not an error:** author one by copying
+  [`profiles/_template.yaml`](profiles/_template.yaml) to `profiles/<lang>.yaml` (schema:
+  [`_schema.md`](profiles/_schema.md)), add an ADR, then resume — the `profile-author` role
+  drives this. Never hardcode toolchain facts into a template to skip it.
 - **Q1.2 — Any secondary/interop language?** (e.g. a C ABI under a C++ core, Python
   bindings, a WASM target.) If yes, note the second profile and how the surfaces relate.
 - **Q1.3 — Reverse-domain group path?** Defaults to the reference convention `it/d4np`.

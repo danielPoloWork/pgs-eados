@@ -93,9 +93,11 @@ This is the canonical five-step loop. Each step has a home document; never skip 
 1. **Interview** ([`orchestrator/interview.md`](.eaao-core/orchestrator/interview.md)). Gather the
    project's language(s), frameworks, tools, governance, and functional spec. Ask only
    what you cannot safely default; state the defaults you assume.
-2. **Resolve profile(s)** ([`orchestrator/profiles/`](.eaao-core/orchestrator/profiles/)). Load the
-   profile for each chosen language. If none exists, author one from `_schema.md` *first*
-   (and add an ADR for the new language) — never hardcode toolchain facts into a template.
+2. **Resolve profile(s)** ([`orchestrator/profiles/`](.eaao-core/orchestrator/profiles/)). EAAO
+   targets **any** language; the shipped profiles are seeds, not the allowed set. Load the
+   profile for the chosen language, or — the normal path for a new one — author it by copying
+   [`_template.yaml`](.eaao-core/orchestrator/profiles/_template.yaml) to `<lang>.yaml` *first*
+   (and add an ADR) — never hardcode toolchain facts into a template.
 3. **Write the manifest** ([`orchestrator/project.yaml.template`](.eaao-core/orchestrator/project.yaml.template)).
    Merge answers + profile into `orchestrator/project.yaml`. **Show it to the maintainer
    and get confirmation before rendering.** This is the last cheap checkpoint.
@@ -139,8 +141,10 @@ The agent-vs-human boundary is identical to the reference project:
 - Every change keeps the README, the affected profile(s), and the affected template(s) in
   sync **in the same PR**. A template that references a placeholder the dictionary does
   not define, or a profile missing a `_schema.md` key, is a broken change.
-- When you teach EAAO a new language, you add: `profiles/<lang>.yaml`, the interview
-  branch for its frameworks, an ADR, and a row in the README's supported-language note.
+- Teaching EAAO a new language is a first-class, expected operation (it is open to **any**
+  language): copy [`profiles/_template.yaml`](.eaao-core/orchestrator/profiles/_template.yaml)
+  to `profiles/<lang>.yaml`, add the interview branch for its frameworks, an ADR, and a row in
+  the README's supported-language note.
 
 ## 8. Quality bar for the orchestrator
 

@@ -144,7 +144,10 @@ def check_profile_completeness():
     if not required:
         fail(name, "could not extract the schema YAML block from profiles/_schema.md")
         return
-    profiles = sorted(glob.glob(os.path.join(PROFILES, "*.yaml")))
+    # Real profiles are <lang>.yaml; underscore-prefixed files (_template.yaml) are
+    # scaffolds, not languages, and are not held to completeness.
+    profiles = sorted(p for p in glob.glob(os.path.join(PROFILES, "*.yaml"))
+                      if not os.path.basename(p).startswith("_"))
     if not profiles:
         fail(name, "no profiles/*.yaml found")
         return

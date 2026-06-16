@@ -194,9 +194,12 @@ placeholder**. The render-smoke job in EAAO's own CI runs this against
 - **One source of truth per fact.** A project fact (name, language, owner, namespace)
   is captured once in `project.yaml` and flows to every artifact via placeholders.
   This is the same anti-drift discipline the generated `consistency_lint.py` enforces.
-- **Language knowledge is data, not code.** Adding support for a new language means
-  adding one `profiles/<lang>.yaml` — not editing templates. The templates only know
-  about *roles* (build tool, test runner, formatter), never specific tools.
+- **Open to any language.** EAAO is not limited to a fixed list — the six shipped profiles
+  (C++, Rust, Go, Java, Python, TypeScript) are **seeds**. Supporting a new language means
+  copying [`profiles/_template.yaml`](.eaao-core/orchestrator/profiles/_template.yaml) to one
+  `profiles/<lang>.yaml` — never editing templates, which only know about *roles* (build tool,
+  test runner, formatter), never specific tools. There is no "unsupported language", only
+  "not yet profiled".
 - **The generated repo governs itself.** EAAO's job ends at generation. The new repo
   ships with its own `AGENTS.md`, CI, and lint, so it is self-sufficient and is *not*
   coupled back to EAAO.

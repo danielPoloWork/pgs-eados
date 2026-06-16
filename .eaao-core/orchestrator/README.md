@@ -24,15 +24,19 @@ substitute the [`placeholders.md`](placeholders.md) into [`../templates/`](../te
 lay down the cross-language source tree, seed the day-zero docs, run the generated
 consistency lint, and draft the bootstrap PR. The new repo is then self-governing.
 
-## Adding a language
+## Adding a language (any language)
 
-Genericity is extended by **data, not template edits**:
+EAAO supports **any** programming language; the six shipped profiles are seeds. A new
+language is added by **data, not template edits**:
 
-1. Copy [`profiles/_schema.md`](profiles/_schema.md)'s required keys into a new
-   `profiles/<lang>.yaml`.
+1. Copy [`profiles/_template.yaml`](profiles/_template.yaml) to `profiles/<lang>.yaml` and
+   fill every field (schema: [`_schema.md`](profiles/_schema.md)). Pick the de-facto
+   enterprise tool for each role.
 2. Add the language's framework follow-ups to the interview (Phase 2) if it needs them.
 3. Record an ADR in [`../docs/adr/`](../docs/adr/) for the addition.
-4. Confirm a repo rendered for that language passes `tools/consistency_lint.py`.
+4. Prove it: `python ../tools/eaao_lint.py` (completeness) **and** render a manifest for the
+   language whose generated `tools/consistency_lint.py` passes.
 
 If you find yourself editing a template to support a language, stop — the missing
-knowledge belongs in the profile.
+knowledge belongs in the profile. This is what keeps EAAO open-ended instead of capped at a
+fixed list.
