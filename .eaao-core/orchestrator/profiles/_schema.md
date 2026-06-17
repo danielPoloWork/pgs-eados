@@ -60,6 +60,10 @@ ci:
   # (sanitizers, leak check, ABI compat, etc.). May reference {{PROJECT_SLUG}} etc.
   extra_jobs: |
     <job-yaml or "">
+  # A YAML snippet (literal block) for the data-race / concurrency-verification job. Rendered
+  # ONLY when the project sets capabilities.threading. "" if the language has no race tooling.
+  race_job: |
+    <race-job-yaml or "">
 
 # Which capability flags this language can satisfy out of the box (informational; the
 # project's own answers in project.yaml still decide what is enabled).

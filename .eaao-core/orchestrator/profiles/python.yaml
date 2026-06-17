@@ -65,6 +65,7 @@ ci:
         - uses: astral-sh/setup-uv@v3
         - run: uv sync --all-extras --dev
         - run: ruff format --check . && ruff check . && mypy --strict src
+  race_job: ""                 # GIL-bound; no standard data-race detector (use thread stress tests)
 
 supports:
   threading_sanitizer: false   # GIL-bound; use faulthandler + thread stress tests instead

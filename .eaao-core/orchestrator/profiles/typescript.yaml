@@ -66,6 +66,7 @@ ci:
           with: { node-version: '20', cache: pnpm }
         - run: pnpm install --frozen-lockfile
         - run: pnpm prettier --check . && pnpm eslint . --max-warnings 0 && pnpm tsc --noEmit
+  race_job: ""                 # single-threaded event loop; no data-race detector
 
 supports:
   threading_sanitizer: false   # single-threaded event loop; worker-thread stress if used

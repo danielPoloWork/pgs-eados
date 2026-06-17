@@ -70,6 +70,16 @@ ci:
         - uses: dtolnay/rust-toolchain@nightly
           with: { components: miri }
         - run: cargo miri test
+  race_job: |
+    tsan:
+      name: tsan / thread sanitizer (nightly)
+      runs-on: ubuntu-24.04
+      steps:
+        - uses: actions/checkout@v6
+        - uses: dtolnay/rust-toolchain@nightly
+          with: { components: rust-src }
+        - name: cargo test under ThreadSanitizer
+          run: RUSTFLAGS="-Zsanitizer=thread" cargo test -Zbuild-std --target x86_64-unknown-linux-gnu
 
 supports:
   threading_sanitizer: true    # nightly TSan + Miri; ownership covers most races at compile time

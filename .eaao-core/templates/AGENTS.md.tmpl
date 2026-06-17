@@ -192,7 +192,9 @@ Documentation is part of the deliverable. Every PR ships its own doc updates.
   `cannot-reproduce`/`rejected`/`duplicate`, never as a real defect.
 - **Workflow docs** — `docs/workflow/` holds the git, documentation, release, and maintenance
   conventions, plus `github-setup.md` (one-time repo configuration).{{#IF_ANNOUNCE}} Release
-  announcements: `docs/workflow/announcements.md`.{{/IF_ANNOUNCE}}
+  announcements: `docs/workflow/announcements.md`.{{/IF_ANNOUNCE}}{{#IF_SERVICE}} Production
+  runbook: `docs/workflow/operations.md`.{{/IF_SERVICE}}{{#IF_PACKAGING}} Distribution:
+  `docs/workflow/packaging.md`.{{/IF_PACKAGING}}
 {{#IF_I18N}}- **Translations (i18n)** — `docs/i18n/<code>/` holds derived copies of the English
   sources; update a translation and its `translation-status.md` row in its own PR. The English
   page stays authoritative.
@@ -221,6 +223,9 @@ value. Therefore:
 - **Documentation:** all public symbols documented with `{{DOC_TOOL}}`-compatible comments.
 - **Errors:** the spec's error model is honored at every boundary; all error paths covered
   by tests.
+{{#IF_THREADING}}- **Concurrency:** every shared-state type documents whether it is thread-safe;
+  data races are forbidden and verified by the CI race/sanitizer job ({{SANITIZERS}}).
+{{/IF_THREADING}}
 
 ## 10. Enterprise Quality Bar
 

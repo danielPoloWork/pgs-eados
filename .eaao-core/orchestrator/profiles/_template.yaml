@@ -55,8 +55,12 @@ ci:
   setup_steps: |              # YAML steps (literal block) that set up the toolchain in a job
     - name: ...
       uses: ...
-  extra_jobs: |               # language-specific quality jobs (format/lint/leak/etc.) | "" if none
-    ""
+  extra_jobs: |               # language-specific quality jobs (format/lint/leak/etc.)
+    your-job:
+      name: ...
+      runs-on: ubuntu-24.04
+      steps: [ ... ]
+  race_job: ""                # data-race/concurrency job (use a `|` block); "" if the language has none
 
 supports:                     # informational; project answers still decide what is enabled
   threading_sanitizer: false

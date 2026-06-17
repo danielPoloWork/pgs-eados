@@ -86,6 +86,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{#EACH_CI_CELL}}` | Loop over CI matrix cells (`os`, `toolchain`, `preset`) | — |
 | `{{CI_SETUP_STEPS}}` | Profile-provided "set up the toolchain" YAML steps | — |
 | `{{CI_EXTRA_JOBS}}` | Profile-provided extra jobs (sanitizers, valgrind, …) | — |
+| `{{CI_RACE_JOB}}` | Profile-provided data-race/concurrency job (rendered only under `IF_THREADING`; blank if N/A) | — |
 
 ## 6. Conventional-commit scopes
 
@@ -112,11 +113,11 @@ These gate optional sections so a CLI does not ship a library's packaging docs, 
 | Flag | True when |
 |---|---|
 | `{{#IF_BENCH}}` | The project has a benchmark suite |
-| `{{#IF_THREADING}}` | The project exposes concurrency (enables TSan job, thread-safety ADR seed) |
+| `{{#IF_THREADING}}` | The project exposes concurrency (renders the profile's race/TSan CI job + the thread-safety convention) |
 | `{{#IF_PUBLIC_API}}` | The project publishes a stable API/ABI (enables SemVer-ABR notes) |
 | `{{#IF_I18N}}` | Docs are translated (enables the i18n manifest + lint check) |
-| `{{#IF_PACKAGING}}` | The project is distributed via a package registry |
-| `{{#IF_SERVICE}}` | The project is a long-running service (enables deploy/runtime ADR seeds) |
+| `{{#IF_PACKAGING}}` | The project is distributed via a package registry (renders `docs/workflow/packaging.md`) |
+| `{{#IF_SERVICE}}` | The project is a long-running service (renders `docs/workflow/operations.md`) |
 | `{{#IF_SERIES}}` | The project belongs to an umbrella series (`PROJECT_SERIES` non-empty) |
 | `{{#IF_ANNOUNCE}}` | Releases/news are announced on social channels (enables the announcements workflow) |
 | `{{#IF_PKG_ECOSYSTEM}}` | The language has a Dependabot ecosystem (derived: `PKG_ECOSYSTEM` non-empty) |

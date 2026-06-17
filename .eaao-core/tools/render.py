@@ -256,6 +256,7 @@ def build_context(m):
         "TIER1_PLATFORMS": ci.get("tier1_platforms", ""),
         "CI_SETUP_STEPS": ci.get("setup_steps", ""),
         "CI_EXTRA_JOBS": ci.get("extra_jobs", ""),
+        "CI_RACE_JOB": ci.get("race_job", ""),
         "SPEC_OBJECTIVE": spec.get("objective", ""),
         "SPEC_ARCHITECTURE": spec.get("architecture", ""),
         "SPEC_VERIFICATION": spec.get("verification", ""),
@@ -391,6 +392,10 @@ def main():
             if rel.startswith("docs/benchmarks/") and not flags["IF_BENCH"]:
                 continue
             if rel == "docs/workflow/announcements.md.tmpl" and not flags["IF_ANNOUNCE"]:
+                continue
+            if rel == "docs/workflow/operations.md.tmpl" and not flags["IF_SERVICE"]:
+                continue
+            if rel == "docs/workflow/packaging.md.tmpl" and not flags["IF_PACKAGING"]:
                 continue
             with open(src, encoding="utf-8") as handle:
                 text = handle.read()

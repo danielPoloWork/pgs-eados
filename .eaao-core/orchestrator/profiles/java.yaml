@@ -61,6 +61,15 @@ ci:
         - uses: actions/setup-java@v4
           with: { distribution: temurin, java-version: '21', cache: gradle }
         - run: ./gradlew spotlessCheck check jacocoTestCoverageVerification
+  race_job: |
+    jcstress:
+      name: jcstress / concurrency stress
+      runs-on: ubuntu-24.04
+      steps:
+        - uses: actions/checkout@v6
+        - uses: actions/setup-java@v4
+          with: { distribution: temurin, java-version: '21', cache: gradle }
+        - run: ./gradlew jcstress
 
 supports:
   threading_sanitizer: true    # JCStress for concurrency correctness

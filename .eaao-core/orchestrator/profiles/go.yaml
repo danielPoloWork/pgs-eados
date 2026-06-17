@@ -64,6 +64,15 @@ ci:
           run: |
             go test -race ./...
             go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...
+  race_job: |
+    race:
+      name: race / data-race detector
+      runs-on: ubuntu-24.04
+      steps:
+        - uses: actions/checkout@v6
+        - uses: actions/setup-go@v5
+          with: { go-version: '1.22', cache: true }
+        - run: go test -race ./...
 
 supports:
   threading_sanitizer: true    # -race is the canonical data-race gate

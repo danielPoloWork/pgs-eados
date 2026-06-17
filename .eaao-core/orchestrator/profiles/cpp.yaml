@@ -99,6 +99,16 @@ ci:
             valgrind --leak-check=full --show-leak-kinds=all \
               --errors-for-leak-kinds=definite,indirect --error-exitcode=1 \
               ./build/debug/<demonstrative-test>
+  race_job: |
+    tsan:
+      name: tsan / thread sanitizer
+      runs-on: ubuntu-24.04
+      env: { CC: clang, CXX: clang++ }
+      steps:
+        - uses: actions/checkout@v6
+        - uses: lukka/get-cmake@latest
+        - name: Build + test under ThreadSanitizer
+          run: cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan --output-on-failure
 
 supports:
   threading_sanitizer: true

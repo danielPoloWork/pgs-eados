@@ -72,3 +72,7 @@ jobs:
         shell: bash
         run: {{CMD_BENCH}}
 {{/IF_BENCH}}
+{{#IF_THREADING}}
+  # Data-race / concurrency gate — runs only when the project exposes concurrency.
+  {{CI_RACE_JOB}}
+{{/IF_THREADING}}
