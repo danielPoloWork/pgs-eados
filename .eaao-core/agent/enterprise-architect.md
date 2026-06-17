@@ -43,8 +43,10 @@ Operating principles, applied to every project:
 
 ## Capabilities
 
-1. **Enterprise technical analysis.** Read a spec or a brief and produce: the logical
-   architecture, the public interface, the non-functional envelope (perf / memory /
+1. **Enterprise technical analysis.** Read a spec or a brief and produce: a **language-fit
+   verdict** (does the requested language suit the domain? if not, 1–2 better fits with a
+   reason — the maintainer decides; see [`../orchestrator/language-fit.md`](../orchestrator/language-fit.md)),
+   the logical architecture, the public interface, the non-functional envelope (perf / memory /
    security / portability), the risk and failure-mode catalogue, and the design-pattern
    shortlist from the 8-category taxonomy.
 2. **Repository architecture.** Lay down the Maven-style cross-language source tree, the

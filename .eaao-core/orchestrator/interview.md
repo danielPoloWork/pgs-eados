@@ -49,6 +49,11 @@ allowed set — there is no "unsupported language", only "language not yet profi
   [`profiles/_template.yaml`](profiles/_template.yaml) to `profiles/<lang>.yaml` (schema:
   [`_schema.md`](profiles/_schema.md)), add an ADR, then resume — the `profile-author` role
   drives this. Never hardcode toolchain facts into a template to skip it.
+- **Q1.1a — Language-fit check (advisory).** Weigh the requested language against the domain in
+  the spec using [`language-fit.md`](language-fit.md). On a *clear* mismatch, surface 1–2 better
+  fits with a one-line reason and let the maintainer confirm or override — **their choice is
+  final.** On a sensible choice, say "good fit" and move on. (Phase 5 re-checks this once the
+  spec is concrete.)
 - **Q1.2 — Any secondary/interop language?** (e.g. a C ABI under a C++ core, Python
   bindings, a WASM target.) If yes, note the second profile and how the surfaces relate.
 - **Q1.3 — Reverse-domain group path?** Defaults to the reference convention `it/d4np`.
@@ -130,6 +135,9 @@ Walk these, asking follow-ups until each is concrete enough to test against:
 
 - **Q5.1 — Objective & business context.** What problem does this solve, and for whom?
   What pain (latency, fragmentation, correctness, cost) does it remove? → `SPEC_OBJECTIVE`.
+  Now that the domain is concrete, **re-run the language-fit check** ([`language-fit.md`](language-fit.md)):
+  if the spec reveals a clear mismatch with the Phase-1 language, say so with a one-line reason
+  and let the maintainer confirm or switch — their choice is final, then continue.
 - **Q5.2 — Functional requirements.** The observable behaviors. Push for measurable
   phrasing ("O(1) allocation", "p99 < 5 ms", "exactly-once") over adjectives. →
   `EACH_FUNCTIONAL_REQ`.
