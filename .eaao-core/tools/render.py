@@ -157,12 +157,18 @@ def load_yaml(text):
                 result[key] = parse_block_scalar(indent)
             elif val == "":
                 skip_blanks()
-                if pos[0] < n and indent_of(lines[pos[0]]) > indent:
+                if pos[0] < n:
                     nxt = lines[pos[0]]
-                    if nxt.strip().startswith("- "):
-                        result[key] = parse_list(indent_of(nxt))
+                    nind = indent_of(nxt)
+                    is_item = nxt.strip().startswith("- ")
+                    if is_item and nind == indent:
+                        # YAML permits a block sequence at the SAME indent as its key;
+                        # accept it instead of silently treating the key as null.
+                        result[key] = parse_list(indent)
+                    elif nind > indent:
+                        result[key] = parse_list(nind) if is_item else parse_map(nind)
                     else:
-                        result[key] = parse_map(indent_of(nxt))
+                        result[key] = None
                 else:
                     result[key] = None
             else:
@@ -178,8 +184,17 @@ def load_yaml(text):
             line = lines[pos[0]]
             if indent_of(line) != indent or not line.strip().startswith("- "):
                 break
-            items.append(_scalar(_strip_comment(line.strip()[2:].strip())))
-            pos[0] += 1
+            after_dash = line[indent + 1:]                       # everything past the '-'
+            key_col = indent + 1 + (len(after_dash) - len(after_dash.lstrip(" ")))
+            content = line[key_col:]
+            if re.match(r"[A-Za-z0-9_]+\s*:(\s|$)", content):
+                # Block-style mapping item ("- key: value" + aligned continuation lines).
+                # Rewrite the "- " lead-in to spaces so parse_map reads a normal entry.
+                lines[pos[0]] = " " * key_col + content
+                items.append(parse_map(key_col))
+            else:
+                items.append(_scalar(_strip_comment(content.strip())))
+                pos[0] += 1
         return items
 
     skip_blanks()
@@ -293,6 +308,36 @@ def build_context(m):
 
 
 # ---------------------------------------------------------------------------
+# Manifest pre-render validation (catch silent mistakes the renderer would paper over).
+# ---------------------------------------------------------------------------
+KNOWN_SECTIONS = {
+    "identity", "ownership", "language", "toolchain", "ci",
+    "governance", "i18n", "announce", "spec",
+}
+
+
+def validate_manifest(m, scalars):
+    """Guards that turn quiet manifest mistakes into a hard, actionable failure:
+    an unknown/misspelled top-level section (which would otherwise resolve to an empty
+    mapping and blank every field under it), and a non-numeric start version (the classic
+    `start_version`/`version_start` swap)."""
+    problems = []
+    for key in m:
+        if key not in KNOWN_SECTIONS:
+            problems.append(
+                f"unknown top-level section '{key}' (typo? expected one of: "
+                f"{', '.join(sorted(KNOWN_SECTIONS))})"
+            )
+    sv = scalars.get("START_VERSION", "")
+    if sv and not re.fullmatch(r"\d+\.\d+\.\d+", sv):
+        problems.append(
+            f"governance.start_version '{sv}' is not a numeric X.Y.Z version "
+            "(did you swap it with version_start?)"
+        )
+    return problems
+
+
+# ---------------------------------------------------------------------------
 # Render engine.
 # ---------------------------------------------------------------------------
 def render(tmpl, scalars, flags, sections, local=None, where=""):
@@ -374,6 +419,15 @@ def main():
     with open(args.manifest, encoding="utf-8") as handle:
         manifest = load_yaml(handle.read())
     scalars, flags, sections = build_context(manifest)
+
+    problems = validate_manifest(manifest, scalars)
+    if problems:
+        print("Render: FAIL — manifest validation\n")
+        for p in sorted(set(problems)):
+            print(f"  {p}")
+        print(f"\n{len(set(problems))} manifest problem(s).")
+        return 1
+
     slug = scalars["PROJECT_SLUG"]
     out_dir = os.path.abspath(args.out)
     os.makedirs(out_dir, exist_ok=True)

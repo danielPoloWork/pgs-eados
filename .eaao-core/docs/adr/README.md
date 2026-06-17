@@ -14,3 +14,4 @@ is sequential and never reused. Template: the generated
 | [0003](0003-generated-repos-are-self-governing.md) | Generated repositories are self-governing | Accepted |
 | [0004](0004-seed-language-profiles.md) | Seed profiles for C, C#, VB.NET, JS, PHP, Lua (SQL/CSS/HTML stay secondary) | Accepted |
 | [0005](0005-seed-modern-and-legacy-profiles.md) | Seed Scala/Kotlin/Swift/Dart/Ruby + legacy COBOL/Pascal (QBasic deferred) | Accepted |
+| [0006](0006-manifest-loader-and-emitted-yaml-validation.md) | Spec-correct manifest loader + real-parser gate for emitted YAML | Accepted |

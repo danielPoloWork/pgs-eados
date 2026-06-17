@@ -66,8 +66,9 @@ ci:                          # from profiles/<lang>.yaml
 
 governance:
   scopes: [api, build, tests, docs, ci]          # -> {{#EACH_SCOPE}}
-  version_start: "pre-1.0 milestone-driven"
-  start_version: "0.0.0"                          # numeric seed -> {{START_VERSION}}
+  # Two distinct version fields — do not swap them (render validates start_version is X.Y.Z):
+  version_start: "pre-1.0 milestone-driven"       # PROSE policy descriptor      -> {{VERSION_START}}
+  start_version: "0.0.0"                           # NUMERIC X.Y.Z seed (badge++) -> {{START_VERSION}}
   house_rules: ""                                 # org overlay (from config/) -> {{HOUSE_RULES}}
   capabilities:                                   # the {{#IF_*}} flags
     bench:      false

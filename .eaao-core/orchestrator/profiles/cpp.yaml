@@ -79,7 +79,8 @@ ci:
           with: { fetch-depth: 0 }
         - uses: lukka/get-cmake@latest
         - name: Configure debug to produce compile_commands.json
-          run: { CC: clang, CXX: clang++ } && cmake --preset debug
+          env: { CC: clang, CXX: clang++ }
+          run: cmake --preset debug
         - name: clang-tidy the diff
           shell: bash
           run: |

@@ -156,12 +156,15 @@ The factory is held to the bar it imposes downstream:
 | Profile completeness | Every `profiles/<lang>.yaml` defines every key in `profiles/_schema.md` |
 | Template parity | Each template preserves the governance rules of its reference origin (no rule silently dropped in generalization) |
 | Generated-repo lint | A repo rendered from the templates passes `tools/consistency_lint.py` out of the box |
+| Emitted-YAML validity | Every profile's CI fragments and the rendered repo's `*.yml` parse as well-formed YAML |
 | English-only | No non-English artifact lands on disk |
 
-The first three gates are mechanically enforced by [`tools/eaao_lint.py`](.eaao-core/tools/eaao_lint.py)
-(run in CI via [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Run it before drafting
-any PR that touches templates, profiles, the placeholder dictionary, or the generation
-playbook — a red self-lint is a broken change.
+The first three gates are mechanically enforced by [`tools/eaao_lint.py`](.eaao-core/tools/eaao_lint.py);
+emitted-YAML validity is enforced by [`tools/profile_ci_lint.py`](.eaao-core/tools/profile_ci_lint.py)
+(a real-parser check that degrades to a skip when PyYAML is absent). Both run in CI via
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). Run them before drafting any PR that
+touches templates, profiles, the placeholder dictionary, or the generation playbook — a red
+gate is a broken change.
 
 Keep the factory **current**: the [stay-current routine](.eaao-core/maintenance/stay-current.md)
 refreshes profile toolchains, CI runner images, and action pins on a cadence (the
