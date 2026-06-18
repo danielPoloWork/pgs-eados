@@ -29,8 +29,10 @@ jobs:
           python-version: '3.12'
       - name: EAAO self-lint
         run: python .eaao-core/tools/eaao_lint.py
+      - name: Renderer guard tests (validation, containment, CLI — dependency-free)
+        run: python .eaao-core/tools/tests/test_render_guards.py
       - name: Byte-compile the factory tooling
-        run: python -m py_compile .eaao-core/tools/eaao_lint.py .eaao-core/tools/render.py .eaao-core/tools/autotune.py .eaao-core/tools/self_review.py .eaao-core/tools/profile_ci_lint.py .eaao-core/tools/tests/test_loader.py
+        run: python -m py_compile .eaao-core/tools/eaao_lint.py .eaao-core/tools/render.py .eaao-core/tools/autotune.py .eaao-core/tools/self_review.py .eaao-core/tools/profile_ci_lint.py .eaao-core/tools/tests/test_loader.py .eaao-core/tools/tests/test_render_guards.py
       - name: Auto-tuner (advisory)
         run: python .eaao-core/tools/autotune.py
 
