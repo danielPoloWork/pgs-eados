@@ -30,8 +30,6 @@ SECTION_RE = re.compile(r"\{\{([#^])([A-Z][A-Z0-9_]*)\}\}(.*?)\{\{/\2\}\}", re.D
 VAR_RE = re.compile(r"(?<!\$)\{\{\s*([^{}]+?)\s*\}\}")
 UPPER_RE = re.compile(r"[A-Z][A-Z0-9_]*$")
 
-errors = []
-
 
 # ---------------------------------------------------------------------------
 # Minimal YAML loader. Supported subset (validated against PyYAML by
@@ -425,19 +423,25 @@ def validate_manifest(m, scalars):
 # ---------------------------------------------------------------------------
 # Render engine.
 # ---------------------------------------------------------------------------
-def render(tmpl, scalars, flags, sections, local=None, where=""):
+def render(tmpl, scalars, flags, sections, local=None, where="", errors=None):
+    # `errors` accumulates unresolved placeholders/fields. It is threaded explicitly (not a
+    # module global) so render() is reentrant: standalone calls are self-contained, and one
+    # run's failures never leak into the next. Callers that need the list pass their own.
+    if errors is None:
+        errors = []
+
     def repl_section(m):
         kind, name, body = m.group(1), m.group(2), m.group(3)
         if name in sections:
             items = sections[name]
             if kind == "#":
                 return "".join(
-                    render(body, scalars, flags, sections, it, where) for it in items
+                    render(body, scalars, flags, sections, it, where, errors) for it in items
                 )
-            return render(body, scalars, flags, sections, local, where) if not items else ""
+            return render(body, scalars, flags, sections, local, where, errors) if not items else ""
         truthy = flags.get(name, False)
         keep = truthy if kind == "#" else not truthy
-        return render(body, scalars, flags, sections, local, where) if keep else ""
+        return render(body, scalars, flags, sections, local, where, errors) if keep else ""
 
     out = SECTION_RE.sub(repl_section, tmpl)
 
@@ -526,6 +530,7 @@ def main():
     out_dir = os.path.abspath(args.out)
     os.makedirs(out_dir, exist_ok=True)
 
+    errors = []           # one accumulator for the whole run, threaded into every render()
     written = 0
     for cur, _dirs, files in os.walk(TEMPLATES):
         if "__pycache__" in cur:
@@ -547,7 +552,7 @@ def main():
                 continue
             with open(src, encoding="utf-8") as handle:
                 text = handle.read()
-            rendered = render(text, scalars, flags, sections, None, rel)
+            rendered = render(text, scalars, flags, sections, None, rel, errors)
             write_file(out_dir, out_relpath(rel, slug), rendered)
             written += 1
 
@@ -558,7 +563,8 @@ def main():
                 if os.path.exists(p)), None)
     if lic:
         with open(lic, encoding="utf-8") as handle:
-            write_file(out_dir, "LICENSE", render(handle.read(), scalars, flags, sections, None, "LICENSE"))
+            write_file(out_dir, "LICENSE",
+                       render(handle.read(), scalars, flags, sections, None, "LICENSE", errors))
     for key in ("SRC_MAIN", "SRC_TEST", "SRC_BENCH"):
         if scalars[key]:
             write_file(out_dir, f"{scalars[key]}/.gitkeep", "")
