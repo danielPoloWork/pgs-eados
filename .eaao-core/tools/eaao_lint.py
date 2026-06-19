@@ -22,11 +22,15 @@ Each check runs independently; all failures are reported, then a non-zero exit o
 import glob
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = os.path.join(ROOT, "templates")
 PROFILES = os.path.join(ROOT, "orchestrator", "profiles")
+# The actual git repository root is one level above .eaao-core/ — README.md, docs/i18n/, and
+# .github/ live there, not under the factory folder.
+REPO_ROOT = os.path.dirname(ROOT)
 failures = []  # (check, message)
 
 
@@ -261,6 +265,54 @@ def check_action_pins():
                            f"{fac[action][0][:10]} ({fac[action][1]}) — keep them in lockstep")
 
 
+# ---------------------------------------------------------------------------
+# 7. i18n freshness — every `translated` row in docs/i18n/translation-status.md pins the
+#    source commit it was made from; the translation is STALE if the English source changed
+#    since. Opt-in: skipped entirely when no manifest exists (the factory's own i18n is
+#    optional). Needs git history (CI checks out with fetch-depth: 0).
+# ---------------------------------------------------------------------------
+def _git(*args):
+    """Run git from the repo root; return stdout (stripped) or None on error."""
+    try:
+        out = subprocess.run(["git", "-C", REPO_ROOT, *args],
+                             capture_output=True, text=True, check=True)
+        return out.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
+def check_i18n_freshness():
+    name = "i18n-freshness"
+    manifest_path = os.path.join(REPO_ROOT, "docs", "i18n", "translation-status.md")
+    if not os.path.exists(manifest_path):
+        return  # the factory ships no translations — nothing to check
+    i18n_dir = os.path.join(REPO_ROOT, "docs", "i18n")
+    rows = 0
+    for line in read(manifest_path).splitlines():
+        # Data rows begin with a link cell `| [...](...)`; skips the legend + header rows.
+        if not line.lstrip().startswith("| [") or "`translated`" not in line:
+            continue
+        link = re.search(r"\]\(([^)]+)\)", line)
+        sha = re.search(r"\|\s*`([0-9a-f]{7,40})`\s*\|", line)
+        if link is None or sha is None:
+            fail(name, f"could not parse translated manifest row: {line.strip()}")
+            continue
+        rows += 1
+        src = os.path.normpath(os.path.join(i18n_dir, link.group(1)))
+        rel = os.path.relpath(src, REPO_ROOT).replace(os.sep, "/")
+        recorded = sha.group(1)
+        newer = _git("log", "--oneline", f"{recorded}..HEAD", "--", rel)
+        if newer is None:
+            fail(name, f"git unavailable or commit {recorded} not in history for {rel} "
+                       "(CI needs a full clone — fetch-depth: 0)")
+        elif newer:
+            fail(name, f"i18n translation of {rel} is STALE: source changed since recorded "
+                       f"commit {recorded} ({len(newer.splitlines())} commit(s) after) — "
+                       "refresh the translation and bump its translation-status.md row")
+    if rows == 0:
+        fail(name, "translation-status.md exists but has no parseable `translated` rows")
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -268,6 +320,7 @@ CHECKS = [
     check_agent_registry,
     check_lessons,
     check_action_pins,
+    check_i18n_freshness,
 ]
 
 

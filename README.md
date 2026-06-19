@@ -1,5 +1,13 @@
 # Enterprise Agentic Architecture Orchestrator (EAAO)
 
+[![CI](https://github.com/danielPoloWork/pgs-eaao/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eaao/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](.eaao-core/orchestrator/profiles/)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
+
+> **🌐 Translations:** [简体中文](docs/i18n/zh-Hans/README.md) · [日本語](docs/i18n/ja/README.md) — derived from this English source. Policy & freshness: [`docs/i18n/`](docs/i18n/README.md).
+
 > A language-agnostic meta-project that reproduces the **enterprise agent system** of
 > `pbr-cpp-memory-pool` for *any* new project, in *any* language, with *any* toolchain —
 > by interviewing the maintainer, recording the answers in a single manifest, and
