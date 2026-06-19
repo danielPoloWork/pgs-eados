@@ -50,24 +50,27 @@ mechanically.
    possibly-stale artifact):
 
    ```markdown
-   > 🌐 Translation of [`README.md`](../../README.md) as of commit `<short-sha>`.
+   > 🌐 Translation of [`README.md`](../../README.md).
    > **English is normative** — if this differs from the source, the English version wins.
    ```
 
 3. Record it in [`translation-status.md`](translation-status.md): the source path, the
-   **source commit hash** you translated from (`git rev-parse --short HEAD` after the English
-   change landed), the translated-at commit, the status, and the reviewer.
+   **source content hash** you translated from (first 12 hex of `sha256sum <english-file>`,
+   or `python -c "import hashlib;print(hashlib.sha256(open('README.md','rb').read()).hexdigest()[:12])"`),
+   the status, and the reviewer.
 
-When you **edit an English source** that has translations, refresh those translations (or
-mark their manifest rows `stale`) in the same PR — otherwise the freshness lint flags the
-commit-hash drift.
+When you **edit an English source** that has translations, refresh those translations and
+update their `Source hash` in the same PR — otherwise the freshness lint flags the drift.
 
 ## Staleness gate
 
-[`translation-status.md`](translation-status.md) pins each translation to the source commit it
-was made from. A translation is **stale** when its source page has changed since that commit.
-`.eaao-core/tools/eaao_lint.py` turns this into a CI-checkable condition (the `i18n-freshness`
-check): it fails when `git log <recorded-commit>..HEAD -- <source>` is non-empty.
+[`translation-status.md`](translation-status.md) pins each translation to the **SHA-256
+content hash** of the source it was made from. A translation is **stale** when its source
+page hashes differently now. `.eaao-core/tools/eaao_lint.py` turns this into a CI-checkable
+condition (the `i18n-freshness` check): it fails when the source's current hash ≠ the recorded
+one. It is **content-based, not commit-based**, so it survives squash-merges (which rewrite
+history and would orphan a recorded commit) — see
+[ADR-0010](../../.eaao-core/docs/adr/0010-content-hash-i18n-freshness.md).
 
 ## Terminology
 

@@ -6,7 +6,7 @@
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../.eaao-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> 🌐 本页面是项目 [`README.md`](../../../README.md) 的简体中文翻译（基于提交 `8ca27b2`）。
+> 🌐 本页面是项目 [`README.md`](../../../README.md) 的简体中文翻译。
 > **英文版本为唯一权威来源** —— 如本译文与原文不一致，以英文版为准。
 > 用其他语言阅读：[English](../../../README.md) · [日本語](../ja/README.md)。
 

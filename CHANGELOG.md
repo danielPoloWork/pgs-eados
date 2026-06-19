@@ -21,17 +21,24 @@ in the same PR. EAAO is pre-`v1.0.0`; there are no releases yet.
   check in `eaao_lint.py`.
 - `CONTRIBUTING.md` and the owner-governed contribution model in `AGENTS.md` §6:
   contributors suggest via PRs, the owner decides and squash-merges, `main` is protected.
+- ADR-0010 — content-hash i18n freshness (squash-merge-proof).
 
 ### Changed
 
 - Repository merge policy set to **squash-only** (merge-commit and rebase disabled), with
   delete-branch-on-merge.
+- `i18n-freshness` now pins translations to the English source's **SHA-256 content hash**
+  instead of a commit SHA, and no longer needs git history (`fetch-depth: 0` dropped from CI).
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- `i18n-freshness` no longer falsely reports translations stale after a squash-merge orphans
+  the recorded source commit (it broke `main` CI right after the squash-only policy landed) —
+  see ADR-0010.
 
 ### Security
 

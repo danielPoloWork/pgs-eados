@@ -6,7 +6,7 @@
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../.eaao-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> 🌐 本ページはプロジェクト [`README.md`](../../../README.md) の日本語訳です（コミット `8ca27b2` 時点）。
+> 🌐 本ページはプロジェクト [`README.md`](../../../README.md) の日本語訳です。
 > **英語版が唯一の正典** —— 本訳が原文と食い違う場合は英語版が優先されます。
 > 他の言語で読む：[English](../../../README.md) · [简体中文](../zh-Hans/README.md)。
 
