@@ -21,10 +21,10 @@ Status vocabulary:
 
 | Source page | Source commit | Translated at | Status | Reviewer |
 |-------------|:-------------:|:-------------:|:------:|----------|
-| [`README.md`](../../README.md) | `dddf2d7` | `dddf2d7` | `translated` | — |
+| [`README.md`](../../README.md) | `8ca27b2` | `8ca27b2` | `translated` | — |
 
 ## `ja` (Japanese)
 
 | Source page | Source commit | Translated at | Status | Reviewer |
 |-------------|:-------------:|:-------------:|:------:|----------|
-| [`README.md`](../../README.md) | `dddf2d7` | `dddf2d7` | `translated` | — |
+| [`README.md`](../../README.md) | `8ca27b2` | `8ca27b2` | `translated` | — |

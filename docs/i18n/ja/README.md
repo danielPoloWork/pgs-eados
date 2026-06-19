@@ -6,7 +6,7 @@
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../.eaao-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> 🌐 本ページはプロジェクト [`README.md`](../../../README.md) の日本語訳です（コミット `dddf2d7` 時点）。
+> 🌐 本ページはプロジェクト [`README.md`](../../../README.md) の日本語訳です（コミット `8ca27b2` 時点）。
 > **英語版が唯一の正典** —— 本訳が原文と食い違う場合は英語版が優先されます。
 > 他の言語で読む：[English](../../../README.md) · [简体中文](../zh-Hans/README.md)。
 
@@ -223,6 +223,22 @@ cd ../my-new-repo && python tools/consistency_lint.py     # the generated repo's
   すべて英語です。インタビュー自体は維持者の言語で行えます。
 - **不可逆な手順は人間が所有する。** エージェントはブランチ・コミット・PR を起草し、人間が
   開き、レビューし、マージします。EAAO はこの境界を逐語的に再現します。
+
+---
+
+## コントリビューションとガバナンス
+
+EAAO は **owner ガバナンス**です：コントリビューターは pull request で*提案*し、owner
+（`@danielPoloWork`）が*決定*し **squash-merge** します。誰も `main` へ直接 push しません。
+
+- まず [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) から：fork → フィーチャーブランチ →
+  Conventional Commits → ゲート実行（`eaao_lint`、render-smoke、`tools/tests/`）→ PR を開く。
+- `main` は **squash** マージ方式のみを受け付けます。完全なブランチ保護 ruleset（PR 必須、
+  push できる者の制限）はリポジトリ公開後に有効になります。
+- セキュリティ問題は公開 issue に書きません —— [`SECURITY.md`](../../../SECURITY.md) を参照。
+  質問やアイデアは GitHub Discussions へ。リリースは SemVer に従い
+  [`CHANGELOG.md`](../../../CHANGELOG.md) に記録されます。完全な契約は
+  [`AGENTS.md`](../../../AGENTS.md) です。
 
 ---
 
