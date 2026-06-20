@@ -104,3 +104,18 @@ spec:
   verification: doctest unit tests, ASan/UBSan/TSan, Valgrind leak-check, reproducible benchmarks.
   milestone1_items:
     - "1.6 Implement the free-list arena and the allocate/deallocate fast paths"
+  milestones:
+    - number: 2
+      title: "Concurrency & safety"
+      goal: "Make the pool thread-safe and prove it under the sanitizers."
+      items:
+        - "2.1 Add the thread-safe allocation path (lock-free free-list or sharded locks)"
+        - "2.2 Wire TSan into CI and add the multi-threaded stress test"
+        - "2.3 Document the threading contract in the public API docs"
+    - number: 3
+      title: "Benchmarks & 1.0 hardening"
+      goal: "Lock the public API, prove performance, and cut the first stable release."
+      items:
+        - "3.1 Add the reproducible allocation/deallocation benchmarks"
+        - "3.2 Freeze the public interface and record the API-stability ADR"
+        - "3.3 Cut v1.0.0 (SemVer) with the release workflow"

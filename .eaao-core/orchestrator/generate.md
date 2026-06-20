@@ -133,8 +133,10 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
 
 ## Step 6 — Seed the roadmap & day-zero state
 
-- `ROADMAP.md`: render **Milestone 1** from `spec.milestone1_items`, plus the *Spec
-  Coverage Map* skeleton (one row per spec section) so the lint's `spec-map` check passes.
+- `ROADMAP.md`: render the **full roadmap up front** — Milestone 1 (universal bootstrap + any
+  `spec.milestone1_items`) and **every** `spec.milestones` entry (`number`, `title`, `goal`,
+  `items`) — plus the *Spec Coverage Map* skeleton (one row per spec section) so the lint's
+  `spec-map` check passes. Mirror the same milestone list into the README milestone table.
 - `CHANGELOG.md`: a single `[Unreleased]` block + an empty *Released versions* index.
 - The version constant in `version_file` set to `{{START_VERSION}}` (the same value the
   README `Status-vX.Y.Z` badge renders) — `0.0.0` pre-1.0, or as decided in Q4.4. Keeping

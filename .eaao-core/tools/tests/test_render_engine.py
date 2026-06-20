@@ -19,7 +19,8 @@ import render  # noqa: E402  (the module under test)
 
 SCALARS = {"NAME": "acme", "EMPTY": "", "BLOCK": "line1\nline2\n"}
 FLAGS = {"IF_ON": True, "IF_OFF": False}
-SECTIONS = {"EACH_D": [{"k": "a"}, {"k": "b"}], "EACH_S": ["x", "y"], "EACH_EMPTY": []}
+SECTIONS = {"EACH_D": [{"k": "a"}, {"k": "b"}], "EACH_S": ["x", "y"], "EACH_EMPTY": [],
+            "EACH_M": [{"n": 1, "items": ["a", "b"]}, {"n": 2, "items": ["c"]}]}
 
 
 def _r(tmpl, local=None):
@@ -51,6 +52,12 @@ def main():
 
     o, e = _r("{{#EACH_EMPTY}}item{{/EACH_EMPTY}}{{^EACH_EMPTY}}none{{/EACH_EMPTY}}")
     check("empty EACH: # yields nothing, ^ yields body once", o == "none", failures)
+
+    # Nested loop: a section whose name (lowercased) is a list FIELD of the current item
+    # iterates that field — e.g. {{#ITEMS}} inside {{#EACH_MILESTONE}} over a milestone's items.
+    o, e = _r("{{#EACH_M}}[{{n}}:{{#ITEMS}}{{.}}{{/ITEMS}}]{{/EACH_M}}")
+    check("nested loop over the current item's list field",
+          o == "[1:ab][2:c]" and not e, failures)
 
     o, e = _r("{{MISSING}}")
     check("unresolved UPPER placeholder -> error + blank",

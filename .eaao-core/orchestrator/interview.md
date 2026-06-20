@@ -152,8 +152,12 @@ Walk these, asking follow-ups until each is concrete enough to test against:
 - **Q5.6 — Verification & test strategy.** How correctness and performance are *proven* —
   unit tests, sanitizers, property tests, fuzzing, the canonical leak/race check, the
   benchmark methodology. → `SPEC_VERIFICATION`.
-- **Q5.7 — Milestone 1 scope.** The thinnest first slice that compiles, tests, and ships
-  (the reference's Milestone 1 = build system + skeleton + CI). → `EACH_MILESTONE1_ITEM`.
+- **Q5.7 — The full roadmap, up front.** Milestone 1 is the universal bootstrap (build system,
+  skeleton, CI) — automatic; you may add extra M1 items (→ `EACH_MILESTONE1_ITEM`). Then lay out
+  **all** the project's milestones now, not one at a time: for each, a `number` (2, 3, …), a
+  `title`, a one-line `goal`, and its `items` as pre-numbered tasks (`2.1`, `2.2`, …). Ask
+  follow-up questions until the whole roadmap is concrete; never defer milestones to "later". →
+  `EACH_MILESTONE`.
 
 > **Follow-up discipline (Phase 5):** for every requirement, ask "how would CI prove this
 > failed?" If there is no mechanical check, either refine the requirement until there is,

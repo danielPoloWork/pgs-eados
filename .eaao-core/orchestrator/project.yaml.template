@@ -96,4 +96,7 @@ spec:                         # from Phase 5 of the interview
   architecture:     ""        # prose + diagram for the spec & first ADRs
   public_api:       []        # -> {{#EACH_PUBLIC_API}}
   verification:     ""        # -> {{SPEC_VERIFICATION}}
-  milestone1_items: []        # -> {{#EACH_MILESTONE1_ITEM}}
+  milestone1_items: []        # -> {{#EACH_MILESTONE1_ITEM}} (extra M1 items beyond bootstrap)
+  # The full forward roadmap, defined UP FRONT (Milestone 1 = the universal bootstrap, automatic).
+  # Each entry: {number, title, goal, items: ["<n>.<m> task", ...]}.        -> {{#EACH_MILESTONE}}
+  milestones: []

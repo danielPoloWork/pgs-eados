@@ -174,8 +174,8 @@ phases:
         prompt: "Verification & test strategy — how is each requirement proven in CI?"
         sets: [SPEC_VERIFICATION]
       - id: Q5.7
-        prompt: "Milestone 1 scope — thinnest slice that compiles, tests, ships?"
-        sets: [MILESTONE1_ITEMS]
+        prompt: "Full roadmap up front — Milestone 1 is the universal bootstrap; lay out ALL further milestones now (each: number, title, goal, pre-numbered items), not one at a time."
+        sets: [MILESTONE1_ITEMS, MILESTONES]
     follow_ups:
       - for_each: requirement
         ask: "How would CI mechanically prove this requirement was violated?"

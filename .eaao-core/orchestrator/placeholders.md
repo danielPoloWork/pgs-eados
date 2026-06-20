@@ -104,7 +104,9 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{SPEC_ARCHITECTURE}}` | Logical architecture prose + diagram block | — |
 | `{{#EACH_PUBLIC_API}}` | Public surface entries | — |
 | `{{SPEC_VERIFICATION}}` | Verification & test strategy paragraph | — |
-| `{{#EACH_MILESTONE1_ITEM}}` | Milestone-1 roadmap items | — |
+| `{{#EACH_MILESTONE1_ITEM}}` | Extra Milestone-1 roadmap items (beyond the universal bootstrap 1.1–1.5) | — |
+| `{{#EACH_MILESTONE}}` | The project's milestones beyond bootstrap, defined up front; per-item fields: `number`, `title`, `goal`, `items` | — |
+| `{{#ITEMS}}` | A milestone's checklist items — nested loop **inside** `{{#EACH_MILESTONE}}`; `{{.}}` is one pre-numbered item string | — |
 
 ## 8. Conditional capability flags
 

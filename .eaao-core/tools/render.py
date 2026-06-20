@@ -395,6 +395,7 @@ def build_context(m):
         "EACH_NONFUNCTIONAL_REQ": spec.get("nonfunctional_reqs", []) or [],
         "EACH_PUBLIC_API": spec.get("public_api", []) or [],
         "EACH_MILESTONE1_ITEM": spec.get("milestone1_items", []) or [],
+        "EACH_MILESTONE": spec.get("milestones", []) or [],
         "EACH_DOC_LANG": i18n.get("targets", []) or [],
         "EACH_ANNOUNCE_CHANNEL": ann.get("channels", []) or [],
     }
@@ -482,6 +483,16 @@ def render(tmpl, scalars, flags, sections, local=None, where="", errors=None):
 
     def repl_section(m):
         kind, name, body = m.group(1), m.group(2), m.group(3)
+        # Nested loop over a list FIELD of the current item: {{#ITEMS}} inside {{#EACH_MILESTONE}}
+        # iterates that milestone's `items`. The section name lowercased is the field, so a loop
+        # item shadows a same-named global section (each milestone owns its own items).
+        local_list = local.get(name.lower()) if isinstance(local, dict) else None
+        if isinstance(local_list, list):
+            if kind == "#":
+                return "".join(
+                    render(body, scalars, flags, sections, it, where, errors) for it in local_list
+                )
+            return render(body, scalars, flags, sections, local, where, errors) if not local_list else ""
         if name in sections:
             items = sections[name]
             if kind == "#":
