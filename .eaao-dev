@@ -1,0 +1,10 @@
+EAAO development-repository marker.
+
+This file marks the factory's OWN source tree (this repository). `render.py --in-place`
+refuses to run when it finds this sentinel at the repo root, so a maintainer working on EAAO
+cannot accidentally overwrite the factory by generating into it.
+
+It is `export-ignore`d from distribution bundles (see .gitattributes), so a user's copied-in
+`.eaao-core/` never carries it — and `--in-place` works in the user's own project repo.
+
+Do not copy this file into a generated or user project. Do not remove it from this repository.

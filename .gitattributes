@@ -31,6 +31,7 @@
 /.portfolio.json        export-ignore
 /.gitignore             export-ignore
 /.gitattributes         export-ignore
+/.eaao-dev              export-ignore
 /CHANGELOG.md           export-ignore
 /README.md              export-ignore
 /SECURITY.md            export-ignore

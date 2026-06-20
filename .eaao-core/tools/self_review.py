@@ -75,9 +75,10 @@ def main():
             warnings.append("README.md has no Status-vX.Y.Z badge")
 
     # Stray, unrendered placeholders anywhere (GitHub Actions ${{ }} is allowed).
-    for cur, _dirs, files in os.walk(repo):
-        if ".git" in cur:
-            continue
+    for cur, dirs, files in os.walk(repo):
+        # Don't descend into git internals or a co-located factory copy (.eaao-core/, whose
+        # *.tmpl files legitimately contain {{placeholders}} and would be false positives).
+        dirs[:] = [d for d in dirs if d not in (".git", ".eaao-core")]
         for fn in files:
             path = os.path.join(cur, fn)
             try:

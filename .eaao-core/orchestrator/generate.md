@@ -6,8 +6,9 @@ on the previous one. Prerequisite: a `project.yaml` the maintainer has confirmed
 (see [`interview.md`](interview.md) → *Closing the interview*).
 
 > **Rendering: deterministic or manual.** Steps 3–6 substitute placeholders. You may run the
-> bundled renderer — `python tools/render.py orchestrator/project.yaml --out <output-dir>` —
-> which performs exactly the substitutions below, expands the source tree, honors the
+> bundled renderer — `python .eaao-core/tools/render.py .eaao-core/orchestrator/project.yaml --in-place`
+> (the project lands in the current repo, next to `.eaao-core/`; use `--out <dir>` for a separate
+> copy) — which performs exactly the substitutions below, expands the source tree, honors the
 > `capabilities.*` gates, leaves GitHub Actions `${{ … }}` untouched, and **aborts on any
 > unresolved placeholder**. Or do a careful manual pass. Either way, Step 7 verifies the
 > result, so the two paths converge.
@@ -23,8 +24,12 @@ on the previous one. Prerequisite: a `project.yaml` the maintainer has confirmed
 - A language profile exists for every `language.lang` / `language.secondary_lang`. If not,
   author it from [`profiles/_schema.md`](profiles/_schema.md) and record an ADR **before**
   generating. Never inline toolchain facts into a template to work around a missing profile.
-- Decide the **output directory**: a sibling of EAAO named `project_name`
-  (e.g. `../acme-rust-ratelimiter`). The generated repo must not live inside EAAO.
+- Decide **where the project is generated**. The default, recommended model is **in place**: the
+  `.eaao-core/` factory is copied into the user's project repo (`<repo>/.eaao-core/`) and the
+  renderer writes the project files into `<repo>/` next to it (`render.py --in-place`). The
+  rendered `.gitignore` excludes `.eaao-core/`, and `render.py` never writes inside it. To produce
+  a *separate* copy instead, render to a directory **outside** the factory (`--out <dir>`). The
+  renderer refuses `--in-place` in EAAO's own development repo (the `.eaao-dev` sentinel).
 
 ## Step 1 — Resolve derived values
 
@@ -142,7 +147,9 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
 
 1. **Run the consistency lint:** `python tools/consistency_lint.py` from the output repo.
    It must pass. The day-zero seeds in Step 6 are specifically arranged so it does.
-2. **Grep for stray placeholders:** no `{{` may remain anywhere under the output dir.
+2. **Grep for stray placeholders:** no `{{` may remain anywhere under the output dir — when
+   generating in place, exclude the copied-in `.eaao-core/`, whose `.tmpl` files legitimately
+   contain them.
 3. **Toolchain smoke (best effort):** run the profile's `CMD_BUILD` / `CMD_TEST` on the
    skeleton if the language allows a trivial buildable stub; otherwise note it as the first
    Milestone-1 task.
@@ -151,8 +158,10 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
 
 Reproduce the reference project's agent-vs-human boundary exactly:
 
-1. `git init`, set `init.defaultBranch` to `default_branch`, first commit on a branch
-   `chore/bootstrap-enterprise-scaffold` (Conventional Commits).
+1. `git init` (skip if the repo already exists, as in the in-place model), set
+   `init.defaultBranch` to `default_branch`, first commit on a branch
+   `chore/bootstrap-enterprise-scaffold` (Conventional Commits). The rendered `.gitignore`
+   already excludes `.eaao-core/`, so the factory is never committed into the project.
 2. If a remote exists and the maintainer authorized it, push the branch and **draft**
    (`gh pr create --draft`) — never open or merge. Otherwise print the suggested commands.
 3. Hand off: from here, the generated repo's own `AGENTS.md` governs all further work. EAAO

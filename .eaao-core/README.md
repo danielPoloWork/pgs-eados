@@ -53,17 +53,20 @@ enforced by the lint. You only make the project-specific decisions.
 
 ## Use it — deterministic (no agent)
 
-The interview's only output is a filled manifest, so you can fill it by hand and render:
+The interview's only output is a filled manifest, so you can fill it by hand and render. With
+this bundle copied into your project repo (`<your-repo>/.eaao-core/`), `--in-place` generates the
+project **into that repo**, next to `.eaao-core/` (which the rendered `.gitignore` excludes):
 
 ```bash
 cp .eaao-core/orchestrator/project.yaml.template .eaao-core/orchestrator/project.yaml
 # edit it — see .eaao-core/orchestrator/examples/reference.yaml for a worked manifest
-python .eaao-core/tools/render.py .eaao-core/orchestrator/project.yaml --out ../my-new-repo
-cd ../my-new-repo && python tools/consistency_lint.py   # the generated repo's own gate
+python .eaao-core/tools/render.py .eaao-core/orchestrator/project.yaml --in-place
+python tools/consistency_lint.py   # the generated repo's own gate (now at the repo root)
 ```
 
-`render.py` is deterministic, honors the `capabilities.*` gates, leaves GitHub Actions
-`${{ … }}` untouched, and **aborts on any unresolved placeholder**.
+(To render a *separate* copy instead, use `--out <dir-outside-the-factory>`.) `render.py` is
+deterministic, honors the `capabilities.*` gates, leaves GitHub Actions `${{ … }}` untouched,
+and **aborts on any unresolved placeholder**.
 
 ---
 

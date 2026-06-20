@@ -4,7 +4,7 @@
 Dependency-free (Python 3 standard library only). Turns a confirmed project manifest into a
 rendered repository, replacing the "careful manual pass" with a reproducible one:
 
-    python tools/render.py orchestrator/project.yaml --out ../my-new-repo
+    python tools/render.py orchestrator/project.yaml --in-place   # or: --out <dir-outside-eaao>
 
 It implements exactly the substitution grammar the dictionary documents:
   - {{SCALAR}}                       a manifest-derived value
@@ -578,8 +578,13 @@ def _duplicate_top_level_keys(text):
 def main():
     ap = argparse.ArgumentParser(description="Render an EAAO manifest into a repository.")
     ap.add_argument("manifest", help="path to a filled project.yaml")
-    ap.add_argument("--out", required=True, help="output directory (must be outside EAAO)")
+    ap.add_argument("--out", help="output directory, OUTSIDE the EAAO factory folder")
+    ap.add_argument("--in-place", action="store_true",
+                    help="render into the folder that holds .eaao-core/ (a bundle copied into "
+                         "your own repo): the project files land next to .eaao-core/")
     args = ap.parse_args()
+    if bool(args.out) == bool(args.in_place):
+        ap.error("provide exactly one of --out <dir> or --in-place")
 
     with open(args.manifest, encoding="utf-8") as handle:
         raw = handle.read()
@@ -597,13 +602,7 @@ def main():
         return 1
 
     slug = scalars["PROJECT_SLUG"]
-    out_dir = os.path.abspath(args.out)
-
-    # Refuse to render into the EAAO repo itself: write_file confines writes *within* the
-    # output root, but nothing else stops the output root from BEING the factory. `--out .`
-    # would otherwise overwrite EAAO's own AGENTS.md / CI / LICENSE.
-    out_root = os.path.realpath(out_dir)
-    eaao_repo = os.path.realpath(os.path.dirname(ROOT))   # the repo that contains .eaao-core/
+    eaao_repo = os.path.realpath(os.path.dirname(ROOT))   # the folder that holds .eaao-core/
 
     def _inside(child, parent):
         try:
@@ -611,10 +610,28 @@ def main():
         except ValueError:                                # different drives on Windows
             return False
 
-    if _inside(out_root, eaao_repo):
-        print("Render: FAIL — --out must be a directory OUTSIDE the EAAO repository "
-              f"(refusing to render into {out_root}, which would overwrite the factory).")
-        return 1
+    if args.in_place:
+        # Generate INTO the folder that holds .eaao-core/ — the bundle's intended home, copied
+        # into the user's own repo (`<repo>/.eaao-core/`), so the project files land in <repo>/
+        # next to it. No template writes inside .eaao-core/, so the factory stays intact, and the
+        # generated .gitignore excludes it. Refuse only on the EAAO *development* repo, marked by
+        # a root `.eaao-dev` sentinel that never ships in a bundle — so a maintainer cannot
+        # overwrite the factory's own source by running this from a clone.
+        if os.path.exists(os.path.join(eaao_repo, ".eaao-dev")):
+            print("Render: FAIL — refusing --in-place in the EAAO development repository "
+                  "(the .eaao-dev sentinel marks it). Use --out <dir> to render a separate copy.")
+            return 1
+        out_dir = eaao_repo
+    else:
+        out_dir = os.path.abspath(args.out)
+        # write_file confines writes within the output root, but nothing stops that root from
+        # BEING the factory; `--out .` would overwrite EAAO's own AGENTS.md / CI / LICENSE. To
+        # generate into a copied-in .eaao-core/ on purpose, use --in-place instead.
+        if _inside(os.path.realpath(out_dir), eaao_repo):
+            print("Render: FAIL — --out must be a directory OUTSIDE the EAAO repository "
+                  f"(refusing {os.path.realpath(out_dir)}); use --in-place to generate into it).")
+            return 1
+    out_root = os.path.realpath(out_dir)
     os.makedirs(out_dir, exist_ok=True)
 
     errors = []           # one accumulator for the whole run, threaded into every render()

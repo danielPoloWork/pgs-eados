@@ -54,7 +54,7 @@ congruent in CI.
 
 | Tool | Purpose |
 |---|---|
-| `python .eaao-core/tools/render.py <manifest> --out <dir>` | Render a manifest into a repository (deterministic) |
+| `python .eaao-core/tools/render.py <manifest> --in-place \| --out <dir>` | Render a manifest into a repository (deterministic) |
 | `python .eaao-core/tools/eaao_lint.py` | Self-lint: placeholder integrity, profile completeness, playbook references |
 | `python .eaao-core/tools/self_review.py <repo>` | Structural completeness review of a generated repo |
 | `python .eaao-core/tools/autotune.py` | Propose default changes from accumulated run records |
@@ -69,13 +69,15 @@ congruent in CI.
 follows [`generate.md`](../orchestrator/generate.md). If a step fails, it follows
 [`recovery.md`](../orchestrator/recovery.md).
 
-**Deterministic** — no agent needed:
+**Deterministic** — no agent needed. With this factory copied into your repo
+(`<your-repo>/.eaao-core/`), `--in-place` generates the project into that repo, next to
+`.eaao-core/` (which the rendered `.gitignore` excludes); use `--out <dir>` for a separate copy:
 
 ```bash
 cp .eaao-core/orchestrator/project.yaml.template .eaao-core/orchestrator/project.yaml
 # edit it — see .eaao-core/orchestrator/examples/reference.yaml for a worked manifest
-python .eaao-core/tools/render.py .eaao-core/orchestrator/project.yaml --out ../my-new-repo
-cd ../my-new-repo && python tools/consistency_lint.py
+python .eaao-core/tools/render.py .eaao-core/orchestrator/project.yaml --in-place
+python tools/consistency_lint.py
 ```
 
 ---

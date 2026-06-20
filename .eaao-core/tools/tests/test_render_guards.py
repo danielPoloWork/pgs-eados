@@ -121,6 +121,30 @@ def main():
               "OUTSIDE the EAAO repository" in (proc.stdout + proc.stderr), failures)
         check("render into EAAO repo wrote nothing", not os.path.exists(inside), failures)
 
+    # --- --in-place refuses inside the EAAO development repo (the .eaao-dev sentinel) ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "ok.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID)
+        proc = subprocess.run([sys.executable, RENDER_PY, manifest, "--in-place"],
+                              capture_output=True, text=True)
+        check("--in-place in the EAAO dev repo -> non-zero exit", proc.returncode == 1, failures)
+        check("--in-place in the EAAO dev repo -> .eaao-dev message",
+              ".eaao-dev" in (proc.stdout + proc.stderr), failures)
+
+    # --- the CLI requires exactly one of --out / --in-place ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "ok.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID)
+        neither = subprocess.run([sys.executable, RENDER_PY, manifest],
+                                 capture_output=True, text=True)
+        check("neither --out nor --in-place -> error exit", neither.returncode != 0, failures)
+        both = subprocess.run([sys.executable, RENDER_PY, manifest,
+                               "--out", os.path.join(work, "o"), "--in-place"],
+                              capture_output=True, text=True)
+        check("both --out and --in-place -> error exit", both.returncode != 0, failures)
+
     if failures:
         print("test-render-guards: FAIL\n")
         for f in failures:
