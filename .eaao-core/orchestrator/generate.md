@@ -81,7 +81,11 @@ Render, stripping the `.tmpl` suffix and substituting placeholders:
 | `templates/CHANGELOG.md.tmpl` | `CHANGELOG.md` |
 | `templates/SECURITY.md.tmpl` | `SECURITY.md` |
 | `templates/gitignore.tmpl` | `.gitignore` |
-| `LICENSE` (EAAO's, with `{{AUTHOR}}`/`{{YEAR}}`) | `LICENSE` |
+| `templates/LICENSE.tmpl` (MIT body with the project's own `{{AUTHOR}}`/`{{YEAR}}`, **not** EAAO's owner) | `LICENSE` |
+
+> `LICENSE.tmpl` carries the MIT body (EAAO's reference license). If the maintainer chose a
+> different `license_id`, replace the rendered `LICENSE` body with that license's text — the
+> README already renders the chosen `{{LICENSE_ID}}`.
 
 ## Step 4 — Render the documentation system
 

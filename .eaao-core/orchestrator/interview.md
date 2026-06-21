@@ -58,10 +58,11 @@ allowed set — there is no "unsupported language", only "language not yet profi
   bindings, a WASM target.) If yes, note the second profile and how the surfaces relate.
   **SQL, CSS, and HTML are declared here** — as the schema a backend owns, or the markup/styles
   of a frontend — not as the primary language (see [`language-fit.md`](language-fit.md)).
-- **Q1.3 — Reverse-domain group path?** Defaults to the reference convention `it/d4np`.
-  → `GROUP_PATH`, `GROUP_DOTTED`. From `LANG` + `GROUP_DOTTED` + `PROJECT_SLUG` the profile
-  derives `NAMESPACE` in the language's native idiom (`it::d4np::ratelimiter`,
-  `it.d4np.ratelimiter`, `@d4np/ratelimiter`, `github.com/d4np/ratelimiter`, …).
+- **Q1.3 — Reverse-domain group path?** Ask for the maintainer's **own** reverse-domain (e.g.
+  `com/acme`); there is no built-in default — `it/d4np` is only the reference project's value, not
+  a fallback. → `GROUP_PATH`, `GROUP_DOTTED`. From `LANG` + `GROUP_DOTTED` + `PROJECT_SLUG` the
+  profile derives `NAMESPACE` in the language's native idiom (`com::acme::ratelimiter`,
+  `com.acme.ratelimiter`, `@acme/ratelimiter`, `github.com/acme/ratelimiter`, …).
 
 > **Follow-up triggers (Phase 1):** a systems language (C/C++/Rust) → ask about ABI
 > stability and memory model (feeds `IF_PUBLIC_API`, `IF_THREADING`). A managed/runtime
