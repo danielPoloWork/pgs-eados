@@ -9,7 +9,7 @@ a transition; the human **confirms** every human-gated one (`AGENTS.md` §6).
 | Command | Phase | Status | Procedure |
 |---------|-------|--------|-----------|
 | `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
-| `/eados design` | design | M2 | _(lands with M2)_ |
+| `/eados design` | design | **available** (M2) | [`design.md`](design.md) |
 | `/eados plan` | plan | M3 | _(lands with M3)_ |
 | `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
 | `/eados audit` | audit | M4 | _(lands with M4)_ |

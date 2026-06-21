@@ -1,0 +1,46 @@
+# `/eados design` — author and gate an RFC
+
+The first governance phase. An RFC is written *before* the code, reviewed, approved, and gated;
+only then is `design → plan` legal. Owned by the **tech-lead** (or **product-manager** for a
+product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review-protocol.md).
+
+## Preconditions
+
+- The manifest exists with `delivery_state.phase: init` (from [`/eados init`](init.md)).
+  `phase_runner.py <manifest>` reports `-> design` as the legal move.
+
+## Procedure
+
+1. **Check authority** — before drafting, the acting role confirms it may write the RFC path:
+   ```bash
+   python .eados-core/tools/authority_check.py tech-lead docs/rfc/NNNN-<slug>.md
+   ```
+2. **Author the RFC** — copy [`../os/rfc/template.md`](../os/rfc/template.md) to
+   `docs/rfc/NNNN-<slug>.md` and fill **Context, Decision, Alternatives, Consequences**. Push for
+   measurable phrasing and a concrete rejection reason per alternative.
+3. **Review** — `reviewer` peers (and the `enterprise-architect` when the change is cross-cutting)
+   return **structured findings**; the author resolves each. No prose hand-waving.
+4. **Approve** — when findings are resolved, the **approver** (`tech-lead`) adds the record:
+   ```
+   approved-by: tech-lead (YYYY-MM-DD)
+   ```
+5. **Verify the gate** — the `rfc-approved` gate is mechanical:
+   ```bash
+   python .eados-core/tools/rfc_check.py docs/rfc/NNNN-<slug>.md      # must pass
+   ```
+6. **Record the cross-link** — add the RFC id to `delivery_state.refs.rfcs` (feeds the
+   traceability graph, M3/M4) — references, not content.
+7. **Propose the transition** — emit the checkpoint for `design → plan` (human-gated):
+   ```bash
+   python .eados-core/tools/phase_runner.py <manifest> --propose plan
+   ```
+   The agent writes the emitted checkpoint + `phase: plan` to the manifest **after** the human
+   confirms; the runner never advances state itself.
+8. **Hand off** — to [`/eados plan`](../commands/README.md) (lands in M3): the producer turns the
+   approved RFCs into a negotiated milestone roadmap.
+
+## Boundary
+
+The agent **drafts** the RFC, runs the checks, and **proposes** the transition. A human **approves**
+the RFC (the approval encodes a human decision) and **confirms** the human-gated move. No RFC
+self-approves; no phase advances on the agent's authority (`AGENTS.md` §6).
