@@ -29,6 +29,12 @@ phases:
       - id: Q0.3
         prompt: "Repository name (kebab-case)? I can propose one."
         sets: [PROJECT_NAME, PROJECT_SLUG]
+      - id: Q0.4
+        prompt: "Development target?"
+        choices: [software, game, mobile]
+        default: software
+        validate: domain_profile_exists    # else: author domains/<domain>.yaml from _template first
+        sets: [domain]                      # loads orchestrator/domains/<domain>.yaml
 
   - id: 1
     name: Languages

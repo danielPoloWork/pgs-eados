@@ -412,8 +412,9 @@ KNOWN_SECTIONS = {
 }
 
 # Known top-level SCALARS (not sections). `schema_version` versions the manifest schema for
-# backward-compatible evolution (RFC-0001 §8 / OQ1); it is metadata, not a section/placeholder.
-KNOWN_SCALARS = {"schema_version"}
+# backward-compatible evolution (RFC-0001 §8 / OQ1); `domain` selects the target profile
+# (orchestrator/domains/<domain>.yaml, M1-C). Both are metadata, not sections/placeholders.
+KNOWN_SCALARS = {"schema_version", "domain"}
 
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without

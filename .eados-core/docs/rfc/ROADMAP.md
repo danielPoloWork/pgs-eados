@@ -18,7 +18,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 |------|-------|
 | Rename EAAO → EADOS | ✅ merged (#33) |
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
-| **M1 — Foundation** | 🚧 in progress — M1-A merged (#37) · M1-B (manifest) drafted |
+| **M1 — Foundation** | 🚧 in progress — M1-A (#37) · M1-B (#38) merged · M1-C (interview) drafted |
 | M2 · M3 · M4 · M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
@@ -36,7 +36,7 @@ changing how generation behaves today.
       vocabulary — Alpha/Beta/RC vs SemVer).
 - [x] 1.2 `eados_lint`: a **`domain-completeness`** gate (every `domains/<d>.yaml` defines every
       schema key), mirroring `profile-completeness`.
-- [ ] 1.3 Interview: new **`Q0.4 — development target`** loads the domain profile; the manifest
+- [x] 1.3 Interview: new **`Q0.4 — development target`** loads the domain profile; the manifest
       gains a `domain` field.
 - [x] 1.4 Promote the manifest to a **persistent, reference-based `delivery_state`** block
       (current phase, checkpoints, cross-link ids) with a `schema_version` (**resolves OQ1**).

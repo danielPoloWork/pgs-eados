@@ -39,6 +39,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   so a legacy manifest without the block renders unchanged. A new guard test covers the accepted
   shape. Schema versioning is embedded (`schema_version`); migrations are CHANGELOG notes, no
   separate ledger.
+- **M1-C — the interview selects the development target (roadmap 1.3).** A new Phase-0 question
+  `Q0.4 — development target` (`software` / `game` / `mobile`, default `software`) loads the
+  matching `domains/<domain>.yaml` and records it as a top-level `domain` field in the manifest;
+  the renderer accepts it as a known scalar. Added to `interview.md` and `questionnaire.yaml`
+  (with a `domain_profile_exists` validation, mirroring the language `profile_exists` rule). The
+  domain still informs only itself for now — the roles/artifacts/NFRs it selects are consumed by
+  the `design`/`plan` phases in M2+.
 
 ### Changed
 

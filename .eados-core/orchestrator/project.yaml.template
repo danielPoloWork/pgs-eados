@@ -8,6 +8,7 @@
 # --- EADOS delivery-state layer (M1-B) — OPTIONAL; the renderer ignores it. ---
 # schema_version versions the manifest for backward-compatible evolution (resolves OQ1).
 schema_version: 1
+domain: software             # development target: software|game|mobile -> orchestrator/domains/<domain>.yaml
 # delivery_state holds STATE + cross-link REFS (ids), never content — Git stays the source of
 # truth for content (RFC-0001 §8). The phase runner (M1-E) reads/writes it; a legacy manifest
 # without this block renders unchanged.

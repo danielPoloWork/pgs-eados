@@ -35,6 +35,12 @@ Establish the one-liner so every later question has context.
 - **Q0.3 — Proposed repository name?** Kebab-case. Suggest one from the tagline if the
   maintainer has none (e.g. *Rust token-bucket rate limiter* → `acme-rust-ratelimiter`).
   → `PROJECT_NAME`, and derive `PROJECT_SLUG` (single lowercase word, e.g. `ratelimiter`).
+- **Q0.4 — What is the development target?** `software` / `game` / `mobile` (default
+  `software`). This loads [`domains/<domain>.yaml`](domains/_schema.md), which sets the active
+  roles, the artifacts (PRD vs **GDD** for a game), the hard NFR budgets (RAM/GPU/framerate for a
+  game; app-size/cold-start for mobile), and the milestone vocabulary (SemVer vs Alpha/Beta/RC)
+  used from Phase 5 onward. If the chosen target has no profile yet, that is the normal path:
+  author it from [`domains/_template.yaml`](domains/_template.yaml) first. → manifest `domain`.
 
 ## Phase 1 — Language(s)
 
