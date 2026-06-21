@@ -30,7 +30,9 @@ escalation:         # the decision ladder for reviewer disagreement, ending at t
   holds no approval authority.
 - **`ownership_map[]`** — `{ glob, role, action }`, `action ∈ {draft, approve, review}`. The
   deterministic mapping from a changed path to its owning role. A change that touches a glob the
-  acting role does not own is rejected by the authority gate (built M2).
+  acting role may not write is rejected by the authority gate —
+  [`tools/authority_check.py`](../../../tools/authority_check.py) (the agent invokes it with its
+  role + the changed paths before drafting).
 - **`escalation[]`** — an ordered ladder `{ level, decider }`. The terminal decider is always
   `human-owner` — `AGENTS.md` §6: the owner is the sole decider.
 - **`pending_personas`** — a list of role names whose `agent/<role>.md` persona has not been

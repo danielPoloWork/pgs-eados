@@ -78,6 +78,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   reports its gates and human-gating, and **emits the `delivery_state` checkpoint** to write — it
   does *not* write state (the agent writes it; the human confirms human-gated moves). New cases in
   `tools/tests/test_phase_runner.py` cover legal/illegal proposals and the emitted checkpoint.
+- **M2-D — the authority gate enforces the ownership map (roadmap 2.4).** New
+  `tools/authority_check.py <role> <paths>`: given the acting role and the paths a change touches, it
+  rejects any path outside the role's writable surface (`owns` ∪ `may_draft`) per `authority.yaml`.
+  Agent-invoked — CI cannot know a PR's acting role — with a `**`/`*`/exact glob matcher. Covered by
+  `tools/tests/test_authority_check.py` (in-authority vs denied, glob edge cases, unknown role),
+  wired into CI.
 
 ### Changed
 

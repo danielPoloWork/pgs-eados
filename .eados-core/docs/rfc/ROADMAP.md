@@ -19,7 +19,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | Rename EAAO → EADOS | ✅ merged (#33) |
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
 | **M1 — Foundation** | ✅ **done** — M1-A..E merged (#37–#41) |
-| **M2 — design phase + roles** | 🚧 in progress — M2-A·B merged (#42, #43) · M2-C (workflow checker) drafted |
+| **M2 — design phase + roles** | 🚧 in progress — M2-A·B·C merged (#42–#44) · M2-D (authority gate) drafted |
 | M3 · M4 · M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
@@ -67,8 +67,9 @@ the new org-chart roles and the deterministic engine that gates phase transition
 - [x] 2.3 The **deterministic workflow checker**: `phase_runner.py` returns the legal transitions
       and (new `--propose <to>`) validates a proposed transition and **emits the checkpoint** to
       write — read-only; the agent writes it, the human confirms H-gates.
-- [ ] 2.4 The **authority gate**: enforce the `authority.yaml` ownership map — a change touching a
-      glob the acting role does not own is rejected.
+- [x] 2.4 The **authority gate** — `tools/authority_check.py <role> <paths>` enforces the
+      `authority.yaml` ownership map: a path the acting role may not write (outside its
+      `owns`/`may_draft`) is rejected. Agent-invoked (CI can't know the actor's role), tested.
 - [ ] 2.5 Ship the **`/eados design`** command surface.
 
 **Acceptance gate.** A sample RFC passes the review gate; an out-of-authority edit is rejected by
