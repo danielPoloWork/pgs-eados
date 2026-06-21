@@ -228,8 +228,9 @@ projects receive.)
 
 ## 13. Open questions
 
-- **OQ1 — manifest schema versioning mechanics.** Embedded `schema_version` + a migration note
-  policy, or a separate migrations ledger? (Resolve in M1.)
+- **OQ1 — manifest schema versioning mechanics.** ✅ **Resolved (M1-B):** an embedded top-level
+  `schema_version` (currently `1`); schema migrations are recorded as CHANGELOG notes, not a
+  separate ledger.
 - **OQ2 — risk-score thresholds.** What concrete score forces the mandatory security gate, and is
   it per-domain? (Resolve in M4.)
 - **OQ3 — committed SVG.** Keep Mermaid-only (GitHub-rendered) or add a CI Node step that commits

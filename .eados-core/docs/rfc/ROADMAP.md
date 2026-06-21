@@ -18,7 +18,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 |------|-------|
 | Rename EAAO → EADOS | ✅ merged (#33) |
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
-| **M1 — Foundation** | 🚧 in progress — M1-A (domain axis) drafted |
+| **M1 — Foundation** | 🚧 in progress — M1-A merged (#37) · M1-B (manifest) drafted |
 | M2 · M3 · M4 · M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
@@ -38,7 +38,7 @@ changing how generation behaves today.
       schema key), mirroring `profile-completeness`.
 - [ ] 1.3 Interview: new **`Q0.4 — development target`** loads the domain profile; the manifest
       gains a `domain` field.
-- [ ] 1.4 Promote the manifest to a **persistent, reference-based `delivery_state`** block
+- [x] 1.4 Promote the manifest to a **persistent, reference-based `delivery_state`** block
       (current phase, checkpoints, cross-link ids) with a `schema_version` (**resolves OQ1**).
 - [ ] 1.5 Wire the **authority block** to the existing roles (persona in `agent/*.md` ↔ authority
       in `authority.yaml`), making the persona≠authority separation real.
@@ -145,7 +145,7 @@ PR passes the standard's gates.
 
 | OQ | Question | Resolved in |
 |----|----------|-------------|
-| OQ1 | Manifest schema-versioning mechanics | M1 (item 1.4) |
+| OQ1 | Manifest schema-versioning mechanics | ✅ M1-B (item 1.4) — embedded `schema_version` |
 | OQ4 | `product-manager` vs `game-designer` role shape | M2 (item 2.1) |
 | OQ2 | Risk-score thresholds (per-domain?) | M4 (item 4.4) |
 | OQ3 | Committed, CI-generated SVG vs Mermaid-only | Deferred (RFC §9 leans Mermaid-only) |

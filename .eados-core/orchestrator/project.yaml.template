@@ -5,6 +5,17 @@
 # rendering. Every value here resolves a placeholder from placeholders.md. A worked
 # example (the reference project itself) is shown in comments at each field.
 
+# --- EADOS delivery-state layer (M1-B) — OPTIONAL; the renderer ignores it. ---
+# schema_version versions the manifest for backward-compatible evolution (resolves OQ1).
+schema_version: 1
+# delivery_state holds STATE + cross-link REFS (ids), never content — Git stays the source of
+# truth for content (RFC-0001 §8). The phase runner (M1-E) reads/writes it; a legacy manifest
+# without this block renders unchanged.
+delivery_state:
+  phase: init                # init|design|plan|scaffold|audit|refactor
+  checkpoints: []            # [{phase, at, note}] — resumability
+  refs: { rfcs: [], milestones: [], prs: [], releases: [] }   # cross-link ids, not content
+
 identity:
   project_name:    ""        # e.g. pbr-cpp-memory-pool         -> {{PROJECT_NAME}}
   project_slug:    ""        # e.g. memorypool                  -> {{PROJECT_SLUG}}

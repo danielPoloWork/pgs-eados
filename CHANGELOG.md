@@ -32,6 +32,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   Alpha/Beta/RC, cross-discipline deps, and workflow overlay). Validated by a new
   `domain-completeness` gate in `eados_lint.py`. Data only — no rendering or interview change yet
   (that is M1-C).
+- **M1-B — persistent, reference-based manifest (roadmap 1.4, resolves OQ1).** The manifest skeleton
+  gains an optional top-level `schema_version` and a `delivery_state` block (current `phase`,
+  `checkpoints`, and cross-link `refs` — ids, not content; Git stays the source of truth). The
+  renderer now accepts both (a known scalar + a known section) and **ignores them when rendering**,
+  so a legacy manifest without the block renders unchanged. A new guard test covers the accepted
+  shape. Schema versioning is embedded (`schema_version`); migrations are CHANGELOG notes, no
+  separate ledger.
 
 ### Changed
 

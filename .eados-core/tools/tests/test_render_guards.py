@@ -47,6 +47,17 @@ def main():
     # --- validate_manifest: the positive control passes clean ---
     check("valid manifest yields no problems", _problems(VALID) == [], failures)
 
+    # --- M1-B: the persistent delivery-state layer is accepted (schema_version scalar + the
+    #     delivery_state section); a legacy manifest without it still passes (backward-compat,
+    #     proven by the control above) ---
+    WITH_STATE = VALID + (
+        "\nschema_version: 1"
+        "\ndelivery_state: { phase: init, checkpoints: [], "
+        "refs: { rfcs: [], milestones: [], prs: [], releases: [] } }\n"
+    )
+    check("manifest with schema_version + delivery_state passes clean",
+          _problems(WITH_STATE) == [], failures)
+
     # --- validate_manifest: each guard fires on the matching defect ---
     def has(yaml_text, needle):
         return any(needle in p for p in _problems(yaml_text))

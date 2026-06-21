@@ -408,7 +408,12 @@ def build_context(m):
 KNOWN_SECTIONS = {
     "identity", "ownership", "language", "toolchain", "ci",
     "governance", "i18n", "announce", "spec",
+    "delivery_state",   # EADOS persistent delivery state (M1-B); state, not a placeholder source
 }
+
+# Known top-level SCALARS (not sections). `schema_version` versions the manifest schema for
+# backward-compatible evolution (RFC-0001 §8 / OQ1); it is metadata, not a section/placeholder.
+KNOWN_SCALARS = {"schema_version"}
 
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without
@@ -443,6 +448,8 @@ def validate_manifest(m, scalars):
     if not isinstance(m, dict):
         return [f"manifest root must be a mapping, got {type(m).__name__}"]
     for key, val in m.items():
+        if key in KNOWN_SCALARS:
+            continue  # a known top-level scalar (e.g. schema_version), not a section
         if key not in KNOWN_SECTIONS:
             problems.append(
                 f"unknown top-level section '{key}' (typo? expected one of: "
