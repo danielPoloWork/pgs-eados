@@ -68,8 +68,8 @@ gates:
     blocking: true
     required_for: [plan]
   - id: roadmap-covers-rfcs
-    kind: manual
-    runs: "manual:every RFC maps to >=1 milestone item (traceability)"
+    kind: lint
+    runs: "python .eados-core/tools/traceability.py <roadmap> <rfc-ids>"   # every RFC -> a milestone
     blocking: true
     required_for: [scaffold]
   - id: consistency-lint

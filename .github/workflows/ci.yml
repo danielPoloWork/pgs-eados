@@ -31,15 +31,16 @@ jobs:
         run: python .eados-core/tools/eados_lint.py
       - name: Renderer guard tests (validation, containment, CLI — dependency-free)
         run: python .eados-core/tools/tests/test_render_guards.py
-      - name: Engine + autotune + phase-runner + rfc-check + authority-check unit tests (dependency-free)
+      - name: OS tooling unit tests (engine, autotune, phase-runner, rfc/authority/traceability)
         run: |
           python .eados-core/tools/tests/test_render_engine.py
           python .eados-core/tools/tests/test_autotune.py
           python .eados-core/tools/tests/test_phase_runner.py
           python .eados-core/tools/tests/test_rfc_check.py
           python .eados-core/tools/tests/test_authority_check.py
+          python .eados-core/tools/tests/test_traceability.py
       - name: Byte-compile the factory tooling
-        run: python -m py_compile .eados-core/tools/eados_lint.py .eados-core/tools/render.py .eados-core/tools/autotune.py .eados-core/tools/self_review.py .eados-core/tools/profile_ci_lint.py .eados-core/tools/phase_runner.py .eados-core/tools/rfc_check.py .eados-core/tools/authority_check.py .eados-core/tools/tests/test_loader.py .eados-core/tools/tests/test_render_guards.py .eados-core/tools/tests/test_render_engine.py .eados-core/tools/tests/test_consistency_lint.py .eados-core/tools/tests/test_autotune.py .eados-core/tools/tests/test_phase_runner.py .eados-core/tools/tests/test_rfc_check.py .eados-core/tools/tests/test_authority_check.py
+        run: python -m py_compile .eados-core/tools/eados_lint.py .eados-core/tools/render.py .eados-core/tools/autotune.py .eados-core/tools/self_review.py .eados-core/tools/profile_ci_lint.py .eados-core/tools/phase_runner.py .eados-core/tools/rfc_check.py .eados-core/tools/authority_check.py .eados-core/tools/traceability.py .eados-core/tools/tests/test_loader.py .eados-core/tools/tests/test_render_guards.py .eados-core/tools/tests/test_render_engine.py .eados-core/tools/tests/test_consistency_lint.py .eados-core/tools/tests/test_autotune.py .eados-core/tools/tests/test_phase_runner.py .eados-core/tools/tests/test_rfc_check.py .eados-core/tools/tests/test_authority_check.py .eados-core/tools/tests/test_traceability.py
       - name: Auto-tuner (advisory)
         run: python .eados-core/tools/autotune.py
 

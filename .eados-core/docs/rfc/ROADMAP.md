@@ -19,8 +19,8 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | Rename EAAO → EADOS | ✅ merged (#33) |
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
 | **M1 — Foundation** | ✅ **done** — M1-A..E merged (#37–#41) |
-| **M2 — design phase + roles** | 🚧 M2-A..D merged (#42–#45) · M2-E (`/eados design`) drafted — closes M2 |
-| **M3 — plan phase + traceability** | ⏳ next |
+| **M2 — design phase + roles** | ✅ **done** — M2-A..E merged (#42–#46) |
+| **M3 — plan phase + traceability** | 🚧 in progress — M3-A (traceability + roadmap-covers-rfcs) drafted |
 | M4 · M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
@@ -89,10 +89,12 @@ that makes delivery auditable.
       producer/TPM capacity reconciliation), anchored to artifacts (no "multi-agent theater").
 - [ ] 3.2 Ship the **`/eados plan`** command surface; generate/maintain `ROADMAP.md` for a target
       project from its RFCs.
-- [ ] 3.3 The **traceability-graph builder**: walk the cross-links
-      (requirement → RFC → milestone → PR → commit → release).
-- [ ] 3.4 The **`roadmap-covers-rfcs`** gate: every RFC maps to ≥1 milestone item (generalizes the
-      existing spec-coverage-map).
+- [x] 3.3 The **traceability-graph builder** — `tools/traceability.py` builds the design-time
+      `RFC → milestone` edges from the roadmap (the Git-side `PR → commit → release` edges land in
+      M4, derived from the `git`-spec cross-links).
+- [x] 3.4 The **`roadmap-covers-rfcs`** gate — `traceability.py` fails when an RFC is addressed by
+      no milestone (every RFC maps to ≥1 milestone; generalizes the spec-coverage-map). Wired into
+      `workflow.yaml`.
 
 **Acceptance gate.** Every RFC maps to ≥1 milestone; the graph builds from a sample project's
 cross-links.

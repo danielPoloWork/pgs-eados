@@ -90,6 +90,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   → approval → `rfc_check` (the `rfc-approved` gate) → record the RFC in `delivery_state.refs.rfcs`
   → `phase_runner --propose plan` (the agent writes the checkpoint; the human confirms). The command
   surface README marks `/eados design` available. **Milestone 2 (the design phase) is complete.**
+- **M3-A — traceability graph + the `roadmap-covers-rfcs` gate (roadmap 3.3–3.4).** New
+  `tools/traceability.py <roadmap> <RFC-ids>` builds the design-time `RFC → milestone` edges from a
+  roadmap and enforces that **every RFC is addressed by at least one milestone** (the
+  `plan → scaffold` gate; generalizes the spec-coverage-map). The Git-side edges
+  (`PR → commit → release`) land in M4. The `workflow.yaml` `roadmap-covers-rfcs` gate now runs it.
+  Covered by `tools/tests/test_traceability.py`, wired into CI.
 
 ### Changed
 
