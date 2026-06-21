@@ -84,6 +84,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   Agent-invoked — CI cannot know a PR's acting role — with a `**`/`*`/exact glob matcher. Covered by
   `tools/tests/test_authority_check.py` (in-authority vs denied, glob edge cases, unknown role),
   wired into CI.
+- **M2-E — `/eados design` command surface (roadmap 2.5, closes M2).** A portable procedure
+  (`orchestrator/commands/design.md`) composing the M2 tooling into the design phase:
+  `authority_check` (the author may write `docs/rfc/`) → author the RFC from the template → review
+  → approval → `rfc_check` (the `rfc-approved` gate) → record the RFC in `delivery_state.refs.rfcs`
+  → `phase_runner --propose plan` (the agent writes the checkpoint; the human confirms). The command
+  surface README marks `/eados design` available. **Milestone 2 (the design phase) is complete.**
 
 ### Changed
 

@@ -19,8 +19,9 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | Rename EAAO → EADOS | ✅ merged (#33) |
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
 | **M1 — Foundation** | ✅ **done** — M1-A..E merged (#37–#41) |
-| **M2 — design phase + roles** | 🚧 in progress — M2-A·B·C merged (#42–#44) · M2-D (authority gate) drafted |
-| M3 · M4 · M5 | ⏳ not started |
+| **M2 — design phase + roles** | 🚧 M2-A..D merged (#42–#45) · M2-E (`/eados design`) drafted — closes M2 |
+| **M3 — plan phase + traceability** | ⏳ next |
+| M4 · M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -70,7 +71,8 @@ the new org-chart roles and the deterministic engine that gates phase transition
 - [x] 2.4 The **authority gate** — `tools/authority_check.py <role> <paths>` enforces the
       `authority.yaml` ownership map: a path the acting role may not write (outside its
       `owns`/`may_draft`) is rejected. Agent-invoked (CI can't know the actor's role), tested.
-- [ ] 2.5 Ship the **`/eados design`** command surface.
+- [x] 2.5 Ship the **`/eados design`** command surface (`commands/design.md` — authority-check →
+      author the RFC from the template → review → `rfc_check` → `phase_runner --propose plan`).
 
 **Acceptance gate.** A sample RFC passes the review gate; an out-of-authority edit is rejected by
 the authority gate; the checker computes the correct legal transitions for a given state.
