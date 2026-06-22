@@ -10,7 +10,7 @@ a transition; the human **confirms** every human-gated one (`AGENTS.md` §6).
 |---------|-------|--------|-----------|
 | `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
 | `/eados design` | design | **available** (M2) | [`design.md`](design.md) |
-| `/eados plan` | plan | M3 | _(lands with M3)_ |
+| `/eados plan` | plan | **available** (M3) | [`plan.md`](plan.md) |
 | `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
 | `/eados audit` | audit | M4 | _(lands with M4)_ |
 | `/eados refactor` | refactor | M5 | _(lands with M5)_ |

@@ -102,6 +102,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   T-shirt sizing → `producer` reconciles capacity into milestones, every step anchored to a concrete
   artifact (no theatre). Validated by `os-spec-completeness`; the output is gated by the M3-A
   `roadmap-covers-rfcs` check.
+- **M3-C — `/eados plan` command surface (roadmap 3.2, closes M3).** A portable procedure
+  (`orchestrator/commands/plan.md`) composing the plan phase: negotiate via `plan.yaml`
+  (`product-manager` → `tech-lead` → `producer`) → `authority_check producer ROADMAP.md` →
+  write/update `ROADMAP.md` → `traceability.py` (`roadmap-covers-rfcs`) → record milestone ids in
+  `delivery_state.refs.milestones` → `phase_runner --propose scaffold` (the agent writes the
+  checkpoint; the human confirms). The command surface README marks `/eados plan` available.
+  **Milestone 3 (the plan phase + traceability) is complete.**
 
 ### Changed
 
