@@ -20,8 +20,9 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | Design package — RFC-0001 + OS specs + diagrams | ✅ merged (#35) |
 | **M1 — Foundation** | ✅ **done** — M1-A..E merged (#37–#41) |
 | **M2 — design phase + roles** | ✅ **done** — M2-A..E merged (#42–#46) |
-| **M3 — plan phase + traceability** | 🚧 in progress — M3-A merged (#47) · M3-B (negotiation protocol) drafted |
-| M4 · M5 | ⏳ not started |
+| **M3 — plan phase + traceability** | 🚧 M3-A·B merged (#47, #48) · M3-C (`/eados plan`) drafted — closes M3 |
+| **M4 — audit phase + risk** | ⏳ next |
+| M5 | ⏳ not started |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -88,8 +89,8 @@ that makes delivery auditable.
 - [x] 3.1 The **roadmap-negotiation protocol** under `orchestrator/os/plan/` (schema + `plan.yaml`
       config + `negotiation-protocol.md`): PM proposes → `tech-lead` sizes (T-shirt) → `producer`
       reconciles capacity, anchored to artifacts (no "multi-agent theatre").
-- [ ] 3.2 Ship the **`/eados plan`** command surface; generate/maintain `ROADMAP.md` for a target
-      project from its RFCs.
+- [x] 3.2 Ship the **`/eados plan`** command surface (`commands/plan.md` — negotiate via `plan.yaml`
+      → write `ROADMAP.md` → `traceability.py` (`roadmap-covers-rfcs`) → `--propose scaffold`).
 - [x] 3.3 The **traceability-graph builder** — `tools/traceability.py` builds the design-time
       `RFC → milestone` edges from the roadmap (the Git-side `PR → commit → release` edges land in
       M4, derived from the `git`-spec cross-links).
