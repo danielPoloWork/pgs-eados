@@ -166,4 +166,4 @@ binding on all future work (the v2.0.0 release included). They are deliberately 
 | OQ1 | Manifest schema-versioning mechanics | ✅ M1-B (item 1.4) — embedded `schema_version` |
 | OQ4 | product-manager vs game-designer role shape | ✅ M2-A (item 2.1) — one authority role + domain persona overlay |
 | OQ2 | Risk-score thresholds (per-domain?) | ✅ M4-A (item 4.4) — global default + per-domain override in risk.yaml |
-| OQ3 | Committed, CI-generated SVG vs Mermaid-only | Deferred (RFC §9 leans Mermaid-only) |
+| OQ3 | Committed, CI-generated SVG vs Mermaid-only | ✅ Resolved — Mermaid-only (no Node toolchain; `.mmd` committed, SVG on demand) |

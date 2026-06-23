@@ -177,6 +177,10 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   `AGENTS.md` §3 and the README opening updated. The `zh-Hans` / `ja` translations were re-translated
   to match (including the product name → "Delivery Operating System", which the rename had left as
   "Architecture Orchestrator"), and their `i18n-freshness` hashes refreshed. No behavior change.
+- **OQ3 resolved — Mermaid-only (the last open question).** The RFC diagrams stay Mermaid
+  (GitHub-rendered; the `.mmd` sources are committed); **no CI Node toolchain** is added to this
+  Python-only repo, and SVGs remain on-demand via `mmdc`. RFC §13 and the roadmap OQ table updated.
+  With OQ1 / OQ2 / OQ3 / OQ4 all resolved, **no open questions remain**.
 
 ### Deprecated
 

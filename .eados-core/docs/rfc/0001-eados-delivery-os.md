@@ -235,8 +235,11 @@ projects receive.)
   blast radius) maps to `low/medium/high/critical`; at/above a `mandatory_gate_level` (default
   `high`) the `security-auditor` gate is required, **per-domain configurable** in `risk.yaml`
   (e.g. `mobile` is stricter at `medium`). Yes — per-domain.
-- **OQ3 — committed SVG.** Keep Mermaid-only (GitHub-rendered) or add a CI Node step that commits
-  generated SVGs? (Deferred; §9 leans Mermaid-only.)
+- **OQ3 — committed SVG.** ✅ **Resolved: Mermaid-only.** The diagrams stay Mermaid — GitHub renders
+  them inline and the `.mmd` sources are committed; **no CI Node toolchain** is added to this
+  Python-only repo. SVGs are generated **on demand** via `mmdc` (see
+  [`docs/rfc/assets/README.md`](assets/README.md)). Revisit only if committed SVGs become a hard
+  requirement (e.g. offline docs).
 - **OQ4 — `product-manager` vs `game-designer`.** ✅ **Resolved (M2-A):** one authority role
   (`product-manager`) with a **domain-specialized persona overlay** —
   `agent/domains/<domain>/<role>.md` (e.g. the `game` overlay is the Game Designer). The label
