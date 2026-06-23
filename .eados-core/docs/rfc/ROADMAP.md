@@ -21,8 +21,8 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M1 — Foundation** | ✅ **done** — M1-A..E merged (#37–#41) |
 | **M2 — design phase + roles** | ✅ **done** — M2-A..E merged (#42–#46) |
 | **M3 — plan phase + traceability** | ✅ **done** — M3-A..C merged (#47–#49) |
-| **M4 — audit phase + risk** | 🚧 M4-A·B merged (#50, #51) · M4-C (`/eados audit`) drafted — closes M4 |
-| M5 | ⏳ not started |
+| **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
+| **M5 — refactor (brownfield)** | 🚧 in progress — M5-A (brownfield reader) drafted |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -130,8 +130,8 @@ threshold forces the security gate.
 **Goal.** Bring an existing repository up to the standard via incremental, gated migrations —
 the highest-risk phase (it edits real user code), so it is sequenced last and write-contained.
 
-- [ ] 5.1 **Brownfield reader**: ingest an existing repo and map it against the EADOS standard
-      (structure, governance, gates, profiles).
+- [x] 5.1 **Brownfield reader** — `tools/brownfield.py` (READ-ONLY) maps an existing repo against
+      the EADOS standard (agent contract, docs system, CI, source tree) and reports the gaps to migrate.
 - [ ] 5.2 **Migration planner**: propose incremental migration PRs (one logical change each),
       ordered by risk/dependency.
 - [ ] 5.3 A **write-contained sandbox** (defense-in-depth, building on the renderer write guards

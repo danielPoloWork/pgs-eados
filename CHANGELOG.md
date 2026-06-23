@@ -128,6 +128,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   **risk register** (score + traceability status + findings with severity/impact/mitigation) →
   propose the human-gated `audit → refactor`. Assessment-only; the human publishes any advisory. The
   command surface README marks `/eados audit` available. **Milestone 4 (audit + risk) is complete.**
+- **M5-A — the brownfield reader (roadmap 5.1).** New `tools/brownfield.py` (**read-only**): it
+  ingests an existing repository and maps it against the EADOS standard (agent contract, README,
+  CHANGELOG, LICENSE, SECURITY, ADRs, spec, CI, source tree — with naming-variant tolerance) and
+  reports the **gaps** a migration would close. It **never writes** — ingestion is safe; the
+  migration planner (5.2) and its write-contained sandbox (5.3) are separate, later slices. Covered
+  by `tools/tests/test_brownfield.py` (the standard map, the gaps, and a read-only assertion), wired
+  into CI.
 
 ### Changed
 
