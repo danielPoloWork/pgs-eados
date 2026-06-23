@@ -48,8 +48,16 @@ project's §2 and is itself a rule the generated `AGENTS.md` re-imposes downstre
 
 ## 3. What EADOS is
 
-EADOS reproduces the enterprise agent system of `pbr-cpp-memory-pool` for any project, in
-any language, with any toolchain. It is a **factory**, not a product. The genericity is
+EADOS is a **phase-based agentic delivery operating system**: an opt-in pipeline —
+`init → design → plan → scaffold → audit → refactor` — that governs an enterprise project across
+its lifecycle. It is *declarative, gate-enforced, and human-gated* (not a runtime kernel); the
+design is [RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md), the phases are
+[`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md), and the machine-readable
+specs (`workflow`, `authority`, `git`, `rfc`, `plan`, `risk`) live under
+[`orchestrator/os/`](.eados-core/orchestrator/os/README.md).
+
+The **`scaffold` phase is the factory**: it reproduces the enterprise agent system of
+`pbr-cpp-memory-pool` for any project, in any language, with any toolchain. Its genericity is
 factored into three layers:
 
 - **Language profiles** — `orchestrator/profiles/<lang>.yaml`: toolchain knowledge as data.
@@ -58,8 +66,11 @@ factored into three layers:
 - **Templates** — `templates/**`: the reference artifacts with project facts replaced by
   `{{PLACEHOLDERS}}`.
 
-The README explains the pipeline; [`orchestrator/generate.md`](.eados-core/orchestrator/generate.md)
-is the executable procedure.
+A parallel **domain axis** (`orchestrator/domains/{software,game,mobile}.yaml`) adapts the active
+roles, artifacts, and NFRs to the target. The README explains the pipeline;
+[`orchestrator/generate.md`](.eados-core/orchestrator/generate.md) is the executable `scaffold`
+procedure. **Every phase is opt-in — a maintainer who only wants generation runs `scaffold` and
+sees the classic factory, unchanged.**
 
 ## 4. Repository Layout
 

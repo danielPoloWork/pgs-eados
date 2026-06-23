@@ -1,4 +1,4 @@
-# エンタープライズ・エージェント型アーキテクチャ・オーケストレーター（EADOS）
+# エンタープライズ・エージェント型デリバリー・オペレーティング・システム（EADOS）
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
@@ -11,14 +11,24 @@
 > **英語版が唯一の正典** —— 本訳が原文と食い違う場合は英語版が優先されます。
 > 他の言語で読む：[English](../../../../README.md) · [简体中文](../zh-Hans/README.md)。
 
-> 言語非依存のメタプロジェクト。維持者へのインタビューを行い、その回答を単一の manifest に
-> 記録し、パラメータ化された template からレンダリングすることで、*あらゆる*新規プロジェクト・
-> *あらゆる*言語・*あらゆる*ツールチェーンに対して `pbr-cpp-memory-pool` の
-> **エンタープライズ・エージェント型システム**を再現します。
+> 言語非依存の**デリバリー・オペレーティング・システム**。エンタープライズのソフトウェア・
+> ゲーム・モバイルアプリ向けに、オプトインのフェーズ・パイプライン
+> —— `init → design → plan → scaffold → audit → refactor` —— で、最初の RFC からリリースまで
+> プロジェクトを統治します。その `scaffold` フェーズは、単一の manifest とパラメータ化された
+> template から、*あらゆる*言語向けに `pbr-cpp-memory-pool` の**エンタープライズ・エージェント
+> 型システム**を再現します。
 
-EADOS は製品ではありません。EADOS は、プログラミング言語・フレームワーク・ツールを問わず、
-同じ技術-エンタープライズ構造、同じ GitHub ワークフロー、同じ品質ゲート、同じ AI エージェント
-契約を備えた製品を打ち出す**ファクトリ**です。
+EADOS は出荷する製品ではなく、**仕事の流れ方そのものを司るオペレーティング・システム**です
+—— 宣言的で、ゲートで強制され、人間が確認する統治層（ランタイムのカーネルではありません）。
+その **`scaffold` フェーズがファクトリ**であり、言語・フレームワーク・ツールを問わず、同じ
+エンタープライズ構造・GitHub ワークフロー・品質ゲート・AI エージェント契約を備えたリポジトリを
+打ち出します。ほかのフェーズ（`design`・`plan`・`audit`・`refactor`）は、その統治を
+デリバリー・ライフサイクル全体へ広げます。
+
+> **パイプライン。** 各フェーズは、永続的でゲート検査される manifest に対するオプトインの
+> `/eados <phase>` コマンドです。設計は [RFC-0001](../../../../.eados-core/docs/rfc/0001-eados-delivery-os.md)、
+> 各フェーズは [`orchestrator/commands/`](../../../../.eados-core/orchestrator/commands/README.md) にあります。
+> 生成のみ（従来のファクトリ）は今も `/eados scaffold` のままで、何も変わっていません。
 
 EADOS はある一つの問いに答えるために存在します：
 

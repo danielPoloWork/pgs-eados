@@ -9,15 +9,23 @@
 
 > **🌐 Translations:** [简体中文](.eados-core/docs/i18n/zh-Hans/README.md) · [日本語](.eados-core/docs/i18n/ja/README.md) — derived from this English source. Policy & freshness: [`.eados-core/docs/i18n/`](.eados-core/docs/i18n/README.md).
 
-> A language-agnostic meta-project that reproduces the **enterprise agent system** of
-> `pbr-cpp-memory-pool` for *any* new project, in *any* language, with *any* toolchain —
-> by interviewing the maintainer, recording the answers in a single manifest, and
-> rendering a complete, governed repository from parameterized templates.
+> A language-agnostic **delivery operating system** for enterprise software, games, and mobile
+> apps: an opt-in phase pipeline — `init → design → plan → scaffold → audit → refactor` — that
+> governs a project from its first RFC to release. Its `scaffold` phase reproduces the **enterprise
+> agent system** of `pbr-cpp-memory-pool` for *any* language, from a single manifest and
+> parameterized templates.
 
-EADOS is not the product. EADOS is the **factory** that stamps out products that all
-share the same technical-enterprise structure, the same GitHub workflow, the same
-quality gates, and the same AI-agent contract — regardless of programming language,
-framework, or tooling.
+EADOS is not a product you ship; it is the **operating system for how the work flows** — a
+declarative, gate-enforced, human-in-the-loop governance layer (not a runtime kernel). Its
+**`scaffold` phase is the factory** that stamps out repositories sharing the same enterprise
+structure, GitHub workflow, quality gates, and AI-agent contract — regardless of language,
+framework, or tooling. The other phases (`design`, `plan`, `audit`, `refactor`) extend that
+governance across the whole delivery lifecycle.
+
+> **The pipeline.** Each phase is an opt-in `/eados <phase>` command over a persistent,
+> gate-checked manifest; the design is [RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md),
+> the phases live in [`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md).
+> Generation alone (the classic factory) is still just `/eados scaffold` — nothing about it changed.
 
 It exists to answer one question:
 

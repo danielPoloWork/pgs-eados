@@ -1,4 +1,4 @@
-# 企业级智能体架构编排器（EADOS）
+# 企业级智能体交付操作系统（EADOS）
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v1.2.1-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
@@ -11,12 +11,20 @@
 > **英文版本为唯一权威来源** —— 如本译文与原文不一致，以英文版为准。
 > 用其他语言阅读：[English](../../../../README.md) · [日本語](../ja/README.md)。
 
-> 一个与语言无关的元项目，它为*任何*新项目、*任何*语言、*任何*工具链，复刻
-> `pbr-cpp-memory-pool` 的**企业级智能体系统** —— 方法是访谈维护者，将答案记录到单一
-> manifest 中，并从参数化的 template 渲染出一个完整、受治理的仓库。
+> 一个与语言无关的**交付操作系统**，面向企业级软件、游戏与移动应用：一条可选用的阶段流水线
+> —— `init → design → plan → scaffold → audit → refactor` —— 从第一份 RFC 一直治理到发布。其
+> `scaffold` 阶段为*任何*语言复刻 `pbr-cpp-memory-pool` 的**企业级智能体系统**，只需单一
+> manifest 与参数化的 template。
 
-EADOS 不是产品。EADOS 是那座**工厂**，它批量生产的产品都共享同样的技术-企业级结构、同样的
-GitHub 工作流、同样的质量门禁、同样的 AI 智能体契约 —— 无论编程语言、框架或工具如何。
+EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统** —— 一个声明式、由门禁强制、保留
+人工确认的治理层（并非运行时内核）。其 **`scaffold` 阶段就是那座工厂**，批量生产共享同样企业级
+结构、GitHub 工作流、质量门禁与 AI 智能体契约的仓库 —— 无论语言、框架或工具如何。其余阶段
+（`design`、`plan`、`audit`、`refactor`）把这套治理扩展到整个交付生命周期。
+
+> **流水线。** 每个阶段都是一个可选用的 `/eados <phase>` 命令，作用于一份持久、受门禁校验的
+> manifest；设计见 [RFC-0001](../../../../.eados-core/docs/rfc/0001-eados-delivery-os.md)，各阶段
+> 位于 [`orchestrator/commands/`](../../../../.eados-core/orchestrator/commands/README.md)。仅做
+> 生成（经典工厂）依旧只是 `/eados scaffold` —— 它没有任何变化。
 
 它的存在是为了回答一个问题：
 

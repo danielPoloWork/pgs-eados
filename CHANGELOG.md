@@ -171,6 +171,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   / docs-in-sync rules are continuous **invariants** (upheld across M1–M5, binding on future work),
   now presented as such rather than as completable tasks. No behavior change — `docs/rfc/ROADMAP.md`
   only.
+- **README + `AGENTS.md` reframed as a delivery operating system, not just a factory.** The
+  front-door prose now positions EADOS as the phase pipeline (`init → design → plan → scaffold →
+  audit → refactor`), with the **`scaffold` phase = the classic factory** (unchanged, opt-in).
+  `AGENTS.md` §3 and the README opening updated. The `zh-Hans` / `ja` translations were re-translated
+  to match (including the product name → "Delivery Operating System", which the rename had left as
+  "Architecture Orchestrator"), and their `i18n-freshness` hashes refreshed. No behavior change.
 
 ### Deprecated
 
