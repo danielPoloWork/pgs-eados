@@ -25,7 +25,11 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TOOLS = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, TOOLS)
+import render  # noqa: E402  — the dependency-free YAML loader, reused to parse the OS specs
+
+ROOT = os.path.dirname(TOOLS)
 TEMPLATES = os.path.join(ROOT, "templates")
 PROFILES = os.path.join(ROOT, "orchestrator", "profiles")
 # The actual git repository root is one level above .eados-core/ — README.md and .github/
@@ -418,6 +422,150 @@ def check_authority_personas():
                    "remove it from pending_personas")
 
 
+# ---------------------------------------------------------------------------
+# 11. Cross-spec consistency — referential integrity ACROSS the delivery-OS specs. os-spec-
+#     completeness checks that each spec carries its own keys; this checks that the references
+#     BETWEEN them resolve. A role named in workflow/plan/rfc/a domain must exist in the authority
+#     model; a gate named in a workflow transition / plan / rfc must exist in the workflow gate
+#     registry; a from/to/required_for state must exist; a domain's workflow_overlay must exist;
+#     a risk level / domain-override must resolve. This is the gate that stops the OS from
+#     silently fragmenting as the specs evolve — a `tech-led` typo, a phantom transition gate, a
+#     dangling overlay would otherwise pass unnoticed (the OS thesis: knowledge as data, applied
+#     by gates). The git spec's cross-cutting `traceability` gate is NOT a phase-transition gate and
+#     is intentionally outside this registry check. Opt-in: skipped until orchestrator/os/ exists.
+# ---------------------------------------------------------------------------
+def _load_spec(spec):
+    """Parse orchestrator/os/<spec>/<spec>.yaml with the dependency-free loader; None if absent."""
+    path = os.path.join(ROOT, "orchestrator", "os", spec, f"{spec}.yaml")
+    return render.load_yaml(read(path)) if os.path.exists(path) else None
+
+
+def _load_domains():
+    """Parse every orchestrator/domains/<domain>.yaml (skipping _scaffolds) -> {filename: data}."""
+    out = {}
+    ddir = os.path.join(ROOT, "orchestrator", "domains")
+    if os.path.isdir(ddir):
+        for path in sorted(glob.glob(os.path.join(ddir, "*.yaml"))):
+            if not os.path.basename(path).startswith("_"):
+                out[os.path.basename(path)] = render.load_yaml(read(path))
+    return out
+
+
+def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, domains=None):
+    """Pure referential-integrity check across the parsed delivery-OS specs. Returns a list of
+    problem strings (empty == every cross-reference resolves). I/O-free so it is unit-testable
+    with in-memory fixtures; check_cross_spec_consistency() supplies the on-disk specs."""
+    problems = []
+    if not isinstance(authority, dict) or not isinstance(workflow, dict):
+        return problems   # a missing/unparseable core spec is os-spec-completeness's report, not ours
+    domains = domains or {}
+
+    def vocab(records, key):
+        return {r[key] for r in (records or []) if isinstance(r, dict) and r.get(key) is not None}
+
+    roles = vocab(authority.get("roles"), "name")
+    states = vocab(workflow.get("states"), "id")
+    gates = vocab(workflow.get("gates"), "id")
+    overlays_map = workflow.get("domain_overlays") or {}
+    if not isinstance(overlays_map, dict):
+        overlays_map = {}
+    overlays = set(overlays_map)
+    for ov in overlays_map.values():        # an overlay may DEFINE extra gates — legitimate ids too
+        if isinstance(ov, dict):
+            gates |= set(ov.get("add_gates") or [])
+    levels = set(risk.get("levels") or []) if isinstance(risk, dict) else set()
+    domain_ids = {d["domain"] for d in domains.values()
+                  if isinstance(d, dict) and d.get("domain") is not None}
+
+    HUMAN = {"human-owner", "human"}   # escalation/PR terminals that are not authority roles
+
+    def one(label, value, allowed, kind):
+        if value is not None and value not in allowed:
+            problems.append(f"{label} references unknown {kind} '{value}'")
+
+    def many(label, values, allowed, kind):
+        for v in (values if isinstance(values, list) else []):
+            one(label, v, allowed, kind)
+
+    # --- authority: routing + escalation reference its own roles ---
+    for om in (authority.get("ownership_map") or []):
+        if isinstance(om, dict):
+            one(f"authority.ownership_map[{om.get('glob')!r}].role", om.get("role"), roles, "role")
+    for esc in (authority.get("escalation") or []):
+        if isinstance(esc, dict):
+            one(f"authority.escalation L{esc.get('level')}.decider",
+                esc.get("decider"), roles | HUMAN, "role")
+
+    # --- workflow: state owners, transition states + gates, gate target states, overlay domains ---
+    for st in (workflow.get("states") or []):
+        if isinstance(st, dict):
+            one(f"workflow.states[{st.get('id')!r}].role", st.get("role"), roles, "role")
+    for tr in (workflow.get("transitions") or []):
+        if isinstance(tr, dict):
+            edge = f"workflow.transition {tr.get('from')}->{tr.get('to')}"
+            one(f"{edge}.from", tr.get("from"), states, "state")
+            one(f"{edge}.to", tr.get("to"), states, "state")
+            many(f"{edge}.entry_gates", tr.get("entry_gates"), gates, "gate")
+    for g in (workflow.get("gates") or []):
+        if isinstance(g, dict):
+            many(f"workflow.gate {g.get('id')!r}.required_for", g.get("required_for"), states, "state")
+    if domain_ids:
+        for ov_key in sorted(overlays):
+            one("workflow.domain_overlays key", ov_key, domain_ids, "domain")
+
+    # --- plan: negotiation roles + the plan->scaffold transition gate ---
+    if isinstance(plan, dict):
+        plan_roles = plan.get("roles")
+        if isinstance(plan_roles, dict):
+            for role_key, role_val in plan_roles.items():
+                one(f"plan.roles.{role_key}", role_val, roles, "role")
+        one("plan.gate", plan.get("gate"), gates, "gate")
+
+    # --- rfc: author/reviewer/approver roles + the design->plan transition gate ---
+    if isinstance(rfc, dict):
+        many("rfc.author_roles", rfc.get("author_roles"), roles, "role")
+        many("rfc.reviewer_roles", rfc.get("reviewer_roles"), roles, "role")
+        one("rfc.approver_role", rfc.get("approver_role"), roles, "role")
+        one("rfc.gate", rfc.get("gate"), gates, "gate")
+
+    # --- risk: the mandatory gate level + per-domain overrides resolve ---
+    if isinstance(risk, dict) and levels:
+        one("risk.mandatory_gate_level", risk.get("mandatory_gate_level"), levels, "level")
+        dov = risk.get("domain_overrides") if isinstance(risk.get("domain_overrides"), dict) else {}
+        for dname, override in dov.items():
+            if domain_ids:
+                one(f"risk.domain_overrides[{dname!r}]", dname, domain_ids, "domain")
+            if isinstance(override, dict):
+                one(f"risk.domain_overrides[{dname!r}].mandatory_gate_level",
+                    override.get("mandatory_gate_level"), levels, "level")
+
+    # --- domains: declared roles, role-label keys, and the workflow overlay all resolve ---
+    for fname, data in sorted(domains.items()):
+        if not isinstance(data, dict):
+            continue
+        many(f"domains/{fname}.roles", data.get("roles"), roles, "role")
+        if isinstance(data.get("role_labels"), dict):
+            for rkey in data["role_labels"]:
+                one(f"domains/{fname}.role_labels key", rkey, roles, "role")
+        one(f"domains/{fname}.workflow_overlay", data.get("workflow_overlay"), overlays,
+            "workflow_overlay")
+
+    return problems
+
+
+def check_cross_spec_consistency():
+    name = "cross-spec-consistency"
+    if not os.path.isdir(os.path.join(ROOT, "orchestrator", "os")):
+        return  # the OS specs arrive with the delivery-OS pivot; absent before it
+    authority, workflow = _load_spec("authority"), _load_spec("workflow")
+    if not isinstance(authority, dict) or not isinstance(workflow, dict):
+        return  # os-spec-completeness reports a missing/unparseable core spec
+    problems = cross_spec_problems(authority, workflow, _load_spec("plan"),
+                                   _load_spec("rfc"), _load_spec("risk"), _load_domains())
+    for problem in problems:
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -429,6 +577,7 @@ CHECKS = [
     check_os_specs,
     check_domains,
     check_authority_personas,
+    check_cross_spec_consistency,
 ]
 
 
