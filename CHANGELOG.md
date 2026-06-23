@@ -135,6 +135,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   migration planner (5.2) and its write-contained sandbox (5.3) are separate, later slices. Covered
   by `tools/tests/test_brownfield.py` (the standard map, the gaps, and a read-only assertion), wired
   into CI.
+- **M5-B — the migration planner (roadmap 5.2).** New `tools/migration_planner.py` (**read-only**):
+  from the brownfield gaps it produces an **ordered plan** of incremental migration steps — one
+  logical change each (one PR), lowest-risk / most-foundational first (governance docs before CI
+  before the source tree). It proposes; it does not write — edits happen one gated PR at a time in
+  the refactor sandbox (M5-C). Covered by `tools/tests/test_migration_planner.py` (ordering,
+  one-step-per-gap, read-only), wired into CI.
 
 ### Changed
 

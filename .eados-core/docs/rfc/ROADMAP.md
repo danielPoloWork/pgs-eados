@@ -22,7 +22,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M2 — design phase + roles** | ✅ **done** — M2-A..E merged (#42–#46) |
 | **M3 — plan phase + traceability** | ✅ **done** — M3-A..C merged (#47–#49) |
 | **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
-| **M5 — refactor (brownfield)** | 🚧 in progress — M5-A (brownfield reader) drafted |
+| **M5 — refactor (brownfield)** | 🚧 in progress — M5-A merged (#53) · M5-B (migration planner) drafted |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -132,8 +132,8 @@ the highest-risk phase (it edits real user code), so it is sequenced last and wr
 
 - [x] 5.1 **Brownfield reader** — `tools/brownfield.py` (READ-ONLY) maps an existing repo against
       the EADOS standard (agent contract, docs system, CI, source tree) and reports the gaps to migrate.
-- [ ] 5.2 **Migration planner**: propose incremental migration PRs (one logical change each),
-      ordered by risk/dependency.
+- [x] 5.2 **Migration planner** — `tools/migration_planner.py` (READ-ONLY) orders the brownfield
+      gaps into incremental steps (one logical change each), lowest-risk / most-foundational first.
 - [ ] 5.3 A **write-contained sandbox** (defense-in-depth, building on the renderer write guards
       of [ADR-0007](../adr/0007-renderer-write-guards-and-validation-independence.md)) — no write
       escapes the target repo; every change is a reviewable, gated PR.
