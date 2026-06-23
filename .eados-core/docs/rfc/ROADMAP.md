@@ -22,7 +22,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M2 — design phase + roles** | ✅ **done** — M2-A..E merged (#42–#46) |
 | **M3 — plan phase + traceability** | ✅ **done** — M3-A..C merged (#47–#49) |
 | **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
-| **M5 — refactor (brownfield)** | 🚧 in progress — M5-A merged (#53) · M5-B (migration planner) drafted |
+| **M5 — refactor (brownfield)** | 🚧 in progress — M5-A·B merged (#53, #54) · M5-C (write-contained sandbox) drafted |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -134,9 +134,9 @@ the highest-risk phase (it edits real user code), so it is sequenced last and wr
       the EADOS standard (agent contract, docs system, CI, source tree) and reports the gaps to migrate.
 - [x] 5.2 **Migration planner** — `tools/migration_planner.py` (READ-ONLY) orders the brownfield
       gaps into incremental steps (one logical change each), lowest-risk / most-foundational first.
-- [ ] 5.3 A **write-contained sandbox** (defense-in-depth, building on the renderer write guards
-      of [ADR-0007](../adr/0007-renderer-write-guards-and-validation-independence.md)) — no write
-      escapes the target repo; every change is a reviewable, gated PR.
+- [x] 5.3 A **write-contained sandbox** — `tools/sandbox.py` (defense-in-depth, on the renderer
+      write-guard principle of [ADR-0007](../adr/0007-renderer-write-guards-and-validation-independence.md)):
+      a write may only land inside the target repo (traversal/absolute/symlink/`.git`/clobber refused).
 - [ ] 5.4 Ship the **`/eados refactor`** command surface.
 
 **Acceptance gate.** A fixture repo is migrated via gated PRs; no write escapes the sandbox; each

@@ -141,6 +141,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v1.2.1**.
   before the source tree). It proposes; it does not write — edits happen one gated PR at a time in
   the refactor sandbox (M5-C). Covered by `tools/tests/test_migration_planner.py` (ordering,
   one-step-per-gap, read-only), wired into CI.
+- **M5-C — the write-contained sandbox (roadmap 5.3).** New `tools/sandbox.py` — the mechanical
+  backstop for the only phase that edits real user code. `safe_write(root, rel, content)` lands a
+  write **only inside the target repo**: traversal is refused (realpath + commonpath, so a symlink
+  pointing outside is caught), absolute/drive-qualified paths are refused, `.git/` is off-limits,
+  and it is **additive by default** (no clobbering a file without explicit `overwrite=True`). Builds
+  on the renderer's ADR-0007 write guard. Covered by `tools/tests/test_sandbox.py` — strong negative
+  tests (traversal, absolute, `.git`, clobber, symlink-escape), wired into CI.
 
 ### Changed
 
