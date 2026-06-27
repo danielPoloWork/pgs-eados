@@ -38,6 +38,12 @@ roles:
     may_draft: ["SECURITY.md", "docs/bugs/**"]
     may_approve: []
     owns: ["SECURITY.md"]
+  - name: contribution-reviewer     # Inbound-PR steward: composes reviewer + security-auditor.
+    pillar: engineering
+    phases: []                      # cross-cutting (like /eados review), not a delivery-phase role
+    may_draft: []                   # drafts a review report + labels via /eados review; owns no path
+    may_approve: []                 # recommends a disposition — never approves / merges (like reviewer)
+    owns: []
   - name: profile-author            # Adds/refreshes language profiles (factory maintenance).
     pillar: engineering
     phases: []                      # not a delivery-pipeline phase role; invoked ad-hoc

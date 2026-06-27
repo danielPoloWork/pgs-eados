@@ -264,7 +264,7 @@ posts the close — the #94 episode), encoding it as data the gates validate.
       vocabulary, and the "external touches an owned path → escalate" rule. Auto-validated by
       `os-spec-completeness` and the `data-file-validity` / `gate-coverage` gates; its role/gate
       cross-refs validated by `cross-spec-consistency` (anti-fragmentation — no special case in code).
-- [ ] 8.2 **The `contribution-reviewer` role** — persona `agent/contribution-reviewer.md` (the
+- [x] 8.2 **The `contribution-reviewer` role** — persona `agent/contribution-reviewer.md` (the
       enterprise contribution steward: composes `reviewer` + `security-auditor`, adds
       provenance / policy / triage, never merges) + an `authority.yaml` record (engineering pillar,
       `phases: []`, empty `owns` / `may_approve` like `reviewer`) + a registry row. Enforced by

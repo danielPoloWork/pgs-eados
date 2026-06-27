@@ -13,6 +13,7 @@ boundary (draft/propose; the human opens, merges, publishes).
 | [`enterprise-architect`](enterprise-architect.md) | Stand up and govern a project; drive the EADOS interview → generate loop. The orchestrating role. |
 | [`reviewer`](reviewer.md) | Review a diff/PR against the spec, quality bar, and patterns policy; return structured findings. |
 | [`security-auditor`](security-auditor.md) | Threat-model and audit for vulnerabilities, unsafe deps, and secret leaks; draft advisories. |
+| [`contribution-reviewer`](contribution-reviewer.md) | Evaluate an inbound PR from a non-owner: provenance, the contribution policy, risk, and triage to a recommended disposition. Recommends; never merges. |
 | [`release-manager`](release-manager.md) | Cut a SemVer release: bump, changelog, notes, tag, announcement draft. |
 | [`profile-author`](profile-author.md) | Add or refresh a language profile (toolchain knowledge as data). |
 | [`product-manager`](product-manager.md) | Own the "what"/"why": vision, priorities, the product spec (PRD/GDD). The Product pillar. |
@@ -22,9 +23,10 @@ boundary (draft/propose; the human opens, merges, publishes).
 ## How they compose
 
 A generation run is the **architect**; before the bootstrap PR it invokes the **reviewer** and
-(for sensitive surfaces) the **security-auditor**; a release is the **release-manager**; adding
-a language is the **profile-author**. They share one contract, so handing off between them does
-not change the rules — only the focus.
+(for sensitive surfaces) the **security-auditor**; an inbound PR from a non-owner is the
+**contribution-reviewer** (which composes those two and adds provenance + policy + triage); a
+release is the **release-manager**; adding a language is the **profile-author**. They share one
+contract, so handing off between them does not change the rules — only the focus.
 
 ## Persona vs. authority (the separation is the point)
 

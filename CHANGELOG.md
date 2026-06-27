@@ -11,6 +11,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M8 / 8.2 — the `contribution-reviewer` role.** New portable persona
+  `agent/contribution-reviewer.md` — the inbound-PR steward: composes `reviewer` + `security-auditor`,
+  adds trust-tier classification + the contribution-policy checks + triage, and recommends a
+  disposition (it judges the change, not the person; it never merges or closes). Plus an
+  `authority.yaml` record (engineering pillar, `phases: []`, empty `owns`/`may_approve` like
+  `reviewer`) and an `agent/README.md` registry row. Enforced by `agent-registry` +
+  `authority-personas`.
+
 - **M8 / 8.1 — inbound-contribution policy as data.** New OS spec
   `orchestrator/os/contribution/{_schema.md, contribution.yaml}`: the owner-identity source
   (CODEOWNERS + manifest fallback), the trust tiers (owner · collaborator · external-fork), the
