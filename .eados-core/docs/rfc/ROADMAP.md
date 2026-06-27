@@ -24,7 +24,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
 | **M5 — refactor (brownfield)** | ✅ **done** — M5-A..D merged (#53–#56) |
 | **v2.0.0 release** | ✅ tagged on #70's merge — GitHub Release drafted, awaiting human publish |
-| **M6 — hardening & UX** | 🚧 in progress — 6.1, 6.2, 6.3, 6.9 done (#63, #65, #68, #76); 6.4–6.8 planned (#64, #66, #67, #69, #72) |
+| **M6 — hardening & UX** | 🚧 in progress — 6.1, 6.2, 6.3, 6.4, 6.9 done (#63, #65, #66, #68, #76); 6.5–6.8 planned (#64, #67, #69, #72) |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -168,8 +168,10 @@ GitHub issue under the `M6 — hardening & UX` milestone (#6).
       one template with the manifest context (the same gates as a full render) and places it via
       `sandbox.safe_write`; the "render the missing artifact → sandbox" step in `refactor.md` now
       invokes it (no longer manual).
-- [ ] 6.4 (F1, #66) **`/eados status` (doctor)** — current phase + legal transitions + gate status
-      + traceability coverage at a glance.
+- [x] 6.4 (F1, #66) **`/eados status` (doctor)** — a read-only `tools/doctor.py` (+ the
+      `commands/status.md` surface) reports current phase, legal transitions (+ gates/human-gating),
+      refs, and traceability coverage at a glance — composing `phase_runner` + `traceability`; exits
+      non-zero on an actionable problem (undeclared phase, uncovered RFC, dangling edge).
 - [ ] 6.5 (G3, #64) **Thin CLI phase orchestrator** — `eados.py <phase> <manifest>` runs a phase's
       tool chain deterministically (today `/eados <phase>` is a markdown procedure an agent reads).
 - [ ] 6.6 (F2, #67) **Auto-derive traceability links from PR bodies** (via `gh`) — replace the

@@ -11,6 +11,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.0.0**.
 
 ### Added
 
+- **M6 / 6.4 — `/eados status` doctor (F1, #66).** A new read-only `tools/doctor.py` (the
+  `/eados status` surface, `commands/status.md`) reports a project's delivery health at a glance:
+  current phase (+ its owning role and what it produces), the legal next transitions (+ gates and
+  human-gating, via `phase_runner`), the recorded `rfcs`/`milestones` refs, and traceability
+  coverage (`roadmap-covers-rfcs`, plus `traceability-lint` when a links file is present, via
+  `traceability`). It composes the existing tools — never re-implements — and exits non-zero on an
+  actionable problem (undeclared phase, uncovered RFC, dangling edge), doubling as a pre-flight
+  check. Covered by `tools/tests/test_doctor.py`. Read-only; no pipeline behavior change.
 - **M6 / 6.3 — single-artifact render for the `refactor` phase (G2, #63).** A new
   `tools/render_artifact.py` renders **one** template with the manifest context — reusing
   `render.py`'s engine and the `validate_manifest` + unresolved-placeholder gates, so a single

@@ -14,6 +14,10 @@ a transition; the human **confirms** every human-gated one (`AGENTS.md` §6).
 | `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
 | `/eados audit` | audit | **available** (M4) | [`audit.md`](audit.md) |
 | `/eados refactor` | refactor | **available** (M5) | [`refactor.md`](refactor.md) |
+| `/eados status` | — (any) | **available** (M6) | [`status.md`](status.md) |
+
+`/eados status` is the odd one out — a **read-only doctor**, not a phase that advances: it reports
+the current phase, the legal next moves, and traceability coverage at a glance (roadmap 6.4).
 
 **Portable.** The canonical procedure is the markdown here; a host wraps it with its own skill
 mechanism (Claude Code `.claude/skills/`, a Codex/Gemini agent registry). The adapter is thin — it
