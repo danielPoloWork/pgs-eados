@@ -11,6 +11,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M7 / 7.1 — Prerequisites: getting an AI coding agent (#89).** README's "Getting started" gains a
+  **Prerequisites — getting an AI coding agent** subsection: install links for Claude Code, Gemini
+  Antigravity, and ChatGPT Codex, one line on what "open the folder" does (the agent auto-loads
+  `AGENTS.md`), and an explicit no-agent fallback to the deterministic path; USAGE §3 routes the same.
+  The zh-Hans + ja README translations are refreshed to match (i18n-freshness stays green). Docs only
+  — no behavior change.
+
 ### Changed
 
 ### Deprecated

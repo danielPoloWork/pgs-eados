@@ -67,7 +67,9 @@ congruent in CI.
 **Conversational** — open the repo with an AI agent; it reads `AGENTS.md`, runs
 [`interview.md`](../orchestrator/interview.md), writes `project.yaml` for your confirmation, then
 follows [`generate.md`](../orchestrator/generate.md). If a step fails, it follows
-[`recovery.md`](../orchestrator/recovery.md).
+[`recovery.md`](../orchestrator/recovery.md). _Need an agent?_ Install Claude Code, Gemini
+Antigravity, or ChatGPT Codex — the [README's *Prerequisites*](../../README.md) has the install
+links — or take the **Deterministic** path below.
 
 **Deterministic** — no agent needed. With this factory copied into your repo
 (`<your-repo>/.eados-core/`), `--in-place` generates the project into that repo, next to

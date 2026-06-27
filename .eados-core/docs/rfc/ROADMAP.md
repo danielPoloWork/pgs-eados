@@ -211,7 +211,7 @@ correct-but-confusing tool output self-explanatory — **without changing any to
 inline comments, and at most an optional tool hint). Each item is one PR, tracked under the
 `M7 — onboarding & docs` milestone (#7).
 
-- [ ] 7.1 (#89) **Prerequisites — getting an AI coding agent** — a short pointer (not a tutorial):
+- [x] 7.1 (#89) **Prerequisites — getting an AI coding agent** — a short pointer (not a tutorial):
       install links for Claude Code / Gemini Antigravity / ChatGPT Codex, one line on what "open the
       folder" does (auto-loads `AGENTS.md`), and the explicit no-agent fallback to the deterministic
       path — so nobody stalls before starting.

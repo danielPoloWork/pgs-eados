@@ -157,6 +157,21 @@ depends on how you drive it:
 - **To contribute to EADOS** — **git**, to clone and open pull requests. You do **not** need git
   just to download and use the factory.
 
+### Prerequisites — getting an AI coding agent
+
+The recommended (conversational) path needs an **`AGENTS.md`-aware AI coding agent**. Install one:
+
+- **Claude Code** — [install & setup](https://docs.anthropic.com/en/docs/claude-code)
+- **Gemini Antigravity** — [antigravity.google](https://antigravity.google/)
+- **ChatGPT Codex** — [Codex CLI](https://developers.openai.com/codex/cli)
+
+"**Open the folder with your agent**" then means: start the agent in your project's repo root — it
+auto-loads `AGENTS.md` and adopts the Enterprise Project Architect persona, ready for the interview.
+
+**No agent? You're not blocked** — take the **deterministic path**: fill `project.yaml` and run
+`render.py` (Python 3.12+, standard-library only). See [Quickstart](#quickstart) and
+[`USAGE.md`](.eados-core/docs/USAGE.md) §3.
+
 ### Get it
 
 **Download the bundle into your project's repo — recommended, no clone.** The bundle is a

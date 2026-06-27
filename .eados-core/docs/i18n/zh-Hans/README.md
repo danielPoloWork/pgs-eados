@@ -151,6 +151,20 @@ EADOS 是一座 markdown/YAML 工厂 —— 没有东西需要编译，几乎没
   `eados_lint.py` 以及生成的 `consistency_lint.py`）；只依赖标准库，无需 `pip install`。
 - **为 EADOS 做贡献** —— **git**，用于克隆并提交 pull request。仅仅下载并使用工厂**无需** git。
 
+### 前置准备 —— 获取一个 AI 编码智能体
+
+推荐的（对话式）路径需要一个能读取 `AGENTS.md` 的 **AI 编码智能体**。任选其一安装：
+
+- **Claude Code** —— [安装与配置](https://docs.anthropic.com/en/docs/claude-code)
+- **Gemini Antigravity** —— [antigravity.google](https://antigravity.google/)
+- **ChatGPT Codex** —— [Codex CLI](https://developers.openai.com/codex/cli)
+
+“**用你的智能体打开该文件夹**”的意思是：在你项目的仓库根目录启动该智能体——它会自动加载
+`AGENTS.md` 并采用 Enterprise Project Architect（企业项目架构师）人格，准备开始访谈。
+
+**没有智能体？你也不会被卡住** —— 走**确定性路径**：填写 `project.yaml` 并运行 `render.py`
+（仅需 Python 3.12+，只用标准库）。参见 [Quickstart](#quickstart) 与 [`USAGE.md`](../../USAGE.md) §3。
+
 ### 获取
 
 **把 bundle 下载到你项目的仓库 —— 推荐，无需克隆。** bundle 是工厂的自包含、**无前缀**副本

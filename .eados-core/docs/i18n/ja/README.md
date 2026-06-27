@@ -160,6 +160,22 @@ EADOS は markdown/YAML のファクトリです —— コンパイルするも
 - **EADOS に貢献する** —— クローンして pull request を開くための **git**。ファクトリをダウンロード
   して使うだけなら git は**不要**です。
 
+### 前提条件 —— AI コーディングエージェントの入手
+
+推奨される（会話的）パスには、`AGENTS.md` を読む **AI コーディングエージェント**が必要です。いずれかを導入してください：
+
+- **Claude Code** —— [インストールとセットアップ](https://docs.anthropic.com/en/docs/claude-code)
+- **Gemini Antigravity** —— [antigravity.google](https://antigravity.google/)
+- **ChatGPT Codex** —— [Codex CLI](https://developers.openai.com/codex/cli)
+
+「**エージェントでフォルダを開く**」とは、プロジェクトのリポジトリ直下でエージェントを起動することです——
+エージェントは `AGENTS.md` を自動的に読み込み、Enterprise Project Architect（エンタープライズ・プロジェクト・
+アーキテクト）ペルソナを採用して、インタビューの準備が整います。
+
+**エージェントがない？ それでも止まりません** —— **決定的パス**を使います：`project.yaml` を埋めて
+`render.py` を実行してください（Python 3.12+ のみ、標準ライブラリだけ）。[Quickstart](#quickstart) と
+[`USAGE.md`](../../USAGE.md) §3 を参照。
+
 ### 入手
 
 **バンドルをあなたのプロジェクトのリポジトリにダウンロード —— 推奨、クローン不要。** バンドルは
