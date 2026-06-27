@@ -11,6 +11,16 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M8 / 8.1 — inbound-contribution policy as data.** New OS spec
+  `orchestrator/os/contribution/{_schema.md, contribution.yaml}`: the owner-identity source
+  (CODEOWNERS + manifest fallback), the trust tiers (owner · collaborator · external-fork), the
+  required inbound checks, the disposition + label vocabulary, and the load-bearing "external fork
+  touches an owned path → escalate to a human" rule — encoding the maintainer's external-PR practice
+  (the #94 episode) as one source of truth for the M8 reviewer + tooling. Auto-validated by
+  `os-spec-completeness` + `data-file-validity` + `gate-coverage`; its escalation decider/disposition
+  cross-references are resolved by `cross-spec-consistency` (+ `test_cross_spec.py`). First item of
+  **M8 — inbound contribution review**.
+
 - **Hardening — workflow-safety gate (contributor security surface).** New self-lint check
   (`eados_lint.py` #16): the sensitive CI triggers `pull_request_target` and `workflow_run` — which
   run with repository secrets on partially-untrusted events (the classic secret-exfiltration / self-

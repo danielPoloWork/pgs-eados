@@ -2,7 +2,8 @@
 """Tests for the cross-spec-consistency gate (eados_lint check #11) — referential integrity
 ACROSS the delivery-OS specs. Pure-function tests on cross_spec_problems() with in-memory
 fixtures: a complete clean spec set has no problems, and every kind of dangling cross-reference
-(role / state / gate / overlay / level / domain / cross-cutting git gate) is caught. Dependency-free.
+(role / state / gate / overlay / level / domain / cross-cutting git gate / contribution decider +
+disposition) is caught. Dependency-free.
 
     python .eados-core/tools/tests/test_cross_spec.py
 """
@@ -121,6 +122,26 @@ def main():
               a, w, p, r, rk, d, {"traceability": {"gate": "tracability-lint"}})), failures)
     check("git is optional — a None git yields no problems",
           el.cross_spec_problems(*clean(), None) == [], failures)
+
+    # M8 8.1: the inbound-contribution policy's escalation decider resolves to a role / the human
+    # terminal, and its escalation disposition is one the policy itself declares.
+    def contrib(decider="human-owner", disposition="needs-maintainer"):
+        return {"escalation": {"on": "ext-touches-owned", "decider": decider,
+                               "disposition": disposition},
+                "dispositions": [{"id": "needs-maintainer"}, {"id": "close-with-thanks"}]}
+    check("a clean contribution policy has no problems",
+          el.cross_spec_problems(*clean(), None, contrib()) == [], failures)
+    check("a role decider (not just the human terminal) resolves",
+          el.cross_spec_problems(*clean(), None, contrib(decider="enterprise-architect")) == [],
+          failures)
+    check("an unknown contribution escalation decider is caught",
+          any("decider" in prob for prob in
+              el.cross_spec_problems(*clean(), None, contrib(decider="nobody-role"))), failures)
+    check("an escalation disposition the policy does not declare is caught",
+          any("disposition" in prob for prob in
+              el.cross_spec_problems(*clean(), None, contrib(disposition="made-up"))), failures)
+    check("contribution is optional — a None yields no problems",
+          el.cross_spec_problems(*clean(), None, None) == [], failures)
 
     # Robustness: a missing/unparseable core spec is left to os-spec-completeness, not double-reported.
     check("a None workflow yields no problems (deferred to os-spec-completeness)",

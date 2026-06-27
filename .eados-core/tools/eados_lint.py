@@ -452,7 +452,8 @@ def _load_domains():
     return out
 
 
-def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, domains=None, git=None):
+def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, domains=None, git=None,
+                        contribution=None):
     """Pure referential-integrity check across the parsed delivery-OS specs. Returns a list of
     problem strings (empty == every cross-reference resolves). I/O-free so it is unit-testable
     with in-memory fixtures; check_cross_spec_consistency() supplies the on-disk specs."""
@@ -556,6 +557,19 @@ def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, dom
         one(f"domains/{fname}.workflow_overlay", data.get("workflow_overlay"), overlays,
             "workflow_overlay")
 
+    # --- contribution: the escalation decider resolves to a role / the human terminal, and the
+    #     escalation disposition is one the policy itself declares (M8 8.1 — the inbound-review
+    #     policy is data, so a typo'd decider/disposition is caught here, not at review time) ---
+    if isinstance(contribution, dict):
+        esc = contribution.get("escalation")
+        if isinstance(esc, dict):
+            one("contribution.escalation.decider", esc.get("decider"), roles | HUMAN, "role")
+            disp_ids = {d.get("id") for d in (contribution.get("dispositions") or [])
+                        if isinstance(d, dict)}
+            if esc.get("disposition") is not None and disp_ids and esc["disposition"] not in disp_ids:
+                problems.append("contribution.escalation.disposition references unknown disposition "
+                                f"'{esc['disposition']}'")
+
     return problems
 
 
@@ -568,7 +582,7 @@ def check_cross_spec_consistency():
         return  # os-spec-completeness reports a missing/unparseable core spec
     problems = cross_spec_problems(authority, workflow, _load_spec("plan"),
                                    _load_spec("rfc"), _load_spec("risk"), _load_domains(),
-                                   _load_spec("git"))
+                                   _load_spec("git"), _load_spec("contribution"))
     for problem in problems:
         fail(name, problem)
 

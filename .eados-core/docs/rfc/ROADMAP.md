@@ -258,7 +258,7 @@ This milestone **automates the policy the owner already applies by hand** to ext
 change, not the person; honor a good idea via co-author + an in-house re-implementation; the owner
 posts the close — the #94 episode), encoding it as data the gates validate.
 
-- [ ] 8.1 **Contribution policy as data** — `orchestrator/os/contribution/{_schema.md,
+- [x] 8.1 **Contribution policy as data** — `orchestrator/os/contribution/{_schema.md,
       contribution.yaml}`: the owner-identity source (CODEOWNERS / manifest), the trust tiers
       (owner · collaborator · external-fork), the required inbound checks, the disposition + label
       vocabulary, and the "external touches an owned path → escalate" rule. Auto-validated by
