@@ -29,6 +29,11 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.0.0**.
   in-repo Dependabot PRs; the same `--fix` is the manual/local fallback (stay-current routine).
   Deterministic and dependency-free; covered by `tools/tests/test_sync_action_pins.py`. Factory-only
   (generated repos render no templates). No pipeline behavior change.
+- **Docs — `DEPENDABOT_SYNC_TOKEN` setup guide.** `maintenance/dependabot-sync-token.md` documents
+  the optional token for *green-by-itself* Dependabot pin auto-sync (ADR-0013): fine-grained PAT
+  (drop-in) vs GitHub App (robust, with the workflow snippet), least-privilege (Contents-write only),
+  storage via `gh secret set`, verification, and rotation. Linked from the stay-current routine.
+  Maintainer-facing; no behavior change.
 
 ### Changed
 

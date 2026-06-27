@@ -57,7 +57,8 @@ for the fix itself to land.
 - **Factory-only.** Generated repos render no `.tmpl` files, so they have no template drift and do
   not need this workflow; it lives in the factory's own `.github/workflows/`, not in the templates.
 - The default (`GITHUB_TOKEN`) path lands the fix but leaves the stale check until re-run; full
-  green-by-itself is opt-in via the documented secret. This is the deliberate trade for requiring no
+  green-by-itself is opt-in via the documented secret ([setup guide](../../maintenance/dependabot-sync-token.md)).
+  This is the deliberate trade for requiring no
   mandatory credential setup.
 
 This supersedes the "tracked separately, its own reviewed PR" note in ADR-0009's 2026-06-27

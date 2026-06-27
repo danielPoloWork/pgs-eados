@@ -30,7 +30,8 @@ the templates and the `action-pins` lockstep gate blocks the PR. This is now **a
 the `dependabot-pin-sync` workflow ([ADR-0013](../docs/adr/0013-dependabot-action-pin-auto-remediation.md))
 re-syncs the templates and commits the fix back onto the Dependabot PR. (With the default
 `GITHUB_TOKEN` the fix lands but the check re-runs on the next event / a manual re-run; set a
-`DEPENDABOT_SYNC_TOKEN` repo secret — a PAT or GitHub App token — for green-by-itself.)
+`DEPENDABOT_SYNC_TOKEN` repo secret for green-by-itself — see the
+[setup guide](dependabot-sync-token.md) for PAT vs GitHub App.)
 
 To do it by hand (locally, or for any non-Dependabot drift), run the same fixer the workflow uses:
 
