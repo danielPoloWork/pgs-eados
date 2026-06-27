@@ -27,7 +27,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M6 — hardening & UX** | ✅ **done** — items 6.1–6.9 (#63–#69, #72, #76) |
 | **v2.1.0 release** | ✅ published 2026-06-27 — M6 hardening & UX (bundles attached; Latest) |
 | **M7 — onboarding & docs** | ✅ **done** — items 7.1–7.5 (#97–#101) |
-| **M8 — inbound contribution review** | ⏳ planned — items 8.1–8.6 (`/eados review` + `contribution-reviewer`) |
+| **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -288,7 +288,7 @@ the contributor. Provenance stays 100% in-house. It is encoded as data the gates
       `pr` field + its `_schema.md`, validated by `cross-spec-consistency`. **No change to the shipped
       phase pipeline.** Optional: a rendered CI template `pr-contribution-review.yml` (comment-only —
       never approve / merge) for generated repos.
-- [ ] 8.6 **Dogfood + docs** — an ADR for the inbound-contribution-trust model, a `/eados review`
+- [x] 8.6 **Dogfood + docs** — an ADR for the inbound-contribution-trust model, a `/eados review`
       walkthrough in USAGE/README, and the evaluator run against the **#94** external-contribution
       episode (the canonical case) as the worked example — plus the currently-open non-owner PR #96
       as a live secondary case; RFC-0001, this roadmap, the affected specs, and the CHANGELOG kept in

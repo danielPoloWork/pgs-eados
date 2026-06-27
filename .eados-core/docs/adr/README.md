@@ -22,3 +22,4 @@ is sequential and never reused. Template: the generated
 | [0011](0011-eados-phase-based-delivery-operating-system.md) | EADOS — phase-based agentic delivery operating system (the pivot) | Accepted |
 | [0012](0012-project-rename-to-eados.md) | Rename EAAO → EADOS: repo, path, and bundle migration | Accepted |
 | [0013](0013-dependabot-action-pin-auto-remediation.md) | Dependabot action-pin auto-remediation (`workflow_run` template re-sync) | Accepted |
+| [0014](0014-inbound-contribution-trust-model.md) | Inbound-contribution trust model (verify the change, never merge non-owner commits, adopt via co-author) | Accepted |

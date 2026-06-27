@@ -11,6 +11,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M8 / 8.6 — dogfood + docs (M8 complete).**
+  [ADR-0014](.eados-core/docs/adr/0014-inbound-contribution-trust-model.md) records the
+  inbound-contribution trust model; USAGE gains a §7 **`/eados review` walkthrough** with EADOS's own
+  **#94** episode as the worked example (the real evaluator output — `external-fork` touches an owned
+  path → `needs-maintainer`, adopt via co-author, never merge the fork's commits); RFC-0001 §6 and the
+  ADR index are kept in lockstep. With this, **M8 — inbound contribution review** is complete
+  (8.1–8.6) — a v2.2.0 release follows.
+
 - **M8 / 8.5 — `contribution-review` wired as a cross-cutting gate.** Registered the
   `contribution-review` gate in `workflow.yaml` (`required_for: []`, advisory/`blocking: false` —
   like `traceability-lint`, it is **not** a phase-transition gate), referenced from a new

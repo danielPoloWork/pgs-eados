@@ -189,7 +189,48 @@ git archive --format=tar.gz -o pgs-eados-bundle.tar.gz HEAD   # prefix-less: ext
 git archive HEAD | tar tf - | sort                          # preview contents without writing a file
 ```
 
-## 7. Go deeper
+## 7. Reviewing an inbound contribution (`/eados review`)
+
+When a PR arrives from a **non-owner** (a collaborator, or an unknown fork), evaluate it against the
+contribution policy and draft a recommended disposition — it **recommends; the human disposes**
+(`AGENTS.md` §6). The policy is data ([`os/contribution/contribution.yaml`](../orchestrator/os/contribution/contribution.yaml));
+the model is [ADR-0014](adr/0014-inbound-contribution-trust-model.md).
+
+```bash
+python .eados-core/tools/pr_review.py --pr <PR#> [--repo OWNER/REPO] [--domain D]
+```
+
+Worked example — EADOS's own **#94** (an external fork that edited the manifest template):
+
+```text
+inbound-PR review: #94 by gxuxhxm [tier: external-fork, fork=True]
+  risk: medium  (factors: medium-change)  security-auditor gate: optional
+  owned paths touched: .eados-core/orchestrator/project.yaml.template
+  checks:
+    [????] ci-green — CI status unknown — verify the run
+    [OK]   provenance-clear — author 'gxuxhxm' known (fork=True)
+    [????] no-added-secrets — security-auditor lens — confirm no added secrets/tokens or secret exposure
+    [????] scope-matches-intent — confirm the diff matches the linked issue / stated intent
+    [????] gate-coverage-holds — verify via self-lint (gate-coverage runs in CI)
+  -> recommended disposition: needs-maintainer (review:needs-maintainer) — external fork touches an owned path
+  note: thank the contributor — every non-owner disposition does (courtesy.always_thank)
+  note: no auto-accept — this is a recommendation with its reasoning; the human disposes
+  note: never merge the contributor's commits — adopt via re-implement-in-house (co-author)
+  recommends only — the human disposes / merges / closes (AGENTS.md §6)
+```
+
+That recommendation is exactly what happened: #94 touched an owned factory file, so it escalated to
+the maintainer, who **adopted** the idea via an in-house re-implementation (co-author credit + a
+rationale comment) and closed the PR with thanks — never merging the fork's commits. Drive it via the
+[`/eados review`](../orchestrator/commands/review.md) command, which deepens with the
+`security-auditor` + `reviewer` on an owned-path / high-risk hit and drafts the comment + label.
+No `gh` / offline → it SKIPs cleanly.
+
+**The rule:** we never merge a non-owner's commits — a good idea enters the tree only as our own
+re-implementation with co-author credit, so provenance stays in-house. Trust sets the *scrutiny*,
+not the *outcome* (the change is judged, not the author).
+
+## 8. Go deeper
 
 - [`AGENTS.md`](../../AGENTS.md) — the binding contract (source of truth).
 - [`orchestrator/`](../orchestrator/README.md) — the engine (interview, generate, placeholders, profiles, recovery).

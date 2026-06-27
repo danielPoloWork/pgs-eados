@@ -141,6 +141,11 @@ OS adds:
   (disabling tests/warnings is an existing anti-pattern).
 - **Merge ≠ deploy.** `merged → tagged/released → deployed` are distinct, separately-gated states;
   the human publishes. `delegation_flag` records an owner who delegates the full lifecycle.
+- **Inbound contributions.** A PR from a non-owner is governed by the contribution policy
+  ([`os/contribution/`](../../orchestrator/os/contribution/contribution.yaml)) + the cross-cutting
+  `contribution-review` gate (`pr.review_gate`): verify the change not the person, **never merge a
+  non-owner's commits** (a good idea is adopted via a co-author re-implementation), always thank —
+  `/eados review` drafts the recommendation, the human disposes (ADR-0014).
 
 ## 7. Traceability & audit graph
 
