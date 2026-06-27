@@ -23,8 +23,10 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M3 — plan phase + traceability** | ✅ **done** — M3-A..C merged (#47–#49) |
 | **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
 | **M5 — refactor (brownfield)** | ✅ **done** — M5-A..D merged (#53–#56) |
-| **v2.0.0 release** | ✅ tagged on #70's merge — GitHub Release drafted, awaiting human publish |
+| **v2.0.0 release** | ✅ published 2026-06-23 |
 | **M6 — hardening & UX** | ✅ **done** — items 6.1–6.9 (#63–#69, #72, #76) |
+| **v2.1.0 release** | ✅ published 2026-06-27 — M6 hardening & UX (bundles attached; Latest) |
+| **M7 — onboarding & docs** | ⏳ planned — items 7.1–7.5 (issues #87–#91) |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -198,6 +200,38 @@ GitHub issue under the `M6 — hardening & UX` milestone (#6).
 any new data/spec is `_schema`-validated and lint-gated (no special-casing in code — the
 anti-fragmentation invariant below).
 **Depends on:** v2.0.0 (post-release); incremental — items are independent.
+
+---
+
+## Milestone 7 — onboarding & UX docs (post-v2.1.0)
+
+**Goal.** Close the first-time-user friction a fresh install/usage evaluation surfaced (2026-06-27):
+make the phase pipeline followable, the install OS-agnostic, the manifest self-documenting, and a
+correct-but-confusing tool output self-explanatory — **without changing any tool behavior** (docs,
+inline comments, and at most an optional tool hint). Each item is one PR, tracked under the
+`M7 — onboarding & docs` milestone (#7).
+
+- [ ] 7.1 (#89) **Prerequisites — getting an AI coding agent** — a short pointer (not a tutorial):
+      install links for Claude Code / Gemini Antigravity / ChatGPT Codex, one line on what "open the
+      folder" does (auto-loads `AGENTS.md`), and the explicit no-agent fallback to the deterministic
+      path — so nobody stalls before starting.
+- [ ] 7.2 (#88) **Windows/PowerShell install & render variants** — a PowerShell equivalent beside
+      every Unix snippet in README/USAGE (download, extract, render), using `$env:TEMP` not `/tmp`,
+      so a Windows user reaches `<repo>/.eados-core/` without translation.
+- [ ] 7.3 (#90) **`project.yaml` documented field-by-field** — inline comments in the template and/or
+      a required-fields table (field → meaning → required? → source → placeholder), so a manifest can
+      be hand-filled without reverse-engineering `reference.yaml`; `render.py` succeeds on it.
+- [ ] 7.4 (#87) **End-to-end phase walkthrough** — a narrated `init → design → plan → scaffold →
+      audit` run (the headline v2.0.0 feature) with the exact commands, expected output, the human
+      gates, and how `delivery_state` evolves; reproducible from the doc alone.
+- [ ] 7.5 (#91) **Clarify `rfc_check` scope** — a doc note (+ optionally a clearer tool hint) that the
+      gate targets generated-project RFCs following `os/rfc/template.md`; EADOS's own RFC-0001 is
+      intentionally out of scope, so its FAIL isn't mistaken for a defect (no headings retrofitted).
+
+**Acceptance gate.** A first-time user can, from the docs alone, install on any OS, understand the
+agent prerequisite (or take the no-agent path), hand-fill a valid manifest, and follow a full phase
+run. **No tool behavior change**; self-lint + render-smoke stay green.
+**Depends on:** v2.1.0 (post-release); incremental — items are independent.
 
 ---
 
