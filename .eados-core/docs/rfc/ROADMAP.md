@@ -24,7 +24,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M4 — audit phase + risk** | ✅ **done** — M4-A..C merged (#50–#52) |
 | **M5 — refactor (brownfield)** | ✅ **done** — M5-A..D merged (#53–#56) |
 | **v2.0.0 release** | ✅ tagged on #70's merge — GitHub Release drafted, awaiting human publish |
-| **M6 — hardening & UX** | 🚧 in progress — 6.1–6.5 + 6.9 done (#63, #64, #65, #66, #68, #76); 6.6–6.8 planned (#67, #69, #72) |
+| **M6 — hardening & UX** | 🚧 in progress — 6.1–6.6 + 6.9 done (#63, #64, #65, #66, #67, #68, #76); 6.7–6.8 planned (#69, #72) |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -176,8 +176,10 @@ GitHub issue under the `M6 — hardening & UX` milestone (#6).
       phase's deterministic outgoing gates (data-driven from `workflow.yaml`), marking render-time /
       human gates `[manual]`, then reports the legal next moves; `eados.py status` is the doctor. The
       executable spine beneath the markdown `/eados <phase>` procedures.
-- [ ] 6.6 (F2, #67) **Auto-derive traceability links from PR bodies** (via `gh`) — replace the
-      hand-written `links.yaml`, feeding `traceability-lint` real `PR → commit → release` edges.
+- [x] 6.6 (F2, #67) **Auto-derive traceability links from PR bodies** (via `gh`) —
+      `tools/derive_links.py` builds the `{pr, rfc, milestone, commit, release}` edges from merged
+      PRs (pure parser + a thin `gh` shell that degrades cleanly offline), emitting a `links.yaml`
+      `traceability-lint` consumes — no more hand-writing it.
 - [ ] 6.7 (F4, #69) **Version-lockstep dogfooding** — apply the generated repos' `version-lockstep`
       gate to EADOS's own README release badge (the factory held to the bar it imposes downstream).
 - [ ] 6.8 (#72) **Cross-spec gate → cross-cutting gates** — extend `cross-spec-consistency` to

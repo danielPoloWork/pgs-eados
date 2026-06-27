@@ -18,7 +18,8 @@ Owned by the **security-auditor** (with the **reviewer** for structured findings
    ```
    (`links.yaml` = the PR cross-link edges the `git` spec mandates: `{pr, rfc, milestone, commit,
    release}`.) An RFC with no PR, a PR missing its RFC/milestone, or a release with no PR+commit
-   fails the audit.
+   fails the audit. **Derive `links.yaml` from the merged PRs** instead of hand-writing it:
+   `python .eados-core/tools/derive_links.py --out links.yaml` (via `gh`; roadmap 6.6).
 2. **Risk score** — score the change and learn whether the security gate is mandatory:
    ```bash
    python .eados-core/tools/risk_score.py $(changed paths) --lines N --domain <domain>

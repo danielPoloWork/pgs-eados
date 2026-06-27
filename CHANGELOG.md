@@ -11,6 +11,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.0.0**.
 
 ### Added
 
+- **M6 / 6.6 — auto-derive traceability links from PR bodies (F2, #67).** A new
+  `tools/derive_links.py` builds the `{pr, rfc, milestone, commit, release}` traceability edges from
+  merged PRs — `pr`/`commit`/`milestone` from `gh` metadata, `rfc` parsed from the body, `release`
+  from a release PR's title — and emits a `links.yaml` that `traceability.py --links` consumes, so
+  the graph runs on real data instead of a hand-maintained file. By default it emits only delivery
+  PRs (those with an rfc or milestone); `--all` emits every PR. The parser is pure and tested
+  **gh-free**; the optional fetch degrades cleanly (clear message, exit 2) when `gh` is absent,
+  unauthenticated, or offline — CI never depends on the network. Covered by
+  `tools/tests/test_derive_links.py`. No pipeline behavior change.
 - **M6 / 6.5 — thin CLI phase orchestrator (G3, #64).** A new `tools/eados.py <phase> <manifest>`
   runs a phase's **deterministic outgoing gates** — read from `workflow.yaml` (no hardcoded chain) —
   evaluating the ones it can (`manifest-valid`, `rfc-approved`, `roadmap-covers-rfcs`) via the
