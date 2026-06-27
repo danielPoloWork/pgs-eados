@@ -18,97 +18,94 @@ delivery_state:
   refs: { rfcs: [], milestones: [], prs: [], releases: [] }   # cross-link ids, not content
 
 identity:
-  project_name:    ""        # e.g. pbr-cpp-memory-pool         -> {{PROJECT_NAME}}
-  project_slug:    ""        # e.g. memorypool                  -> {{PROJECT_SLUG}}
-  project_title:   ""        # e.g. High-Performance Memory Pool-> {{PROJECT_TITLE}}
-  project_tagline: ""        # e.g. Fixed-block O(1) memory pool-> {{PROJECT_TAGLINE}}
-  project_series:  ""        # e.g. Purpose-Built References     -> {{PROJECT_SERIES}} (blank ok)
-  project_kind:    library   # library|service|cli|app          -> {{PROJECT_KIND}}
+  project_name:    ""        # Repository name (e.g. pbr-cpp-memory-pool). -> {{PROJECT_NAME}}
+  project_slug:    ""        # Short id used in generated paths (e.g. memorypool). -> {{PROJECT_SLUG}}
+  project_title:   ""        # Human-readable title (e.g. High-Performance Memory Pool). -> {{PROJECT_TITLE}}
+  project_tagline: ""        # One-line description (e.g. Fixed-block O(1) memory pool). -> {{PROJECT_TAGLINE}}
+  project_series:  ""        # Project family; blank if none (e.g. Purpose-Built References). -> {{PROJECT_SERIES}}
+  project_kind:    library   # One of: library|service|cli|app. -> {{PROJECT_KIND}}
 
 ownership:
-  owner:           ""        # GitHub login   e.g. danielPoloWork -> {{OWNER}}
-  maintainer:      ""        # e.g. Daniel Polo                   -> {{MAINTAINER}}
-  author:          ""        # copyright holder                  -> {{AUTHOR}}
-  year:            "2026"    #                                   -> {{YEAR}}
-  license_id:      MIT       #                                   -> {{LICENSE_ID}}
-  default_branch:  main      #                                   -> {{DEFAULT_BRANCH}}
-  assignee:        "@me"     #                                   -> {{ASSIGNEE}}
+  owner:           ""        # GitHub owner or org login (e.g. danielPoloWork). -> {{OWNER}}
+  maintainer:      ""        # Maintainer's display name (e.g. Daniel Polo). -> {{MAINTAINER}}
+  author:          ""        # Copyright holder for generated files. -> {{AUTHOR}}
+  year:            "2026"    # Copyright year. -> {{YEAR}}
+  license_id:      MIT       # SPDX license id (e.g. MIT, Apache-2.0). -> {{LICENSE_ID}}
+  default_branch:  main      # Default Git branch. -> {{DEFAULT_BRANCH}}
+  assignee:        "@me"     # Default issue/PR assignee (@me or a login). -> {{ASSIGNEE}}
 
 language:
-  lang:            ""        # source-tree segment  e.g. cpp     -> {{LANG}}
-  lang_name:       ""        # e.g. C++17                        -> {{LANG_NAME}}
-  lang_standard:   ""        # e.g. C++17 (ISO/IEC 14882:2017)   -> {{LANG_STANDARD}}
-  secondary_lang:  ""        # interop lang or "" (e.g. c)
-  group_path:      "it/d4np" #                                   -> {{GROUP_PATH}}
-  group_dotted:    "it.d4np" #                                   -> {{GROUP_DOTTED}}
-  namespace:       ""        # native idiom e.g. it::d4np::memorypool -> {{NAMESPACE}}
-  src_ext:         ""        # primary extension  e.g. cpp       -> {{SRC_EXT}}
-  public_include_hint: ""    # e.g. #include <it/d4np/memorypool/memory_pool.h>
+  lang:            ""        # Source-tree segment / profile key (e.g. cpp). -> {{LANG}}
+  lang_name:       ""        # Language name + version (e.g. C++17). -> {{LANG_NAME}}
+  lang_standard:   ""        # Standard or spec (e.g. C++17 (ISO/IEC 14882:2017)). -> {{LANG_STANDARD}}
+  secondary_lang:  ""        # Interop language, or "" if none (e.g. c).
+  group_path:      "it/d4np" # Namespace path, '/'-separated. -> {{GROUP_PATH}}
+  group_dotted:    "it.d4np" # Same namespace, '.'-separated. -> {{GROUP_DOTTED}}
+  namespace:       ""        # Native namespace idiom (e.g. it::d4np::memorypool). -> {{NAMESPACE}}
+  src_ext:         ""        # Primary source extension (e.g. cpp, rs, py). -> {{SRC_EXT}}
+  public_include_hint: ""    # Example include/import shown in generated docs.
 
 # Derived from language + group_path + project_slug (computed during render):
 #   src_main  = src/main/<lang>/<group_path>/<project_slug>      -> {{SRC_MAIN}}
 #   src_test  = src/test/<lang>/<group_path>/<project_slug>      -> {{SRC_TEST}}
 #   src_bench = src/bench/<lang>/<group_path>/<project_slug>     -> {{SRC_BENCH}}
 
-toolchain:                   # defaults pulled from profiles/<lang>.yaml, overridable
-  build_tool:      ""        # -> {{BUILD_TOOL}}
-  pkg_manager:     ""        # -> {{PKG_MANAGER}}
-  test_framework:  ""        # -> {{TEST_FRAMEWORK}}
-  formatter:       ""        # -> {{FORMATTER}}
-  linter:          ""        # -> {{LINTER}}
-  sanitizers:      ""        # -> {{SANITIZERS}}
-  coverage_tool:   ""        # -> {{COVERAGE_TOOL}}
-  coverage_target: 80        # percent line coverage
-  doc_tool:        ""        # -> {{DOC_TOOL}}
-  version_file:    ""        # -> {{VERSION_FILE}}
-  version_const_hint: ""     # -> {{VERSION_CONST_HINT}}
-  package_ecosystem: ""      # Dependabot ecosystem (from profile) -> {{PKG_ECOSYSTEM}}
+toolchain:                   # Defaults come from profiles/<lang>.yaml; override as needed.
+  build_tool:      ""        # Build tool — blank uses the language profile. -> {{BUILD_TOOL}}
+  pkg_manager:     ""        # Package manager — blank uses the profile. -> {{PKG_MANAGER}}
+  test_framework:  ""        # Test framework — blank uses the profile. -> {{TEST_FRAMEWORK}}
+  formatter:       ""        # Formatter — blank uses the profile. -> {{FORMATTER}}
+  linter:          ""        # Linter — blank uses the profile. -> {{LINTER}}
+  sanitizers:      ""        # Sanitizers/analysis — blank uses the profile. -> {{SANITIZERS}}
+  coverage_tool:   ""        # Coverage tool — blank uses the profile. -> {{COVERAGE_TOOL}}
+  coverage_target: 80        # Target line-coverage percent.
+  doc_tool:        ""        # Doc generator — blank uses the profile. -> {{DOC_TOOL}}
+  version_file:    ""        # File that holds the version. -> {{VERSION_FILE}}
+  version_const_hint: ""     # Version constant/pattern for the renderer. -> {{VERSION_CONST_HINT}}
+  package_ecosystem: ""      # Dependabot ecosystem (usually from the profile). -> {{PKG_ECOSYSTEM}}
   commands:
-    build:        ""         # -> {{CMD_BUILD}}
-    test:         ""         # -> {{CMD_TEST}}
-    format_check: ""         # -> {{CMD_FORMAT_CHECK}}
-    lint:         ""         # -> {{CMD_LINT}}
-    bench:        ""         # -> {{CMD_BENCH}} (blank if no bench)
+    build:        ""         # Build command — blank uses the profile. -> {{CMD_BUILD}}
+    test:         ""         # Test command — blank uses the profile. -> {{CMD_TEST}}
+    format_check: ""         # Format-check command — blank uses the profile. -> {{CMD_FORMAT_CHECK}}
+    lint:         ""         # Lint command — blank uses the profile. -> {{CMD_LINT}}
+    bench:        ""         # Benchmark command (used when capabilities.bench). -> {{CMD_BENCH}}
 
-ci:                          # from profiles/<lang>.yaml
-  tier1_platforms: ""        # -> {{TIER1_PLATFORMS}}
-  matrix: []                 # list of {os, toolchain, preset} cells -> {{#EACH_CI_CELL}}
-  setup_steps: ""            # YAML snippet to set up the toolchain  -> {{CI_SETUP_STEPS}}
-  extra_jobs:   ""           # YAML snippet for sanitizer/valgrind/… -> {{CI_EXTRA_JOBS}}
+ci:                          # Defaults come from profiles/<lang>.yaml.
+  tier1_platforms: ""        # CI platforms (e.g. Linux, Windows, macOS). -> {{TIER1_PLATFORMS}}
+  matrix: []                 # CI cells: {os, toolchain, preset}. -> {{#EACH_CI_CELL}}
+  setup_steps: ""            # YAML snippet that sets up the toolchain. -> {{CI_SETUP_STEPS}}
+  extra_jobs:   ""           # YAML snippet for extra jobs (sanitizers/Valgrind/…). -> {{CI_EXTRA_JOBS}}
 
 governance:
-  scopes: [api, build, tests, docs, ci]          # -> {{#EACH_SCOPE}}
+  scopes: [api, build, tests, docs, ci]          # Conventional-Commit scopes for generated docs. -> {{#EACH_SCOPE}}
   # Two distinct version fields — do not swap them (render validates start_version is X.Y.Z):
   version_start: "pre-1.0 milestone-driven"       # PROSE policy descriptor      -> {{VERSION_START}}
   start_version: "0.0.0"                           # NUMERIC X.Y.Z seed (badge++) -> {{START_VERSION}}
-  house_rules: ""                                 # org overlay (from config/) -> {{HOUSE_RULES}}
-  capabilities:                                   # the {{#IF_*}} flags
-    bench:      false
-    threading:  false
-    public_api: true
-    i18n:       false
-    packaging:  false
-    service:    false
-    announce:   false
+  house_rules: ""                                 # Org governance overlay (from config/). -> {{HOUSE_RULES}}
+  capabilities:                                   # Optional generated features (toggle the #IF_* blocks).
+    bench:      false                             # Benchmark templates + commands.
+    threading:  false                             # Threading-specific placeholders.
+    public_api: true                              # Public-API docs + placeholders.
+    i18n:       false                             # Enables the i18n block below.
+    packaging:  false                             # Packaging/distribution artifacts.
+    service:    false                             # Service-specific templates.
+    announce:   false                             # Enables the announce block below.
 
-i18n:                          # documentation translations (gated by capabilities.i18n)
-  default_lang: "en"           # canonical on-disk language          -> {{DOC_DEFAULT_LANG}}
-  targets: []                  # e.g. [{code: it, name: Italian}, {code: es, name: Spanish}]
-                               #                                      -> {{#EACH_DOC_LANG}}
+i18n:                          # Doc translations (used when capabilities.i18n).
+  default_lang: "en"           # Canonical on-disk language. -> {{DOC_DEFAULT_LANG}}
+  targets: []                  # e.g. [{code: it, name: Italian}, {code: es, name: Spanish}]. -> {{#EACH_DOC_LANG}}
 
-announce:                      # release/news announcements (gated by capabilities.announce)
-  channels: []                 # e.g. [{name: X, handle: "@d4np", mode: draft},
-                               #       {name: Discord, handle: "<webhook>", mode: draft}]
-                               #                                      -> {{#EACH_ANNOUNCE_CHANNEL}}
+announce:                      # Release/news announcements (used when capabilities.announce).
+  channels: []                 # e.g. [{name: X, handle: "@d4np", mode: draft}]. -> {{#EACH_ANNOUNCE_CHANNEL}}
 
-spec:                         # from Phase 5 of the interview
-  objective:        ""        # -> {{SPEC_OBJECTIVE}}
-  functional_reqs:  []        # -> {{#EACH_FUNCTIONAL_REQ}}
-  nonfunctional_reqs: []      # -> {{#EACH_NONFUNCTIONAL_REQ}}
-  architecture:     ""        # prose + diagram for the spec & first ADRs
-  public_api:       []        # -> {{#EACH_PUBLIC_API}}
-  verification:     ""        # -> {{SPEC_VERIFICATION}}
-  milestone1_items: []        # -> {{#EACH_MILESTONE1_ITEM}} (extra M1 items beyond bootstrap)
+spec:                         # Filled from Phase 5 of the intake interview.
+  objective:        ""        # Project objective. -> {{SPEC_OBJECTIVE}}
+  functional_reqs:  []        # Functional requirements. -> {{#EACH_FUNCTIONAL_REQ}}
+  nonfunctional_reqs: []      # Non-functional requirements. -> {{#EACH_NONFUNCTIONAL_REQ}}
+  architecture:     ""        # Architecture prose + diagram for the spec & first ADRs.
+  public_api:       []        # Public API (used when capabilities.public_api). -> {{#EACH_PUBLIC_API}}
+  verification:     ""        # Verification strategy. -> {{SPEC_VERIFICATION}}
+  milestone1_items: []        # Extra M1 items beyond the bootstrap. -> {{#EACH_MILESTONE1_ITEM}}
   # The full forward roadmap, defined UP FRONT (Milestone 1 = the universal bootstrap, automatic).
   # Each entry: {number, title, goal, items: ["<n>.<m> task", ...]}.        -> {{#EACH_MILESTONE}}
   milestones: []
