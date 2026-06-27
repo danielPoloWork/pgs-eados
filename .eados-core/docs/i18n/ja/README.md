@@ -190,6 +190,14 @@ curl -L -o /tmp/pgs-eados-bundle.tar.gz \
 tar xzf /tmp/pgs-eados-bundle.tar.gz   # .eados-core/、AGENTS.md … をカレントフォルダへ展開
 ```
 
+**Windows（PowerShell）** では —— `tar` は Windows 10+ に同梱されています：
+
+```powershell
+cd my-project
+Invoke-WebRequest -Uri https://github.com/danielPoloWork/pgs-eados/releases/latest/download/pgs-eados-bundle.tar.gz -OutFile $env:TEMP/pgs-eados-bundle.tar.gz
+tar -xzf $env:TEMP/pgs-eados-bundle.tar.gz   # .eados-core/、AGENTS.md … をカレントフォルダへ展開
+```
+
 これで `my-project/.eados-core/`（`AGENTS.md` の隣）ができているはずです。ZIP やブラウザがよいですか？
 [最新リリース](https://github.com/danielPoloWork/pgs-eados/releases/latest)からいずれかのアセットを
 ダウンロードし、**リポジトリのルート**で展開してください（中身は最上位 —— 外側のフォルダなし）。

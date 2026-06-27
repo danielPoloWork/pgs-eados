@@ -215,7 +215,7 @@ inline comments, and at most an optional tool hint). Each item is one PR, tracke
       install links for Claude Code / Gemini Antigravity / ChatGPT Codex, one line on what "open the
       folder" does (auto-loads `AGENTS.md`), and the explicit no-agent fallback to the deterministic
       path — so nobody stalls before starting.
-- [ ] 7.2 (#88) **Windows/PowerShell install & render variants** — a PowerShell equivalent beside
+- [x] 7.2 (#88) **Windows/PowerShell install & render variants** — a PowerShell equivalent beside
       every Unix snippet in README/USAGE (download, extract, render), using `$env:TEMP` not `/tmp`,
       so a Windows user reaches `<repo>/.eados-core/` without translation.
 - [ ] 7.3 (#90) **`project.yaml` documented field-by-field** — inline comments in the template and/or

@@ -82,6 +82,8 @@ python .eados-core/tools/render.py .eados-core/orchestrator/project.yaml --in-pl
 python tools/consistency_lint.py
 ```
 
+_On **Windows (PowerShell)**: replace `cp` with `Copy-Item .eados-core/orchestrator/project.yaml.template .eados-core/orchestrator/project.yaml`; the `python …` commands are identical (paths with `/` work in PowerShell)._
+
 ---
 
 ## 4. What is FIXED — strict, do not change
@@ -144,6 +146,14 @@ tar xzf /tmp/pgs-eados-bundle.tar.gz    # extracts .eados-core/, AGENTS.md, … 
 ls .eados-core                          # sanity: orchestrator/ templates/ tools/ …
 # ZIP alternative: unzip the .zip asset at the repo root (its contents at the top level).
 # GitHub CLI: gh release download --repo danielPoloWork/pgs-eados --pattern 'pgs-eados-bundle.*'
+```
+
+On **Windows (PowerShell)** — `tar` ships with Windows 10+:
+
+```powershell
+cd <your-repo>
+Invoke-WebRequest -Uri https://github.com/danielPoloWork/pgs-eados/releases/latest/download/pgs-eados-bundle.tar.gz -OutFile $env:TEMP/pgs-eados-bundle.tar.gz
+tar -xzf $env:TEMP/pgs-eados-bundle.tar.gz    # extracts .eados-core/, AGENTS.md, … into the CWD
 ```
 
 Then read [`.eados-core/README.md`](../README.md) and run the factory: open the repo with an AI

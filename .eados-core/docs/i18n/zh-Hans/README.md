@@ -178,6 +178,14 @@ curl -L -o /tmp/pgs-eados-bundle.tar.gz \
 tar xzf /tmp/pgs-eados-bundle.tar.gz   # 将 .eados-core/、AGENTS.md 等解压到当前目录
 ```
 
+在 **Windows（PowerShell）** 上 —— `tar` 随 Windows 10+ 一起提供：
+
+```powershell
+cd my-project
+Invoke-WebRequest -Uri https://github.com/danielPoloWork/pgs-eados/releases/latest/download/pgs-eados-bundle.tar.gz -OutFile $env:TEMP/pgs-eados-bundle.tar.gz
+tar -xzf $env:TEMP/pgs-eados-bundle.tar.gz   # 将 .eados-core/、AGENTS.md 等解压到当前目录
+```
+
 现在你应当得到 `my-project/.eados-core/`（与 `AGENTS.md` 并列）。想要 ZIP 或用浏览器？从
 [最新发布](https://github.com/danielPoloWork/pgs-eados/releases/latest)下载任一资产，并在**仓库根目录**
 解压（内容位于顶层 —— 无外层文件夹）。随后按 [Quickstart](#quickstart) 确认并生成：

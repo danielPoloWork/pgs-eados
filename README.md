@@ -186,6 +186,14 @@ curl -L -o /tmp/pgs-eados-bundle.tar.gz \
 tar xzf /tmp/pgs-eados-bundle.tar.gz   # extracts .eados-core/, AGENTS.md, … into the current folder
 ```
 
+On **Windows (PowerShell)** — `tar` ships with Windows 10+:
+
+```powershell
+cd my-project
+Invoke-WebRequest -Uri https://github.com/danielPoloWork/pgs-eados/releases/latest/download/pgs-eados-bundle.tar.gz -OutFile $env:TEMP/pgs-eados-bundle.tar.gz
+tar -xzf $env:TEMP/pgs-eados-bundle.tar.gz   # extracts .eados-core/, AGENTS.md, … into the current folder
+```
+
 You should now have `my-project/.eados-core/` (next to `AGENTS.md`). Prefer a ZIP or your browser?
 Download either asset from the [latest release](https://github.com/danielPoloWork/pgs-eados/releases/latest)
 and unzip it **at the repo root** (its contents at the top level — no wrapping folder). Then

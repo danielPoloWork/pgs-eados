@@ -11,6 +11,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M7 / 7.2 — Windows/PowerShell install & render variants (#88).** README's "Get it" and USAGE
+  §3/§6 now show a **PowerShell** equivalent beside each Unix snippet — download via
+  `Invoke-WebRequest`, extract with the Windows-bundled `tar`, `$env:TEMP` instead of `/tmp`, and
+  `Copy-Item` for the manifest copy — so a Windows user reaches `<repo>/.eados-core/` without
+  translating commands. The zh-Hans + ja READMEs get the PowerShell variant too (i18n-freshness
+  refreshed). Docs only — no behavior change.
 - **M7 / 7.1 — Prerequisites: getting an AI coding agent (#89).** README's "Getting started" gains a
   **Prerequisites — getting an AI coding agent** subsection: install links for Claude Code, Gemini
   Antigravity, and ChatGPT Codex, one line on what "open the folder" does (the agent auto-loads
