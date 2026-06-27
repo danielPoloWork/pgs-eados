@@ -30,6 +30,21 @@ The `reviewer` comments and the architect weighs cross-domain impact, but **only
    `required_section` and a well-formed approval by the `approver_role`. Only then is
    `design → plan` legal (the human still confirms the human-gated transition).
 
+## Scope — what `rfc_check` validates (and what it does not)
+
+`rfc_check.py` enforces the **generated-project** RFC protocol above: it expects an RFC that follows
+[`template.md`](template.md) — every `required_section` (Context, Decision, Alternatives,
+Consequences, Approval) present as a heading, plus a well-formed approval by the `approver_role`. It
+is a **structural** check: it confirms the record exists and is by the right role, **not** that the
+decision is sound (a human approves — `AGENTS.md` §6).
+
+A repository's **own meta-design RFCs are out of scope.** EADOS's
+[`docs/rfc/0001-eados-delivery-os.md`](../../../docs/rfc/0001-eados-delivery-os.md), for instance, is
+a richer design doc (Summary, the phase model, Alternatives rejected, Approval…) and deliberately
+lacks the literal `Decision`/`Consequences` headings — so running the gate against it **FAILs by
+design, not from a defect**. Point the gate at the project RFCs under a generated repo's `docs/rfc/`
+instead; the [`rfc_check.py`](../../../tools/rfc_check.py) header documents this same scope.
+
 ## Escalation
 
 A reviewer/approver disagreement follows the authority `escalation` ladder

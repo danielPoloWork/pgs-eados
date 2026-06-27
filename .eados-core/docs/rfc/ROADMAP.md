@@ -224,7 +224,7 @@ inline comments, and at most an optional tool hint). Each item is one PR, tracke
 - [x] 7.4 (#87) **End-to-end phase walkthrough** — a narrated `init → design → plan → scaffold →
       audit` run (the headline v2.0.0 feature) with the exact commands, expected output, the human
       gates, and how `delivery_state` evolves; reproducible from the doc alone.
-- [ ] 7.5 (#91) **Clarify `rfc_check` scope** — a doc note (+ optionally a clearer tool hint) that the
+- [x] 7.5 (#91) **Clarify `rfc_check` scope** — a doc note (+ optionally a clearer tool hint) that the
       gate targets generated-project RFCs following `os/rfc/template.md`; EADOS's own RFC-0001 is
       intentionally out of scope, so its FAIL isn't mistaken for a defect (no headings retrofitted).
 

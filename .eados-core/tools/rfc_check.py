@@ -6,6 +6,11 @@ heading) and a well-formed **Approval record** by the approver role. The approva
 *human* decision — this verifies the record exists and is by the right role, nothing more
 (`AGENTS.md` §6). Dependency-free (stdlib + the sibling renderer's YAML loader).
 
+Scope: this targets **generated-project** RFCs that follow `orchestrator/os/rfc/template.md`. A
+repo's own meta-design RFC (e.g. EADOS's `docs/rfc/0001-eados-delivery-os.md`) may use a richer
+structure and is intentionally out of scope — a FAIL there is by design, not a defect. See
+`orchestrator/os/rfc/review-protocol.md` §Scope.
+
     python .eados-core/tools/rfc_check.py <rfc.md>
 """
 

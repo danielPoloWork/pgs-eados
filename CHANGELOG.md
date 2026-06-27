@@ -11,6 +11,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M7 / 7.5 — `rfc_check` scope documented (#91).** A new **Scope** section in
+  [`orchestrator/os/rfc/review-protocol.md`](.eados-core/orchestrator/os/rfc/review-protocol.md)
+  (and the `rfc_check.py` header) states that the `rfc-approved` gate targets *generated-project*
+  RFCs following `os/rfc/template.md`; EADOS's own `docs/rfc/0001-eados-delivery-os.md` is a
+  meta-design RFC and intentionally out of scope, so its FAIL is by design — not a defect.
+  Docs/docstring only; no tool-behavior change (an M7 invariant).
 - **M7 / 7.4 — end-to-end phase walkthrough (#87).** New
   [`.eados-core/docs/walkthrough.md`](.eados-core/docs/walkthrough.md): a follow-along run of the
   whole pipeline (`init → design → plan → scaffold → audit → refactor`) against a tiny worked

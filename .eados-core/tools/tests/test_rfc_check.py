@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for rfc_check — a complete RFC passes the rfc-approved gate; a missing section, an absent
-approval, or a wrong approver each fail. Dependency-free (runnable in the self-lint job).
+approval, or a wrong approver each fail; a non-template (meta-design) RFC FAILs on the missing
+template sections (issue #91 — that FAIL is by design, not a defect). Dependency-free (runnable in
+the self-lint job).
 
     python .eados-core/tools/tests/test_rfc_check.py
 """
@@ -46,6 +48,14 @@ def main():
     wrong = GOOD.replace("approved-by: tech-lead", "approved-by: reviewer")
     check("a wrong approver fails",
           any("requires" in p for p in rc.check_rfc(wrong, proto)), failures)
+
+    # issue #91 — a repo's own meta-design RFC (not template-shaped) FAILs on the missing template
+    # sections. That FAIL is by design, not a defect; the scope is documented in review-protocol.md
+    # §Scope and the rfc_check docstring (no tool-behavior change — an M7 invariant).
+    meta = ("# RFC-0001: meta-design\n## Summary\nx.\n"
+            "## Approval\napproved-by: tech-lead (2026-06-27)\n")
+    check("a non-template (meta-design) RFC fails on missing sections",
+          any(p.startswith("missing required section") for p in rc.check_rfc(meta, proto)), failures)
 
     # the protocol references only declared authority roles / a real workflow gate (sanity)
     check("approver_role is set", bool(proto.get("approver_role")), failures)
