@@ -11,6 +11,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M8 / 8.4 — `/eados review <PR#>` command surface.** New
+  [`orchestrator/commands/review.md`](.eados-core/orchestrator/commands/review.md) + a
+  `commands/README.md` row: runs `pr_review.py`, deepens with the `security-auditor` + `reviewer` on
+  an owned-path touch or a REQUIRED risk score, **drafts** the review comment + `review:<disposition>`
+  label via `gh`, and recommends a disposition. Cross-cutting like `/eados status` (not a phase
+  transition). Drafts only — the human requests-changes / approves / merges / closes; a non-owner's
+  commits are never merged (adopt via `re-implement-in-house`).
+
 - **M8 / 8.3 — `tools/pr_review.py`, the inbound-PR evaluator.** Runs the `contribution-reviewer`
   procedure as a tool: classifies the author's trust tier, runs the contribution-policy
   `required_checks`, composes the **authority** (owned-path escalation) and **risk** (security/size/

@@ -278,7 +278,7 @@ the contributor. Provenance stays 100% in-house. It is encoded as data the gates
       compose `authority_check.py` (owned-path escalation) + `risk_score.py` (security / size /
       blast) → emit a structured **review report + recommended disposition**. Pure parser + a thin
       `gh` shell, fixture-tested.
-- [ ] 8.4 **`/eados review <PR#>` command surface** — `commands/review.md` + a `commands/README.md`
+- [x] 8.4 **`/eados review <PR#>` command surface** — `commands/review.md` + a `commands/README.md`
       row: run `pr_review.py` → on an owned-path touch or a REQUIRED risk score, invoke the
       `security-auditor` + `reviewer` → **draft** the review comment + labels via `gh` → recommend a
       disposition. Cross-cutting like `/eados status` (not a phase transition). Boundary: drafts only;
