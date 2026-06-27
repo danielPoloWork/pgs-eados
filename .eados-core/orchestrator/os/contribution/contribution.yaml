@@ -1,0 +1,55 @@
+# EADOS inbound-contribution policy — reference instance. Schema: ./_schema.md.
+# Encodes the maintainer's external-PR practice — verify the change (not the person), honor a good
+# idea via co-author + an in-house re-implementation, the human posts the close (the #94 episode) —
+# as data the gates validate. The evaluator is ../../../tools/pr_review.py (M8 8.3); the reviewer
+# persona is ../../agent/contribution-reviewer.md (M8 8.2). Roles are ids from ../authority/authority.yaml.
+version: 1
+
+# Where "owned" comes from: authorship at/above `collaborator` is trusted; everyone else is an
+# external fork. CODEOWNERS is authoritative; the manifest's owner is the fallback.
+owner_identity:
+  source: CODEOWNERS                  # .github/CODEOWNERS — authoritative for owned paths
+  manifest_fallback: ownership.owner  # project.yaml `ownership.owner` when CODEOWNERS is absent
+
+# Trust tiers, least -> most scrutiny. Scrutiny attaches to the diff + provenance, NEVER to who
+# opened it (the #94 principle). `external-fork` (unknown / first-time, from a fork) gets the most.
+trust_tiers:
+  - id: owner
+    scrutiny: standard
+  - id: collaborator
+    scrutiny: standard
+  - id: external-fork
+    scrutiny: high
+
+# Every inbound PR is evaluated against these before a disposition is recommended.
+required_checks:
+  - ci-green                # the factory CI (self-lint + render-smoke) is green
+  - provenance-clear        # author + fork status known; no unexpected co-authors
+  - no-added-secrets        # no added secrets/tokens; no new workflow secret exposure
+  - scope-matches-intent    # the diff matches the linked issue / stated intent
+  - gate-coverage-holds     # touched files stay gated — no new ungated class (the M-hardening invariant)
+
+# What the reviewer may RECOMMEND — drafts only; the human disposes (git.yaml `pr.merged_by: human`).
+dispositions:
+  - id: approve-with-nits
+    label: "review:approve-with-nits"
+  - id: request-changes
+    label: "review:request-changes"
+  - id: needs-maintainer
+    label: "review:needs-maintainer"
+  - id: re-implement-in-house     # good idea — adopt via co-author + our own PR (the B2 path)
+    label: "review:re-implement-in-house"
+  - id: close-with-thanks         # redundant / out of scope — thank + close (the human posts it)
+    label: "review:close-with-thanks"
+
+# The load-bearing rule: an external-fork PR that touches an owned path is NEVER auto-disposed —
+# it is routed to the human decider for maintainer review.
+escalation:
+  on: external-fork-touches-owned-path
+  decider: human-owner            # the terminal decider (AGENTS.md §6); matches authority escalation
+  disposition: needs-maintainer   # must be one of `dispositions` above
+
+# The boundary, restated as data: the reviewer reports + recommends; the human acts.
+boundary:
+  recommends_only: true           # drafts a report + a disposition; never approves / merges
+  closes_by: human                # closing an external PR is the human's outward-facing act
