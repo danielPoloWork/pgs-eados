@@ -11,6 +11,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.0.0**.
 
 ### Added
 
+- **CI — Dependabot pin-sync now auto-re-triggers via a GitHub App (ADR-0013 addendum).** The
+  `dependabot-pin-sync` workflow mints a short-lived App token (`actions/create-github-app-token`,
+  SHA-pinned) when `SYNC_APP_ID` + `SYNC_APP_PRIVATE_KEY` are set and pushes the pin re-sync with it,
+  so CI re-triggers and the failed `action-pins` check goes **green by itself**; absent the App
+  secrets it falls back to `GITHUB_TOKEN` (the fix still lands, check re-runs on the next event). The
+  setup guide is rewritten App-first; `DEPENDABOT_SYNC_TOKEN` is now the swap-in PAT fallback, not the
+  default. Factory-only; no pipeline behavior change.
 - **M6 / 6.1 — end-to-end phase-flow smoke (G4, #65).** A new `tools/tests/test_phase_smoke.py`
   threads one coherent fixture project (manifest + RFC + ROADMAP + links) through `design → plan →
   audit` by invoking the real phase tool CLIs (`rfc_check`, `traceability`, `risk_score`,

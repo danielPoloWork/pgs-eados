@@ -31,6 +31,11 @@ jobs:
     name: sync template action pins (dependabot)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # When the GitHub App is configured (SYNC_APP_ID set) the push uses a short-lived App token whose
+    # push re-triggers CI (green-by-itself); otherwise it falls back to GITHUB_TOKEN. A job-level env
+    # may read `secrets`; a step-level `if` may not — hence this mapping.
+    env:
+      HAS_APP: ${{ secrets.SYNC_APP_ID != '' }}
     # Genuine Dependabot PRs only, in-repo (not a fork), and only when CI failed (the action-pins
     # gate is the expected failure to remediate; a no-drift run pushes nothing anyway).
     if: >
@@ -39,16 +44,23 @@ jobs:
       github.event.workflow_run.actor.login == 'dependabot[bot]' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     steps:
+      - name: Mint a short-lived GitHub App token (when the App is configured)
+        id: app-token
+        if: env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.SYNC_APP_ID }}
+          private-key: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
       - name: Check out the Dependabot PR branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
-          # A push by the default GITHUB_TOKEN does NOT re-trigger CI (GitHub's recursion guard), so
-          # the fix lands on the PR but its checks re-run on the next event / a manual re-run. To get
-          # the check to go green by itself, add a repo PAT or GitHub App token as the
-          # DEPENDABOT_SYNC_TOKEN secret — this workflow uses it when present, else GITHUB_TOKEN.
-          token: ${{ secrets.DEPENDABOT_SYNC_TOKEN || github.token }}
+          # The App-token push re-triggers CI -> the check goes green by itself. Without the App
+          # secrets this falls back to GITHUB_TOKEN: the fix still lands, but a GITHUB_TOKEN push does
+          # NOT re-trigger CI (GitHub's recursion guard), so the check re-runs on the next event /
+          # manual re-run. See ADR-0013 + maintenance/dependabot-sync-token.md.
+          token: ${{ steps.app-token.outputs.token || github.token }}
       - name: Sync the workflow templates' action pins to the factory CI
         run: python3 .eados-core/tools/sync_action_pins.py --fix
       - name: Commit and push the sync (only if the templates drifted)

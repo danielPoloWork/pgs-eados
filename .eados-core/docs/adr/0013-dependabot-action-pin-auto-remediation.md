@@ -37,12 +37,14 @@ Add `.github/workflows/dependabot-pin-sync.yml`, triggered by **`workflow_run`**
    (which only copies a SHA the factory CI already trusts — it never resolves a tag itself), and
    pushes the result back **only if the templates drifted**.
 
-Token: `GITHUB_TOKEN` by default. A push by `GITHUB_TOKEN` does **not** re-trigger CI (GitHub's
-recursion guard), so the fix lands but the failed check refreshes on the next event or a manual
-re-run. An **optional** `DEPENDABOT_SYNC_TOKEN` secret (a repo-scoped PAT or GitHub App token) makes
-the pushed commit re-trigger CI so the check goes green with no human action; the workflow uses it
-when present, else `GITHUB_TOKEN`. Provisioning that token is the owner's choice and is not required
-for the fix itself to land.
+Token: a **GitHub App** when configured, else `GITHUB_TOKEN`. When the repo secrets `SYNC_APP_ID` +
+`SYNC_APP_PRIVATE_KEY` are present, the job mints a short-lived installation token
+(`actions/create-github-app-token`) and pushes with it — an App-token push **does** re-trigger CI, so
+the failed check goes green with no human action. With the secrets absent it falls back to
+`GITHUB_TOKEN`: the fix still lands, but a `GITHUB_TOKEN` push does **not** re-trigger CI (GitHub's
+recursion guard), so the check refreshes on the next event or a manual re-run. The App is the owner's
+choice — not required for the fix to land. (A repo-scoped PAT works too by swapping the token source;
+the App is preferred — not person-bound, and its tokens are short-lived.)
 
 ## Consequences
 
@@ -56,11 +58,19 @@ for the fix itself to land.
   Dependabot branch — which shows as *their* actor) out of the privileged job.
 - **Factory-only.** Generated repos render no `.tmpl` files, so they have no template drift and do
   not need this workflow; it lives in the factory's own `.github/workflows/`, not in the templates.
-- The default (`GITHUB_TOKEN`) path lands the fix but leaves the stale check until re-run; full
-  green-by-itself is opt-in via the documented secret ([setup guide](../../maintenance/dependabot-sync-token.md)).
-  This is the deliberate trade for requiring no
-  mandatory credential setup.
+- With the App configured, the check goes **green by itself**; without it the `GITHUB_TOKEN` fallback
+  still lands the fix but leaves the stale check until re-run. Full green-by-itself is opt-in via the
+  App secrets ([setup guide](../../maintenance/dependabot-sync-token.md)) — no mandatory credential setup.
 
 This supersedes the "tracked separately, its own reviewed PR" note in ADR-0009's 2026-06-27
 addendum: the auto-remediation shipped together with the tool. See
 [`maintenance/stay-current.md`](../../maintenance/stay-current.md) for the resulting maintainer flow.
+
+## Addendum (2026-06-27)
+
+The optional re-trigger token is wired as a **GitHub App** (owner-configured), preferred over a PAT —
+not person-bound, and its installation tokens are short-lived. The shipped workflow mints one via
+`actions/create-github-app-token` (SHA-pinned per ADR-0009) when `SYNC_APP_ID` + `SYNC_APP_PRIVATE_KEY`
+are set, and otherwise falls back to `GITHUB_TOKEN` (the fix still lands; the check re-runs on the next
+event). A PAT remains a swap-in alternative. Setup:
+[`maintenance/dependabot-sync-token.md`](../../maintenance/dependabot-sync-token.md).
