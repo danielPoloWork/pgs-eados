@@ -728,7 +728,7 @@ GATE_COVERAGE = [
     (".eados-core/docs/i18n/**",                          "i18n-freshness"),
     ("README.md",                                         "version-lockstep + i18n-freshness"),
     ("CHANGELOG.md",                                      "version-lockstep"),
-    (".github/workflows/*.yml",                           "action-pins"),
+    (".github/workflows/*.yml",                           "action-pins + workflow-safety"),
 ]
 # Intentionally NOT machine-validated — prose/config under human review. Each needs a reason; this
 # is the conscious record of "we looked and chose not to gate this", not a blind skip.
@@ -823,6 +823,79 @@ def _tracked_files():
     return [line.strip() for line in out.stdout.splitlines() if line.strip()]
 
 
+# ---------------------------------------------------------------------------
+# 16. Workflow safety — the external-contributor *security* surface. A workflow triggered by
+#     `pull_request_target` or `workflow_run` runs with the base repo's secrets + write token on a
+#     partially-untrusted event; combined with checking out PR-authored code it is the classic
+#     secret-exfiltration / self-merge vector. Such triggers are forbidden — in this repo's own
+#     workflows AND in the workflow templates shipped to every generated repo (a bad trigger there
+#     has the widest blast radius) — unless a workflow is allow-listed with a justification.
+#     Complements `action-pins` (which pins action SHAs); this guards the trigger surface.
+# ---------------------------------------------------------------------------
+SENSITIVE_TRIGGERS = ("pull_request_target", "workflow_run")
+WORKFLOW_SAFETY_ALLOWLIST = {
+    "dependabot-pin-sync.yml":
+        "ADR-0013 — workflow_run runs the trusted default-branch workflow definition (never PR "
+        "code), gated to actor==dependabot[bot] + same-repo (no forks), and executes only the "
+        "repo's deterministic sync_action_pins.py.",
+}
+_TRIGGER_KEY_RE = re.compile(r"(?m)^\s{0,6}(pull_request_target|workflow_run)\s*:")
+_ON_INLINE_RE = re.compile(r"(?m)^on\s*:\s*[\[{](.+)[\]}]\s*$")
+
+
+def workflow_safety_problems(items, allowlist=WORKFLOW_SAFETY_ALLOWLIST):
+    """items: (name, text) for each workflow (this repo's *.yml + the rendered *.tmpl). Flags any
+    that uses a sensitive trigger unless allow-listed. `name` is the basename so a workflow and its
+    template share one allow-list key. Pure (allow-list injectable) so the contract is testable."""
+    problems = []
+    for name, text in items:
+        triggers = set(_TRIGGER_KEY_RE.findall(text))
+        inline = _ON_INLINE_RE.search(text)
+        if inline:
+            triggers.update(t for t in SENSITIVE_TRIGGERS
+                            if re.search(r"\b" + t + r"\b", inline.group(1)))
+        if triggers and name not in allowlist:
+            problems.append(f"{name}: uses sensitive trigger(s) {sorted(triggers)} that run with "
+                            f"repository secrets on a partially-untrusted event — review and add to "
+                            f"WORKFLOW_SAFETY_ALLOWLIST with a justification, or use pull_request/push")
+    return problems
+
+
+def _workflow_items():
+    """(basename, text) for this repo's workflows + the rendered workflow templates. A template's
+    trailing '.tmpl' is dropped so it shares an allow-list key with its rendered form."""
+    items = []
+    for root in (os.path.join(REPO_ROOT, ".github", "workflows"),
+                 os.path.join(ROOT, "templates", ".github", "workflows")):
+        if not os.path.isdir(root):
+            continue
+        for fn in sorted(os.listdir(root)):
+            if fn.endswith((".yml", ".yaml", ".tmpl")):
+                base = fn[:-5] if fn.endswith(".tmpl") else fn
+                items.append((base, read(os.path.join(root, fn))))
+    return items
+
+
+def check_workflow_safety():
+    name = "workflow-safety"
+    items = _workflow_items()
+    if not items:
+        return  # a partial checkout without workflows
+    for problem in workflow_safety_problems(items):
+        fail(name, problem)
+    # hygiene: an allow-list entry for a workflow that is gone, or no longer uses a sensitive
+    # trigger, is stale — surface it so the allow-list stays honest.
+    by_name = {}
+    for n, text in items:
+        by_name.setdefault(n, text)
+    for fname in WORKFLOW_SAFETY_ALLOWLIST:
+        if fname not in by_name:
+            fail(name, f"workflow-safety allow-list names a missing workflow: '{fname}'")
+        elif not workflow_safety_problems([(fname, by_name[fname])], allowlist={}):
+            fail(name, f"workflow-safety allow-list entry no longer needed (no sensitive trigger): "
+                       f"'{fname}'")
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -839,6 +912,7 @@ CHECKS = [
     check_manifest_template,
     check_data_files,
     check_gate_coverage,
+    check_workflow_safety,
 ]
 
 

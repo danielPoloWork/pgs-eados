@@ -11,6 +11,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **Hardening — workflow-safety gate (contributor security surface).** New self-lint check
+  (`eados_lint.py` #16): the sensitive CI triggers `pull_request_target` and `workflow_run` — which
+  run with repository secrets on partially-untrusted events (the classic secret-exfiltration / self-
+  merge vector) — are forbidden unless a workflow is allow-listed with a justification, both in this
+  repo's `.github/workflows/` **and** in the workflow templates shipped to every generated repo
+  (widest blast radius). The one legitimate `workflow_run` (`dependabot-pin-sync.yml`, ADR-0013) is
+  allow-listed. Complements `action-pins` (SHA pinning) by guarding the trigger surface.
+  `tests/test_workflow_safety.py` + CI registration.
 - **Hardening — gate-coverage meta-gate + a data-file floor (contributor safety).** Two new
   self-lint checks make it structurally impossible for a factory file to ship ungated — the class of
   gap the #90/#94 episode exposed. **`data-file-validity`** (`eados_lint.py` #14) parses every
