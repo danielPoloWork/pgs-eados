@@ -35,7 +35,8 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 答案是：把 **Enterprise Project Architect** 智能体指向 EADOS，运行**接入访谈**，让它生成新仓库。
 
 > **初次接触？** 阅读 [`.eados-core/docs/USAGE.md`](../../../../.eados-core/docs/USAGE.md) ——
-> EADOS 能做什么、如何运作、哪些是固定的、哪些可由你定制的完整地图。
+> EADOS 能做什么、如何运作、哪些是固定的、哪些可由你定制的完整地图。想*看*流程实际运行？
+> 请跟随[逐阶段演练](../../walkthrough.md)。
 
 ---
 

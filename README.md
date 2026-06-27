@@ -37,7 +37,8 @@ The answer: point the **Enterprise Project Architect** agent at EADOS, run the
 **intake interview**, and let it generate the new repository.
 
 > **New here?** Read [`.eados-core/docs/USAGE.md`](.eados-core/docs/USAGE.md) — the full map of
-> what EADOS can do, how it works, and what is fixed vs. what you can customize.
+> what EADOS can do, how it works, and what is fixed vs. what you can customize. Want to *see* the
+> pipeline run? Follow the [phase-by-phase walkthrough](.eados-core/docs/walkthrough.md).
 
 ---
 

@@ -84,6 +84,10 @@ python tools/consistency_lint.py
 
 _On **Windows (PowerShell)**: replace `cp` with `Copy-Item .eados-core/orchestrator/project.yaml.template .eados-core/orchestrator/project.yaml`; the `python …` commands are identical (paths with `/` work in PowerShell)._
 
+_New to the phases? Walk the whole pipeline once against a tiny worked example —
+the [phase-by-phase walkthrough](walkthrough.md) runs every command (`init → audit`) and shows the
+human gate at each step._
+
 ---
 
 ## 4. What is FIXED — strict, do not change

@@ -11,6 +11,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.1.0**.
 
 ### Added
 
+- **M7 / 7.4 — end-to-end phase walkthrough (#87).** New
+  [`.eados-core/docs/walkthrough.md`](.eados-core/docs/walkthrough.md): a follow-along run of the
+  whole pipeline (`init → design → plan → scaffold → audit → refactor`) against a tiny worked
+  example — every command shown actually runs, with the real console output, the human gate at each
+  step, and how `delivery_state.phase` evolves. Linked from the README "New here?" note (with the
+  i18n translations refreshed) and from USAGE §3.
 - **M7 / 7.2 — Windows/PowerShell install & render variants (#88).** README's "Get it" and USAGE
   §3/§6 now show a **PowerShell** equivalent beside each Unix snippet — download via
   `Invoke-WebRequest`, extract with the Windows-bundled `tar`, `$env:TEMP` instead of `/tmp`, and

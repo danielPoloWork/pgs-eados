@@ -221,7 +221,7 @@ inline comments, and at most an optional tool hint). Each item is one PR, tracke
 - [ ] 7.3 (#90) **`project.yaml` documented field-by-field** — inline comments in the template and/or
       a required-fields table (field → meaning → required? → source → placeholder), so a manifest can
       be hand-filled without reverse-engineering `reference.yaml`; `render.py` succeeds on it.
-- [ ] 7.4 (#87) **End-to-end phase walkthrough** — a narrated `init → design → plan → scaffold →
+- [x] 7.4 (#87) **End-to-end phase walkthrough** — a narrated `init → design → plan → scaffold →
       audit` run (the headline v2.0.0 feature) with the exact commands, expected output, the human
       gates, and how `delivery_state` evolves; reproducible from the doc alone.
 - [ ] 7.5 (#91) **Clarify `rfc_check` scope** — a doc note (+ optionally a clearer tool hint) that the
