@@ -11,57 +11,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.2.0**.
 
 ### Added
 
-- **M9 / 9.4 — release publishes integrity + the installers.** The `release-bundle` workflow
-  ([`.github/workflows/release.yml`](.github/workflows/release.yml)) now also attaches a **`SHA256SUMS`**
-  over every asset (a `sha256sum` manifest — the guided installer's default, fail-closed integrity
-  source) and the **guided installer scripts themselves** (`install.sh`, `setup.sh`,
-  `install.command`, `install.ps1`, `install.bat`; export-ignored from the bundle since they *download*
-  it), so `releases/latest/download/install.{sh,ps1}` (and the others) are stable links. The installers
-  gained a **`--sums-file` / `-SumsFile`** seam to verify the bundle against a local `SHA256SUMS`
-  offline (air-gapped) — the natural completion of `--from`/`-From` — which also lets
-  `test_install_sh.py` / `test_install_ps1.py` prove the installer consumes the exact format the
-  release publishes (the producer↔consumer contract; the `*`-binary and 2-space text forms both parse).
-  The release-published `SHA256SUMS` + the one-step `install.{sh,ps1}` links land in the docs at 9.6.
-
-- **M9 / 9.3 — guided installer for Windows (PowerShell).** New
-  [`install/install.ps1`](install/install.ps1): the PowerShell-native equivalent of `install.sh` +
-  `setup.sh` in one script — scriptable via parameters (`-Mode`/`-Path`/`-RepoName`/`-Ref`/`-From`/
-  `-Sha256`/`-NoVerify`/`-PrintPlan`) and **interactive when run bare** (double-click). Same
-  **fail-closed SHA256** verification and **additive no-clobber** extraction as the POSIX engine (it
-  adds no new install logic), using `tar.exe` (Windows 10 1803+) for the `.tar.gz`; on a **new** repo
-  it `git init`s and (when `gh` is present) offers `gh repo create`. A
-  [`install/install.bat`](install/install.bat) shim launches it via
-  `powershell -ExecutionPolicy Bypass -File` (a bare `.ps1` opens in an editor on double-click).
-  PowerShell **5.1/7-compatible** and **ASCII-only** (5.1 reads a no-BOM script as ANSI); gated by a
-  new `install/*.ps1` `gate-coverage` class + `test_install_ps1.py` (driven via `pwsh`, which ships on
-  the CI runner), with the trivial `.bat` shim allow-listed. Release-published `SHA256SUMS` +
-  installers (9.4) and the shellcheck/PSScriptAnalyzer static gate (9.5) follow.
-
-- **M9 / 9.2 — guided-installer interactive layer (POSIX).** New
-  [`install/setup.sh`](install/setup.sh): the Q&A wrapper around the 9.1 engine — it prompts for
-  new-vs-existing repo, the path, and (for new) the repo name, shows the resolved plan, **confirms
-  before writing**, then runs `install.sh` to download / verify / place the bundle. On a **new** repo
-  it `git init`s the target and (when `gh` is present) offers `gh repo create`. It adds **no new
-  install logic** — provenance, SHA256 verification, and the additive no-clobber guarantee stay in
-  `install.sh`. A double-clickable macOS [`install/install.command`](install/install.command) shim
-  delegates to it. `--dry-run`, `--no-gh`, and a `--` passthrough (to `install.sh`) keep it
-  scriptable and testable; gated by a new `install/*.command` `gate-coverage` class +
-  `test_setup_sh.py` (new/existing routing, the required-name re-prompt, the confirm/abort gate, and
-  an offline end-to-end via `--from`). The PowerShell equivalent (9.3) follows.
-
-- **M9 / 9.1 — guided-installer core (POSIX).** New [`install/install.sh`](install/install.sh): a
-  non-interactive engine that downloads the release bundle (`pgs-eados-bundle.tar.gz`), **verifies its
-  SHA256** (fail-closed — it refuses to extract an unverified bundle unless `--no-verify`), and
-  extracts it **additively** at a target repo root (refuses to overwrite any existing file — the
-  [ADR-0007](.eados-core/docs/adr/0007-renderer-write-guards-and-validation-independence.md)
-  no-clobber principle). Scripting flags `--path` / `--repo-name` / `--mode new|existing` / `--ref`,
-  plus a pure `--print-plan` (resolve the URL + target without touching the network or disk) and a
-  `--from <file>` local-bundle seam — so the core is testable and degrades cleanly offline (the
-  `derive_links.py` pattern). Gated by a new `install/*.sh` `gate-coverage` class + a
-  `test_install_sh.py` smoke (wired into CI); the installer is `export-ignore`d from the factory
-  bundle (it downloads it). The interactive wrapper + macOS `.command` (9.2), the PowerShell
-  equivalent (9.3), release-published `SHA256SUMS` + installers (9.4), and the shellcheck static gate
-  (9.5) follow. Re-implements and elevates @AlexMnrs's closed PR #96 (credited at the M9 capstone).
+- **M9 — guided cross-platform installer.** A newcomer installs EADOS into a repo by running a
+  script and answering a few prompts, instead of hand-copying the USAGE §6 `curl`/`tar` snippets.
+  Lives in a top-level **`setup/`** (outside `.eados-core/`, because it *delivers* it; `export-ignore`d
+  from the bundle), one consistently-named script per platform:
+  - [`setup/setup.sh`](setup/setup.sh) (POSIX) + a double-clickable macOS
+    [`setup/setup.command`](setup/setup.command), and [`setup/setup.ps1`](setup/setup.ps1) (Windows
+    PowerShell, 5.1/7-compatible, ASCII-only) + a [`setup/setup.bat`](setup/setup.bat) double-click
+    shim. Each script is **scriptable via flags** (`--mode`/`--path`/`--repo-name`/`--ref`/`--from`/
+    `--sha256`/`--sums-file`/…) **and interactive when run bare** (prompts for new-vs-existing repo,
+    path, and name; shows the plan; confirms before writing).
+  - It **downloads** the release bundle, **verifies its SHA256 fail-closed** (refuses to extract an
+    unverified bundle unless `--no-verify`; checksum from the release `SHA256SUMS`, a `--sha256` pin,
+    or a local `--sums-file`), and **extracts it additively** — refusing to overwrite any existing
+    file (the [ADR-0007](.eados-core/docs/adr/0007-renderer-write-guards-and-validation-independence.md)
+    no-clobber principle). On a **new** repo it `git init`s the target and (when `gh` is present)
+    offers `gh repo create`.
+  - The **release** ([`.github/workflows/release.yml`](.github/workflows/release.yml)) now attaches a
+    **`SHA256SUMS`** over every asset (the installer's default integrity source) and the `setup.*`
+    scripts themselves, so `releases/latest/download/setup.{sh,ps1}` (and `setup.command` /
+    `setup.bat`) are stable links.
+  - Gated by `setup/*` `gate-coverage` classes + `test_setup_sh.py` / `test_setup_ps1.py` (plan
+    resolution, arg validation, fail-closed checksum incl. the published `SHA256SUMS` format,
+    additive no-clobber, and the interactive new/existing flow — all offline via `--from`; the trivial
+    `.bat` shim is allow-listed). The shellcheck/PSScriptAnalyzer static gate (9.5) and the docs +
+    **@AlexMnrs** credit (9.6 — this re-implements and elevates their closed PR #96) follow.
 
 - **Carry-through release default.** The release boundary is now explicit policy: the agent always
   takes a release up to a **draft** — it creates + pushes the annotated tag and opens the GitHub

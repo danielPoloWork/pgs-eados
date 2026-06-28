@@ -29,7 +29,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M7 — onboarding & docs** | ✅ **done** — items 7.1–7.5 (#97–#101) |
 | **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 | **v2.2.0 release** | ✅ published 2026-06-28 — M7 onboarding + contributor-safety hardening + M8 inbound review (bundles attached; Latest) |
-| **M9 — guided installer** | 🚧 in progress — 9.1–9.4 done (installers + release integrity); 9.5–9.6 next |
+| **M9 — guided installer** | 🚧 in progress — 9.1–9.4 + 9.7 done (`setup/` installers + release integrity); 9.5–9.6 next |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -306,9 +306,10 @@ agent merge) is preserved; self-lint (incl. the gate-coverage trilogy) + render-
 ## Milestone 9 — guided cross-platform installer (onboarding)
 
 **Goal.** Let a newcomer **install EADOS into a repo by running a script and answering a few prompts**
-— no copy-pasting the USAGE §6 `curl`/`tar` snippets. A guided, cross-platform installer (Linux/macOS
-`install.sh` + a double-clickable macOS `.command`, and a Windows `install.ps1` with a `.bat` shim)
-downloads the latest release bundle and places it at a target repo root. **Scope:** "install" = the
+— no copy-pasting the USAGE §6 `curl`/`tar` snippets. A guided, cross-platform installer under
+**`setup/`** (Linux/macOS `setup.sh` + a double-clickable macOS `setup.command`, and a Windows
+`setup.ps1` with a `setup.bat` shim) downloads the latest release bundle and places it at a target
+repo root. **Scope:** "install" = the
 **bundle download + placement only** (the consumer step of USAGE §6) — *not* the agentic-OS init
 (interview/generate). The interactivity is about *where* to install: **new repo vs existing repo**, and
 always the **path + repo name**. Each item is one PR, tracked under the `M9 — guided installer`
@@ -318,41 +319,53 @@ This milestone **re-implements and elevates @AlexMnrs's PR #96** ("Add Windows P
 examples", opened then closed by the author) — the `contribution-reviewer`'s `re-implement-in-house`
 path made real: we build it our way and **co-author @AlexMnrs** (credited in the CHANGELOG).
 
-- [x] 9.1 **Installer core (POSIX) — `install.sh`** — a non-interactive engine: download
-      `pgs-eados-bundle.tar.gz` from the latest release, **verify its SHA256** (fail-closed — refuses
-      to extract an unverified bundle unless `--no-verify`), and extract it **additively** at a target
-      repo root (refuse to clobber an existing file). Scripting flags (`--path`, `--repo-name`,
-      `--mode new|existing`, `--ref`), plus a pure `--print-plan` (resolve without touching the
-      network or disk) and a `--from <file>` local-bundle seam — a pure, testable core that degrades
-      cleanly offline (the `derive_links.py` pattern). Gated by a new `install/*.sh` `gate-coverage`
-      class + the `test_install_sh.py` smoke (CI).
-- [x] 9.2 **Interactive layer (POSIX)** — the Q&A wrapper around 9.1: prompt for new-vs-existing repo,
-      path, and repo name; on **new** run `git init` at `<path>/<name>` (offer `gh repo create` when
-      `gh` is present); confirm before writing; clear success / next-steps output (point at `AGENTS.md`
-      / the deterministic path). A double-clickable macOS `.command` entry. Shipped as
-      [`install/setup.sh`](../../../install/setup.sh) (it drives `install.sh`, adding no new install
-      logic) + the [`install/install.command`](../../../install/install.command) double-click shim;
-      a `--dry-run` + a `--` passthrough keep it scriptable/testable, gated by `test_setup_sh.py`.
-- [x] 9.3 **PowerShell installer — `install.ps1`** (+ a `.bat`/`.cmd` shim for true double-click) — the
-      Windows-native equivalent: same prompts + checksum verify + additive extract, mirroring 9.1/9.2
-      (the 7.2 PowerShell-parity principle). Shipped as [`install/install.ps1`](../../../install/install.ps1)
-      (one script: scriptable via params, interactive when bare; PS 5.1/7-compatible, ASCII-only, uses
-      `tar.exe`) + the [`install/install.bat`](../../../install/install.bat) double-click shim
+  > **Layout note (9.7).** Items 9.1–9.4 were first built under `install/` with an `install.sh`
+  > engine + `setup.sh` wrapper; **9.7 relocated + unified them** to `setup/setup.{sh,command,ps1,bat}`
+  > (the POSIX engine + wrapper merged into the single combined `setup/setup.sh`, mirroring
+  > `setup.ps1`). The descriptions below name the final files.
+
+- [x] 9.1 **Installer core (POSIX)** — the download → **verify SHA256** (fail-closed — refuses to
+      extract an unverified bundle unless `--no-verify`) → **additive** extract (refuse to clobber an
+      existing file) engine, with scripting flags (`--path`, `--repo-name`, `--mode new|existing`,
+      `--ref`), a pure `--print-plan` (resolve without touching the network or disk), and a
+      `--from <file>` local-bundle seam — testable, degrades cleanly offline (the `derive_links.py`
+      pattern). Now part of the combined [`setup/setup.sh`](../../../setup/setup.sh); gated by the
+      `setup/*.sh` `gate-coverage` class + the `test_setup_sh.py` smoke (CI).
+- [x] 9.2 **Interactive layer (POSIX)** — when run bare (or `--interactive`): prompt for
+      new-vs-existing repo, path, and repo name; on **new** run `git init` at `<path>/<name>` (offer
+      `gh repo create` when `gh` is present); confirm before writing; clear success / next-steps output
+      (point at `AGENTS.md` / the deterministic path). In the combined
+      [`setup/setup.sh`](../../../setup/setup.sh) + the double-clickable macOS
+      [`setup/setup.command`](../../../setup/setup.command) shim; `--dry-run` keeps it testable, gated by
+      `test_setup_sh.py`.
+- [x] 9.3 **PowerShell installer — `setup.ps1`** (+ a `setup.bat` shim for true double-click) — the
+      Windows-native equivalent: same prompts + checksum verify + additive extract (the 7.2
+      PowerShell-parity principle). [`setup/setup.ps1`](../../../setup/setup.ps1) is one script
+      (scriptable via params, interactive when bare; PS 5.1/7-compatible, ASCII-only, uses `tar.exe`) +
+      the [`setup/setup.bat`](../../../setup/setup.bat) double-click shim
       (`powershell -ExecutionPolicy Bypass -File`). Same fail-closed SHA256 + additive no-clobber as the
-      POSIX engine; gated by `test_install_ps1.py` (driven via `pwsh`).
+      POSIX script; gated by `test_setup_ps1.py` (driven via `pwsh`).
 - [x] 9.4 **Release publishes integrity + the installers** — `release.yml` attaches `SHA256SUMS` and
       the install scripts as assets, so the installer can verify the bundle and
-      `releases/latest/download/install.{sh,ps1}` are stable links. The `release-bundle` workflow now
-      stages the installers + writes a `sha256sum` `SHA256SUMS` over every asset and uploads them all;
-      the installers gained a `--sums-file` / `-SumsFile` seam to verify against a local `SHA256SUMS`
-      (offline / air-gapped), which lets `test_install_{sh,ps1}.py` prove the published format is
-      consumed (the producer↔consumer contract).
+      `releases/latest/download/setup.{sh,ps1}` are stable links. The `release-bundle` workflow now
+      stages the `setup.*` scripts + writes a `sha256sum` `SHA256SUMS` over every asset and uploads them
+      all; the installers gained a `--sums-file` / `-SumsFile` seam to verify against a local
+      `SHA256SUMS` (offline / air-gapped), which lets `test_setup_{sh,ps1}.py` prove the published
+      format is consumed (the producer↔consumer contract).
 - [ ] 9.5 **Gate the new script file-class** — a self-lint / CI check for the installers (shellcheck for
       `*.sh`, PSScriptAnalyzer or a parse check for `*.ps1`) + a smoke test of the core
       download / verify / extract logic, honoring the gate-EVERY-file-class mandate.
 - [ ] 9.6 **Docs + dogfood + credit** — README/USAGE "Get it" gains the one-step installer path beside
       the manual snippets; **credit @AlexMnrs** (co-author + CHANGELOG); RFC-0001, this roadmap, the
       affected specs, and the CHANGELOG kept in lockstep.
+- [x] 9.7 **Relocate + unify the installers under `setup/`** (owner-requested consistency pass) — move
+      the guided installer out of `install/` to a top-level **`setup/`** with consistent
+      **`setup.{sh,command,ps1,bat}`** naming, and **merge the POSIX engine + interactive wrapper into
+      one combined `setup/setup.sh`** (mirroring the already-combined `setup.ps1`). The installer stays
+      outside `.eados-core/` (it *delivers* it) and `export-ignore`d from the bundle. Updates
+      `release.yml`, `eados_lint` `gate-coverage`, `.gitattributes`, and the tests
+      (`test_setup_sh.py` / `test_setup_ps1.py`); no behavior change. Done **before 9.5/9.6** so they —
+      and the public `releases/latest/download/setup.{sh,ps1}` links — bake in the final names.
 
 **Acceptance gate.** A newcomer installs the bundle into a new or existing repo from prompts on Linux,
 macOS, and Windows; the SHA256 is verified and no existing file is clobbered; self-lint (incl. the new

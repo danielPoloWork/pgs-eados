@@ -39,11 +39,11 @@
 /.eados-core/docs/i18n   export-ignore
 # The guided installer (M9) downloads the bundle, so it is not part of it: published as
 # standalone release assets, not shipped inside the factory archive.
-/install                export-ignore
+/setup                  export-ignore
 
 # Installer line endings, pinned regardless of the committer's platform: LF for the POSIX shebang
-# scripts and for install.ps1 (pwsh reads LF fine on every OS); CRLF for the cmd .bat shim.
-install/*.sh            text eol=lf
-install/*.command       text eol=lf
-install/*.ps1           text eol=lf
-install/*.bat           text eol=crlf
+# scripts and for setup.ps1 (pwsh reads LF fine on every OS); CRLF for the cmd .bat shim.
+setup/*.sh              text eol=lf
+setup/*.command         text eol=lf
+setup/*.ps1             text eol=lf
+setup/*.bat             text eol=crlf

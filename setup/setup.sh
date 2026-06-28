@@ -1,27 +1,20 @@
 #!/bin/sh
-# install.sh — guided-installer CORE (POSIX): download the EADOS factory bundle and place it
-# additively at a target repo root.  Milestone 9 (guided installer), item 9.1.
+# setup.sh — guided EADOS installer (POSIX). Downloads the factory bundle, VERIFIES its SHA256
+# (fail-closed), and extracts it ADDITIVELY (refuses to overwrite any existing file — the ADR-0007
+# no-clobber principle) into a target repo root. Scriptable via flags; INTERACTIVE when run bare
+# (or --interactive), prompting for where to install. Double-clickable on macOS via setup.command.
 #
-# SCOPE.  "install" = bundle download + placement only (the consumer step of USAGE §6) — NOT the
-# agentic-OS init (interview / generate).  This is the NON-INTERACTIVE engine: the interactive Q&A
-# wrapper (new-vs-existing repo, git init) and the double-clickable macOS `.command` land in 9.2;
-# the PowerShell equivalent in 9.3.
-#
-# WHAT IT DOES.  Downloads `pgs-eados-bundle.tar.gz` from a GitHub release, VERIFIES its SHA256
-# (fail-closed — it refuses to extract an unverified bundle unless `--no-verify`), and extracts it
-# ADDITIVELY: it refuses to overwrite any existing file (the ADR-0007 no-clobber principle).  A
-# side-effect-free `--print-plan` (resolve the URL + target without touching the network or disk)
-# and a `--from <file>` local-bundle seam keep the core testable and let it degrade cleanly offline
-# (the derive_links.py pattern).
-#
-# Strict POSIX sh — no bashisms — so it runs under dash / ash / bash and the double-click wrappers.
+# SCOPE: "install" = bundle download + placement only (the consumer step of USAGE §6), not the
+# agentic-OS init. The installer lives OUTSIDE .eados-core/ because it *delivers* it, and is
+# export-ignored from the bundle. POSIX sh only (no bashisms); mirror of setup.ps1.
 
 set -eu
 
-PROG=install.sh
+PROG=setup.sh
 BUNDLE_NAME=pgs-eados-bundle.tar.gz
 SUMS_NAME=SHA256SUMS
 DEFAULT_REPO=danielPoloWork/pgs-eados
+CR=$(printf '\r')   # strip a trailing CR off answers so CRLF-piped input works everywhere
 
 # --- output helpers --------------------------------------------------------
 fail()    { _code=$1; shift; printf '%s: error: %s\n' "$PROG" "$*" >&2; exit "$_code"; }
@@ -29,22 +22,24 @@ die()     { fail 1 "$@"; }                # user / safety error
 offline() { fail 2 "$@"; }                # environmental: offline / asset unavailable
 warn()    { printf '%s: warning: %s\n' "$PROG" "$*" >&2; }
 info()    { printf '%s\n' "$*"; }
+prompt()  { printf '%s' "$*" >&2; }       # prompts go to stderr; stdout stays clean for the plan
 
 usage() {
   cat <<'EOF'
-install.sh — download the EADOS factory bundle into a repo (download + placement only).
+setup.sh — download the EADOS factory bundle into a repo (download + placement only).
 
 USAGE
-  install.sh [options]
+  setup.sh                         # bare / double-click (via setup.command) => interactive prompts
+  setup.sh [options]               # scriptable (flags below); add --interactive to force prompts
 
 WHERE TO INSTALL
   --mode new|existing   install into a new repo dir or an existing one      (default: existing)
-  --path DIR            target repo root (existing), or parent dir (new)    (default: .)
-  --repo-name NAME      name of the new repo dir under --path               (required for --mode new)
+  --path DIR            target repo root (existing), or parent dir (new)     (default: .)
+  --repo-name NAME      name of the new repo dir under --path                (required for --mode new)
 
 WHICH BUNDLE
-  --ref REF             release tag to install, e.g. v2.2.0                 (default: latest)
-  --repo OWNER/REPO     source GitHub repo                                  (default: danielPoloWork/pgs-eados)
+  --ref REF             release tag to install, e.g. v2.2.0                  (default: latest)
+  --repo OWNER/REPO     source GitHub repo                                   (default: danielPoloWork/pgs-eados)
   --from FILE           install from a local bundle file (skip download; air-gapped / testing)
   --bundle-url URL      download the bundle from this exact URL (overrides --ref / --repo)
 
@@ -54,11 +49,29 @@ INTEGRITY (fail-closed: refuses to extract an unverified bundle)
   --no-verify           skip checksum verification (loudly; not recommended)
 
 OTHER
+  --interactive         force the prompts even when flags are given
+  --non-interactive     never prompt (use flags / defaults)
+  --no-gh               do not offer to create a GitHub repo with gh (new-repo mode)
+  --dry-run             prompt + show the plan, but do not download / write / git-init
   --print-plan          print the resolved plan and exit (no download, no writes)
   -h, --help            this help
 
-The bundle is extracted ADDITIVELY at the target root: it refuses to overwrite any existing file.
+The bundle is extracted ADDITIVELY: it refuses to overwrite any existing file. On a NEW repo it
+also runs `git init` (and offers `gh repo create` when gh is present).
 EOF
+}
+
+ask() {  # $1 prompt  $2 default ; sets ANSWER (falls back to the default on empty / EOF)
+  if [ -n "${2:-}" ]; then prompt "$1 [$2]: "; else prompt "$1: "; fi
+  if IFS= read -r ANSWER; then :; else ANSWER=; printf '\n' >&2; fi
+  ANSWER=${ANSWER%"$CR"}
+  [ -n "$ANSWER" ] || ANSWER=${2:-}
+}
+
+confirm() {  # $1 prompt ; 0 if the answer is yes
+  prompt "$1 [y/N]: "
+  if IFS= read -r _reply; then :; else _reply=; printf '\n' >&2; fi
+  case "${_reply%"$CR"}" in [yY]|[yY][eE][sS]) return 0 ;; *) return 1 ;; esac
 }
 
 # --- side-effecting helpers ------------------------------------------------
@@ -96,29 +109,69 @@ expected_sha=
 sums_file=
 no_verify=0
 print_plan=0
+dry_run=0
+no_gh=0
+interactive=0
+non_interactive=0
+
+argc=$#   # capture before parsing: bare invocation (no args) implies interactive
 
 # --- parse args (space-form flags only; POSIX) -----------------------------
 while [ $# -gt 0 ]; do
   case "$1" in
-    -h|--help)     usage; exit 0 ;;
-    --mode)        shift; [ $# -ge 1 ] || die "--mode requires a value";        mode=$1;                shift ;;
-    --path)        shift; [ $# -ge 1 ] || die "--path requires a value";        path=$1;                shift ;;
-    --repo-name)   shift; [ $# -ge 1 ] || die "--repo-name requires a value";   repo_name=$1;           shift ;;
-    --ref)         shift; [ $# -ge 1 ] || die "--ref requires a value";         ref=$1;                 shift ;;
-    --repo)        shift; [ $# -ge 1 ] || die "--repo requires a value";        repo=$1;                shift ;;
-    --from)        shift; [ $# -ge 1 ] || die "--from requires a value";        from=$1;                shift ;;
-    --bundle-url)  shift; [ $# -ge 1 ] || die "--bundle-url requires a value";  bundle_url_override=$1; shift ;;
-    --sha256)      shift; [ $# -ge 1 ] || die "--sha256 requires a value";      expected_sha=$1;        shift ;;
-    --sums-file)   shift; [ $# -ge 1 ] || die "--sums-file requires a value";   sums_file=$1;           shift ;;
-    --no-verify)   no_verify=1; shift ;;
-    --print-plan)  print_plan=1; shift ;;
-    --)            shift; break ;;
-    -*)            die "unknown option: $1 (try --help)" ;;
-    *)             die "unexpected argument: $1 (try --help)" ;;
+    -h|--help)        usage; exit 0 ;;
+    --mode)           shift; [ $# -ge 1 ] || die "--mode requires a value";        mode=$1;                shift ;;
+    --path)           shift; [ $# -ge 1 ] || die "--path requires a value";        path=$1;                shift ;;
+    --repo-name)      shift; [ $# -ge 1 ] || die "--repo-name requires a value";   repo_name=$1;           shift ;;
+    --ref)            shift; [ $# -ge 1 ] || die "--ref requires a value";         ref=$1;                 shift ;;
+    --repo)           shift; [ $# -ge 1 ] || die "--repo requires a value";        repo=$1;                shift ;;
+    --from)           shift; [ $# -ge 1 ] || die "--from requires a value";        from=$1;                shift ;;
+    --bundle-url)     shift; [ $# -ge 1 ] || die "--bundle-url requires a value";  bundle_url_override=$1; shift ;;
+    --sha256)         shift; [ $# -ge 1 ] || die "--sha256 requires a value";      expected_sha=$1;        shift ;;
+    --sums-file)      shift; [ $# -ge 1 ] || die "--sums-file requires a value";   sums_file=$1;           shift ;;
+    --no-verify)      no_verify=1; shift ;;
+    --interactive)    interactive=1; shift ;;
+    --non-interactive) non_interactive=1; shift ;;
+    --no-gh)          no_gh=1; shift ;;
+    --dry-run)        dry_run=1; shift ;;
+    --print-plan)     print_plan=1; shift ;;
+    --)               shift; break ;;
+    -*)               die "unknown option: $1 (try --help)" ;;
+    *)                die "unexpected argument: $1 (try --help)" ;;
   esac
 done
 
-# --- validate (pure: argument shape only, no filesystem / network) ---------
+# Interactive when run bare (double-click) or asked for; never when --non-interactive / --print-plan.
+want_interactive=0
+if [ "$non_interactive" = 0 ] && [ "$print_plan" = 0 ]; then
+  if [ "$interactive" = 1 ] || [ "$argc" = 0 ]; then want_interactive=1; fi
+fi
+
+if [ "$want_interactive" = 1 ]; then
+  info "EADOS guided installer — downloads the factory bundle into a repo (no agent init)."
+  info ""
+  ask "Install into a (1) new repo or (2) existing repo?" "2"
+  case "$ANSWER" in
+    1|new|n|N)      mode=new ;;
+    2|existing|e|E) mode=existing ;;
+    *) die "please answer 1 (new) or 2 (existing)" ;;
+  esac
+  if [ "$mode" = new ]; then
+    ask "Parent directory for the new repo" "."
+    path=$ANSWER
+    repo_name=
+    while [ -z "$repo_name" ]; do
+      ask "New repo name" ""
+      repo_name=$ANSWER
+      [ -n "$repo_name" ] || info "  (a name is required for a new repo)"
+    done
+  else
+    ask "Path to the existing repo" "."
+    path=$ANSWER
+  fi
+fi
+
+# --- validate (argument shape only) ----------------------------------------
 case "$mode" in
   new|existing) ;;
   *) die "--mode must be 'new' or 'existing' (got: $mode)" ;;
@@ -164,7 +217,7 @@ else
   verify_desc="REQUIRED but no source (pass --sha256, --sums-file, or --no-verify)"
 fi
 
-if [ "$print_plan" = 1 ]; then
+print_the_plan() {
   info "install plan:"
   info "  mode:       $mode"
   info "  target:     $target"
@@ -175,6 +228,23 @@ if [ "$print_plan" = 1 ]; then
   fi
   info "  checksum:   $verify_desc"
   info "  extract:    additive (refuses to overwrite an existing file)"
+  if [ "$mode" = new ]; then info "  git init:   $target (a fresh repository)"; fi
+}
+
+if [ "$print_plan" = 1 ]; then
+  print_the_plan
+  exit 0
+fi
+
+if [ "$want_interactive" = 1 ]; then
+  info ""
+  print_the_plan
+  info ""
+  confirm "Proceed?" || { info "Aborted — nothing was written."; exit 0; }
+fi
+
+if [ "$dry_run" = 1 ]; then
+  info "[dry-run] would install into $target (mode $mode); nothing written."
   exit 0
 fi
 
@@ -254,8 +324,27 @@ fi
 # Place it.
 tar xzf "$bundle" -C "$target" || die "extraction failed"
 
+# git init for a new repo (the lifecycle the engine defers to the interactive layer).
+if [ "$mode" = new ]; then
+  if command -v git >/dev/null 2>&1; then
+    if ( CDPATH= cd -- "$target" && git init -q ); then
+      info "git: initialised an empty repository in $target"
+    else
+      info "note: 'git init' did not complete for $target — you can run it yourself"
+    fi
+  else
+    info "note: git not found — skipped 'git init' for $target (install git, then run it there)"
+  fi
+  if [ "$no_gh" = 0 ] && command -v gh >/dev/null 2>&1; then
+    if confirm "Create a GitHub repo for it now with gh?"; then
+      ( CDPATH= cd -- "$target" && gh repo create "$repo_name" --private --source=. --remote=origin ) \
+        || info "note: 'gh repo create' did not complete — you can run it later"
+    fi
+  fi
+fi
+
 info ""
-info "EADOS installed into: $target"
+info "Done. EADOS installed into: $target"
 info "  next:  cd \"$target\" && ls .eados-core      # orchestrator/ templates/ tools/ …"
 info "  then:  open the repo with an AI agent (it auto-loads AGENTS.md), or render deterministically:"
 info "         python .eados-core/tools/render.py .eados-core/orchestrator/project.yaml --in-place"

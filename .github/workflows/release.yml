@@ -8,11 +8,10 @@ name: release-bundle
 # .gitattributes (the factory + agent contract + LICENSE; none of this repo's own plumbing).
 # See .eados-core/docs/USAGE.md "Distribution bundle".
 #
-# It also attaches (M9 9.4): a `SHA256SUMS` over every asset — the guided installer's default
-# checksum source (install.sh / install.ps1 verify the bundle against it, fail-closed) — and the
-# guided installer scripts themselves (export-ignored from the bundle, since they *download* it), so
-# `releases/latest/download/install.{sh,ps1}` (and setup.sh / install.command / install.bat) are
-# stable links.
+# It also attaches (M9): a `SHA256SUMS` over every asset — the guided installer's default checksum
+# source (setup.sh / setup.ps1 verify the bundle against it, fail-closed) — and the guided installer
+# scripts themselves (export-ignored from the bundle, since they *download* it), so
+# `releases/latest/download/setup.{sh,ps1}` (and setup.command / setup.bat) are stable links.
 
 on:
   release:
@@ -49,13 +48,12 @@ jobs:
           set -e
           # The guided installers are export-ignored from the bundle (they download it), so they ship
           # as standalone assets. Copy them to the root so both the asset names and the SHA256SUMS
-          # entries are basenames (install.sh / install.ps1 parse SHA256SUMS by basename).
-          cp install/install.sh install/setup.sh install/install.command \
-             install/install.ps1 install/install.bat .
+          # entries are basenames (setup.sh / setup.ps1 parse SHA256SUMS by basename).
+          cp setup/setup.sh setup/setup.command setup/setup.ps1 setup/setup.bat .
           # SHA256SUMS over every attached file — sha256sum's text format ("<hex>  <name>") is exactly
           # what the installers parse. The bundle line is the installer's default integrity source.
           sha256sum pgs-eados-bundle.tar.gz pgs-eados-bundle.zip \
-                    install.sh setup.sh install.command install.ps1 install.bat > SHA256SUMS
+                    setup.sh setup.command setup.ps1 setup.bat > SHA256SUMS
           echo "----- SHA256SUMS -----"; cat SHA256SUMS
       - name: Attach to the release (version-less names → stable /latest/download links)
         env:
@@ -63,4 +61,4 @@ jobs:
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
             pgs-eados-bundle.tar.gz pgs-eados-bundle.zip SHA256SUMS \
-            install.sh setup.sh install.command install.ps1 install.bat --clobber
+            setup.sh setup.command setup.ps1 setup.bat --clobber

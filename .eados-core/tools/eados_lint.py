@@ -747,9 +747,9 @@ GATE_COVERAGE = [
     ("README.md",                                         "version-lockstep + i18n-freshness"),
     ("CHANGELOG.md",                                      "version-lockstep"),
     (".github/workflows/*.yml",                           "action-pins + workflow-safety"),
-    ("install/*.sh",                                      "installer-smoke (test_install_sh.py / test_setup_sh.py); shellcheck in M9.5"),
-    ("install/*.command",                                 "installer-smoke (test_setup_sh.py); shellcheck in M9.5"),
-    ("install/*.ps1",                                     "installer-smoke (test_install_ps1.py); PSScriptAnalyzer in M9.5"),
+    ("setup/*.sh",                                        "installer-smoke (test_setup_sh.py); shellcheck in M9.5"),
+    ("setup/*.command",                                   "installer-smoke (test_setup_sh.py); shellcheck in M9.5"),
+    ("setup/*.ps1",                                       "installer-smoke (test_setup_ps1.py); PSScriptAnalyzer in M9.5"),
 ]
 # Intentionally NOT machine-validated — prose/config under human review. Each needs a reason; this
 # is the conscious record of "we looked and chose not to gate this", not a blind skip.
@@ -783,7 +783,7 @@ GATE_ALLOWLIST = [
     (".eados-core/eval/**",                        "eval rubric prose"),
     (".eados-core/maintenance/**",                 "maintenance prose"),
     (".eados-core/tools/requirements-ci.txt",      "CI pinned + hashed deps (render-smoke)"),
-    ("install/*.bat",                              "Windows cmd double-click shim - trivial pass-through to install.ps1 (the logic + its gate live there); no Linux analyzer"),
+    ("setup/*.bat",                                "Windows cmd double-click shim - trivial pass-through to setup.ps1 (the logic + its gate live there); no Linux analyzer"),
 ]
 
 

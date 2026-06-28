@@ -1,16 +1,16 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  install.ps1 - guided EADOS installer for Windows (M9 9.3): the PowerShell-native equivalent of
-  install.sh (9.1) + setup.sh (9.2). It downloads the factory bundle (pgs-eados-bundle.tar.gz),
-  VERIFIES its SHA256 (fail-closed), and extracts it ADDITIVELY (refuses to overwrite any existing
-  file) into a target repo root. It is interactive when run bare (double-click via install.bat) and
-  scriptable via parameters. Scope = bundle download + placement only (USAGE section 6's consumer
-  step), not the agentic-OS init.
+  setup.ps1 - guided EADOS installer for Windows: the PowerShell-native equivalent of the POSIX
+  setup.sh. It downloads the factory bundle (pgs-eados-bundle.tar.gz), VERIFIES its SHA256
+  (fail-closed), and extracts it ADDITIVELY (refuses to overwrite any existing file) into a target
+  repo root. It is interactive when run bare (double-click via setup.bat) and scriptable via
+  parameters. Scope = bundle download + placement only (USAGE section 6's consumer step), not the
+  agentic-OS init. The installer lives OUTSIDE .eados-core/ because it *delivers* it.
 
-  It adds NO new install logic versus the POSIX scripts - same fail-closed integrity and additive
+  It adds NO new install logic versus the POSIX script - same fail-closed integrity and additive
   no-clobber guarantee (the ADR-0007 principle). Uses tar.exe (Windows 10 1803+) for the .tar.gz,
-  mirroring install.sh. PowerShell 5.1 / 7 compatible; ASCII-only (5.1 reads no-BOM scripts as ANSI).
+  mirroring setup.sh. PowerShell 5.1 / 7 compatible; ASCII-only (5.1 reads no-BOM scripts as ANSI).
 #>
 [CmdletBinding()]
 param(
@@ -40,8 +40,8 @@ $SumsName = 'SHA256SUMS'
 
 # Output to the real stdout/stderr (not Write-Host) so it is captured identically on PS 5.1 and 7.
 function Info([string]$m) { [Console]::Out.WriteLine($m) }
-function Warn([string]$m) { [Console]::Error.WriteLine("install.ps1: warning: $m") }
-function Fail([int]$code, [string]$m) { [Console]::Error.WriteLine("install.ps1: error: $m"); exit $code }
+function Warn([string]$m) { [Console]::Error.WriteLine("setup.ps1: warning: $m") }
+function Fail([int]$code, [string]$m) { [Console]::Error.WriteLine("setup.ps1: error: $m"); exit $code }
 function Die([string]$m) { Fail 1 $m }       # user / safety error
 function Offline([string]$m) { Fail 2 $m }   # environmental: offline / asset unavailable
 
@@ -62,10 +62,10 @@ function Confirm([string]$promptText) {
 
 function Show-Usage {
   Info @'
-install.ps1 - download the EADOS factory bundle into a repo (Windows; download + placement only).
+setup.ps1 - download the EADOS factory bundle into a repo (Windows; download + placement only).
 
 USAGE
-  install.ps1 [options]            # bare / double-click (via install.bat) => interactive prompts
+  setup.ps1 [options]            # bare / double-click (via setup.bat) => interactive prompts
 
 WHERE TO INSTALL
   -Mode new|existing   install into a new repo dir or an existing one   (default: existing)

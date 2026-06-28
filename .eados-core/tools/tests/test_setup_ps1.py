@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Behavioral smoke for install.ps1 — the M9.3 guided installer for Windows (PowerShell).
+"""Behavioral smoke for setup.ps1 — the guided EADOS installer for Windows (PowerShell).
 
-install.ps1 is the PowerShell-native equivalent of install.sh (9.1) + setup.sh (9.2): one script
-that is scriptable via parameters and interactive when asked. Driven through PowerShell (`pwsh`,
-falling back to Windows `powershell`), this asserts parity with the POSIX installers: plan
-resolution (`-PrintPlan`), argument validation, fail-closed checksum verification, additive
+setup.ps1 is the PowerShell-native equivalent of the POSIX setup.sh: one script that is scriptable
+via parameters and interactive when asked. Driven through PowerShell (`pwsh`, falling back to
+Windows `powershell`), this asserts parity with the POSIX installer: plan resolution (`-PrintPlan`),
+argument validation, fail-closed checksum verification (incl. a local `-SumsFile`), additive
 no-clobber extraction, and the interactive flow (new = extract + git-init, existing = extract-only)
 — all offline via the `-From` seam. SKIPs cleanly when no PowerShell is on PATH (so non-Windows
 dev boxes without `pwsh` don't fail); GitHub's ubuntu runners ship `pwsh`, so CI exercises it.
 
-    python .eados-core/tools/tests/test_install_ps1.py
+    python .eados-core/tools/tests/test_setup_ps1.py
 """
 
 import hashlib
@@ -24,7 +24,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 REPO_ROOT = os.path.dirname(os.path.dirname(TOOLS))
-INSTALL_PS1 = os.path.join(REPO_ROOT, "install", "install.ps1")
+SETUP_PS1 = os.path.join(REPO_ROOT, "setup", "setup.ps1")
 
 PWSH = shutil.which("pwsh") or shutil.which("powershell")
 HAVE_GIT = shutil.which("git") is not None
@@ -36,9 +36,9 @@ def check(label, cond, failures):
 
 
 def run(*args, cwd=None, stdin=""):
-    """Run install.ps1 via PowerShell; return (rc, out, err). Filesystem cases pass cwd + RELATIVE
+    """Run setup.ps1 via PowerShell; return (rc, out, err). Filesystem cases pass cwd + RELATIVE
     paths so tar reads them on Windows (bsdtar) and Linux/pwsh (GNU tar) alike."""
-    proc = subprocess.run([PWSH, "-NoProfile", "-File", INSTALL_PS1, *args],
+    proc = subprocess.run([PWSH, "-NoProfile", "-File", SETUP_PS1, *args],
                           capture_output=True, text=True, cwd=cwd, input=stdin)
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -59,10 +59,10 @@ def main():
     failures = []
 
     if PWSH is None:
-        print("test-install-ps1: SKIP — no PowerShell (pwsh / powershell) on PATH")
+        print("test-setup-ps1: SKIP — no PowerShell (pwsh / powershell) on PATH")
         return 0
-    if not os.path.exists(INSTALL_PS1):
-        print(f"test-install-ps1: FAIL — install.ps1 not found at {INSTALL_PS1}")
+    if not os.path.exists(SETUP_PS1):
+        print(f"test-setup-ps1: FAIL — setup.ps1 not found at {SETUP_PS1}")
         return 1
 
     # -Help
@@ -191,7 +191,7 @@ def main():
         with open(os.path.join(tmp, "SHA256SUMS"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(f"{real_sha}  {real}\n")
             fh.write(f"{'0' * 64} *pgs-eados-bundle.zip\n")   # '*' (binary) form must be stripped
-            fh.write(f"{'1' * 64}  install.ps1\n")
+            fh.write(f"{'1' * 64}  setup.ps1\n")
 
         tgt = fresh_target()
         rc, out, err = run("-From", real, "-SumsFile", "SHA256SUMS", "-Mode", "existing",
@@ -214,12 +214,12 @@ def main():
               rc != 0 and "not found" in (out + err).lower(), failures)
 
     if failures:
-        print("test-install-ps1: FAIL\n")
+        print("test-setup-ps1: FAIL\n")
         for f in failures:
             print(f"  {f}")
         print(f"\n{len(failures)} expectation(s) failed.")
         return 1
-    print("test-install-ps1: OK — plan resolution, arg validation, fail-closed checksum, additive "
+    print("test-setup-ps1: OK — plan resolution, arg validation, fail-closed checksum, additive "
           "no-clobber, and interactive new/existing all hold; offline via -From. (parity with the "
           "POSIX installers)")
     return 0

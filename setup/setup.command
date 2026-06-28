@@ -1,9 +1,9 @@
 #!/bin/sh
-# install.command — macOS double-click entry for the guided EADOS installer (M9 9.2).
+# setup.command — macOS double-click entry for the guided EADOS installer.
 #
 # Double-clicking this in Finder opens Terminal and runs it; it simply delegates to setup.sh next
-# to it (the interactive Q&A wrapper around install.sh). Kept as a thin shim so all the install
-# logic lives in one place. On Linux just run setup.sh from a terminal.
+# to it. Kept as a thin shim so all the install logic lives in one place. On Linux just run
+# setup.sh from a terminal.
 
 dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 sh "$dir/setup.sh" "$@"
