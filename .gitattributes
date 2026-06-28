@@ -41,6 +41,9 @@
 # standalone release assets, not shipped inside the factory archive.
 /install                export-ignore
 
-# The installer scripts must stay LF (POSIX shebang) regardless of the committer's platform.
+# Installer line endings, pinned regardless of the committer's platform: LF for the POSIX shebang
+# scripts and for install.ps1 (pwsh reads LF fine on every OS); CRLF for the cmd .bat shim.
 install/*.sh            text eol=lf
 install/*.command       text eol=lf
+install/*.ps1           text eol=lf
+install/*.bat           text eol=crlf

@@ -29,7 +29,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M7 — onboarding & docs** | ✅ **done** — items 7.1–7.5 (#97–#101) |
 | **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 | **v2.2.0 release** | ✅ published 2026-06-28 — M7 onboarding + contributor-safety hardening + M8 inbound review (bundles attached; Latest) |
-| **M9 — guided installer** | 🚧 in progress — 9.1 core + 9.2 interactive layer (POSIX) done; 9.3–9.6 next |
+| **M9 — guided installer** | 🚧 in progress — 9.1 core + 9.2 interactive (POSIX) + 9.3 PowerShell done; 9.4–9.6 next |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -333,9 +333,13 @@ path made real: we build it our way and **co-author @AlexMnrs** (credited in the
       [`install/setup.sh`](../../../install/setup.sh) (it drives `install.sh`, adding no new install
       logic) + the [`install/install.command`](../../../install/install.command) double-click shim;
       a `--dry-run` + a `--` passthrough keep it scriptable/testable, gated by `test_setup_sh.py`.
-- [ ] 9.3 **PowerShell installer — `install.ps1`** (+ a `.bat`/`.cmd` shim for true double-click) — the
+- [x] 9.3 **PowerShell installer — `install.ps1`** (+ a `.bat`/`.cmd` shim for true double-click) — the
       Windows-native equivalent: same prompts + checksum verify + additive extract, mirroring 9.1/9.2
-      (the 7.2 PowerShell-parity principle).
+      (the 7.2 PowerShell-parity principle). Shipped as [`install/install.ps1`](../../../install/install.ps1)
+      (one script: scriptable via params, interactive when bare; PS 5.1/7-compatible, ASCII-only, uses
+      `tar.exe`) + the [`install/install.bat`](../../../install/install.bat) double-click shim
+      (`powershell -ExecutionPolicy Bypass -File`). Same fail-closed SHA256 + additive no-clobber as the
+      POSIX engine; gated by `test_install_ps1.py` (driven via `pwsh`).
 - [ ] 9.4 **Release publishes integrity + the installers** — `release.yml` attaches `SHA256SUMS` and
       the install scripts as assets, so the installer can verify the bundle and
       `releases/latest/download/install.{sh,ps1}` are stable links.

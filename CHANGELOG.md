@@ -11,6 +11,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.2.0**.
 
 ### Added
 
+- **M9 / 9.3 — guided installer for Windows (PowerShell).** New
+  [`install/install.ps1`](install/install.ps1): the PowerShell-native equivalent of `install.sh` +
+  `setup.sh` in one script — scriptable via parameters (`-Mode`/`-Path`/`-RepoName`/`-Ref`/`-From`/
+  `-Sha256`/`-NoVerify`/`-PrintPlan`) and **interactive when run bare** (double-click). Same
+  **fail-closed SHA256** verification and **additive no-clobber** extraction as the POSIX engine (it
+  adds no new install logic), using `tar.exe` (Windows 10 1803+) for the `.tar.gz`; on a **new** repo
+  it `git init`s and (when `gh` is present) offers `gh repo create`. A
+  [`install/install.bat`](install/install.bat) shim launches it via
+  `powershell -ExecutionPolicy Bypass -File` (a bare `.ps1` opens in an editor on double-click).
+  PowerShell **5.1/7-compatible** and **ASCII-only** (5.1 reads a no-BOM script as ANSI); gated by a
+  new `install/*.ps1` `gate-coverage` class + `test_install_ps1.py` (driven via `pwsh`, which ships on
+  the CI runner), with the trivial `.bat` shim allow-listed. Release-published `SHA256SUMS` +
+  installers (9.4) and the shellcheck/PSScriptAnalyzer static gate (9.5) follow.
+
 - **M9 / 9.2 — guided-installer interactive layer (POSIX).** New
   [`install/setup.sh`](install/setup.sh): the Q&A wrapper around the 9.1 engine — it prompts for
   new-vs-existing repo, the path, and (for new) the repo name, shows the resolved plan, **confirms
