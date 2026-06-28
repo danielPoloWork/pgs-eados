@@ -29,7 +29,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M7 — onboarding & docs** | ✅ **done** — items 7.1–7.5 (#97–#101) |
 | **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 | **v2.2.0 release** | ✅ published 2026-06-28 — M7 onboarding + contributor-safety hardening + M8 inbound review (bundles attached; Latest) |
-| **M9 — guided installer** | 🚧 in progress — 9.1 core + 9.2 interactive (POSIX) + 9.3 PowerShell done; 9.4–9.6 next |
+| **M9 — guided installer** | 🚧 in progress — 9.1–9.4 done (installers + release integrity); 9.5–9.6 next |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -340,9 +340,13 @@ path made real: we build it our way and **co-author @AlexMnrs** (credited in the
       `tar.exe`) + the [`install/install.bat`](../../../install/install.bat) double-click shim
       (`powershell -ExecutionPolicy Bypass -File`). Same fail-closed SHA256 + additive no-clobber as the
       POSIX engine; gated by `test_install_ps1.py` (driven via `pwsh`).
-- [ ] 9.4 **Release publishes integrity + the installers** — `release.yml` attaches `SHA256SUMS` and
+- [x] 9.4 **Release publishes integrity + the installers** — `release.yml` attaches `SHA256SUMS` and
       the install scripts as assets, so the installer can verify the bundle and
-      `releases/latest/download/install.{sh,ps1}` are stable links.
+      `releases/latest/download/install.{sh,ps1}` are stable links. The `release-bundle` workflow now
+      stages the installers + writes a `sha256sum` `SHA256SUMS` over every asset and uploads them all;
+      the installers gained a `--sums-file` / `-SumsFile` seam to verify against a local `SHA256SUMS`
+      (offline / air-gapped), which lets `test_install_{sh,ps1}.py` prove the published format is
+      consumed (the producer↔consumer contract).
 - [ ] 9.5 **Gate the new script file-class** — a self-lint / CI check for the installers (shellcheck for
       `*.sh`, PSScriptAnalyzer or a parse check for `*.ps1`) + a smoke test of the core
       download / verify / extract logic, honoring the gate-EVERY-file-class mandate.

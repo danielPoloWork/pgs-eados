@@ -22,6 +22,7 @@ param(
   [string]$From = '',
   [string]$BundleUrl = '',
   [string]$Sha256 = '',
+  [string]$SumsFile = '',
   [switch]$NoVerify,
   [switch]$NoGh,
   [switch]$PrintPlan,
@@ -79,6 +80,7 @@ WHICH BUNDLE
 
 INTEGRITY (fail-closed: refuses to extract an unverified bundle)
   -Sha256 HEX          expected SHA256 of the bundle (else read from the release SHA256SUMS)
+  -SumsFile FILE       verify against a local SHA256SUMS file (skip the download; air-gapped)
   -NoVerify            skip checksum verification (loudly; not recommended)
 
 OTHER
@@ -148,8 +150,9 @@ else {
 
 if ($NoVerify) { $VerifyDesc = 'DISABLED (-NoVerify)' }
 elseif ($Sha256) { $VerifyDesc = "pinned $Sha256" }
+elseif ($SumsFile) { $VerifyDesc = "$SumsName file ($SumsFile)" }
 elseif ($SumsUri) { $VerifyDesc = "$SumsName from the release" }
-else { $VerifyDesc = 'REQUIRED but no source (pass -Sha256 or -NoVerify)' }
+else { $VerifyDesc = 'REQUIRED but no source (pass -Sha256, -SumsFile, or -NoVerify)' }
 
 function Write-Plan {
   Info 'install plan:'
@@ -216,18 +219,26 @@ try {
   else {
     $expected = $Sha256
     if (-not $expected) {
-      if (-not $SumsUri) { Die "cannot verify integrity (no $SumsName source for -From / -BundleUrl); pass -Sha256 or -NoVerify" }
-      $sumsFile = Join-Path $tmp $SumsName
-      try { Invoke-WebRequest -Uri $SumsUri -OutFile $sumsFile -UseBasicParsing }
-      catch { Offline "could not fetch $SumsName ($SumsUri); pass -Sha256 or -NoVerify" }
-      foreach ($line in Get-Content -LiteralPath $sumsFile) {
+      # $SumsFile (the param) vs $sumsSrc (the resolved path) - PowerShell vars are case-insensitive,
+      # so the local must NOT be named $sumsFile or it would clobber the parameter.
+      if ($SumsFile) {
+        if (-not (Test-Path -LiteralPath $SumsFile -PathType Leaf)) { Die "$SumsName file not found: $SumsFile" }
+        $sumsSrc = $SumsFile
+      }
+      elseif ($SumsUri) {
+        $sumsSrc = Join-Path $tmp $SumsName
+        try { Invoke-WebRequest -Uri $SumsUri -OutFile $sumsSrc -UseBasicParsing }
+        catch { Offline "could not fetch $SumsName ($SumsUri); pass -Sha256, -SumsFile, or -NoVerify" }
+      }
+      else { Die "cannot verify integrity (no $SumsName source for -From / -BundleUrl); pass -Sha256, -SumsFile, or -NoVerify" }
+      foreach ($line in Get-Content -LiteralPath $sumsSrc) {
         $fields = $line -split '\s+'
         if ($fields.Count -ge 2) {
           $name = $fields[1] -replace '^\*', '' -replace '^\./', ''
           if ($name -eq $BundleName) { $expected = $fields[0]; break }
         }
       }
-      if (-not $expected) { Die "$SumsName has no entry for $BundleName; pass -Sha256 or -NoVerify" }
+      if (-not $expected) { Die "$SumsName ($sumsSrc) has no entry for $BundleName; pass -Sha256 or -NoVerify" }
     }
     $actual = (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash.ToLower()
     if ($actual -ne $expected.ToLower()) { Die "checksum mismatch: expected $expected, got $actual" }

@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.2.0**.
 
 ### Added
 
+- **M9 / 9.4 — release publishes integrity + the installers.** The `release-bundle` workflow
+  ([`.github/workflows/release.yml`](.github/workflows/release.yml)) now also attaches a **`SHA256SUMS`**
+  over every asset (a `sha256sum` manifest — the guided installer's default, fail-closed integrity
+  source) and the **guided installer scripts themselves** (`install.sh`, `setup.sh`,
+  `install.command`, `install.ps1`, `install.bat`; export-ignored from the bundle since they *download*
+  it), so `releases/latest/download/install.{sh,ps1}` (and the others) are stable links. The installers
+  gained a **`--sums-file` / `-SumsFile`** seam to verify the bundle against a local `SHA256SUMS`
+  offline (air-gapped) — the natural completion of `--from`/`-From` — which also lets
+  `test_install_sh.py` / `test_install_ps1.py` prove the installer consumes the exact format the
+  release publishes (the producer↔consumer contract; the `*`-binary and 2-space text forms both parse).
+  The release-published `SHA256SUMS` + the one-step `install.{sh,ps1}` links land in the docs at 9.6.
+
 - **M9 / 9.3 — guided installer for Windows (PowerShell).** New
   [`install/install.ps1`](install/install.ps1): the PowerShell-native equivalent of `install.sh` +
   `setup.sh` in one script — scriptable via parameters (`-Mode`/`-Path`/`-RepoName`/`-Ref`/`-From`/

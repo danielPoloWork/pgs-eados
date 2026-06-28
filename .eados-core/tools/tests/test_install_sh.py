@@ -164,6 +164,45 @@ def main():
                        "--mode", "existing", "--path", "absent-dir", cwd=tmp)
         check("existing mode requires the target dir to exist", rc != 0, failures)
 
+        # --- M9.4: verify against a SHA256SUMS file, in the format release.yml publishes ---
+        # The release attaches a `sha256sum` SHA256SUMS over every asset; --sums-file verifies the
+        # bundle against it offline. The bundle must be named pgs-eados-bundle.tar.gz (the name the
+        # installer looks up). The file written below is exactly `sha256sum`'s text output.
+        real = "pgs-eados-bundle.tar.gz"
+        real_sha = make_bundle(os.path.join(tmp, real))
+        with open(os.path.join(tmp, "SHA256SUMS"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"{real_sha}  {real}\n")
+            fh.write(f"{'0' * 64} *pgs-eados-bundle.zip\n")   # '*' (binary) form must be stripped
+            fh.write(f"{'1' * 64}  install.sh\n")
+
+        tgt = fresh_target()
+        rc, out, err = run("--from", real, "--sums-file", "SHA256SUMS",
+                           "--mode", "existing", "--path", tgt, cwd=tmp)
+        check("verify via --sums-file succeeds (picks the bundle line)", rc == 0, failures)
+        check("…extracted the bundle", os.path.exists(os.path.join(tmp, tgt, "AGENTS.md")), failures)
+
+        with open(os.path.join(tmp, "BAD_SUMS"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"{'a' * 64}  {real}\n")
+        tgt = fresh_target()
+        rc, out, err = run("--from", real, "--sums-file", "BAD_SUMS",
+                           "--mode", "existing", "--path", tgt, cwd=tmp)
+        check("a tampered --sums-file fails (mismatch)",
+              rc != 0 and "mismatch" in (out + err).lower(), failures)
+
+        with open(os.path.join(tmp, "NOENTRY"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"{'b' * 64}  some-other-file.txt\n")
+        tgt = fresh_target()
+        rc, out, err = run("--from", real, "--sums-file", "NOENTRY",
+                           "--mode", "existing", "--path", tgt, cwd=tmp)
+        check("a --sums-file lacking the bundle entry fails ('no entry')",
+              rc != 0 and "no entry" in (out + err).lower(), failures)
+
+        tgt = fresh_target()
+        rc, out, err = run("--from", real, "--sums-file", "missing-sums",
+                           "--mode", "existing", "--path", tgt, cwd=tmp)
+        check("a missing --sums-file fails cleanly",
+              rc != 0 and "not found" in (out + err).lower(), failures)
+
     if failures:
         print("test-install-sh: FAIL\n")
         for f in failures:

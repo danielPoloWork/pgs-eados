@@ -185,6 +185,34 @@ def main():
         check("answering 'n' at the confirm aborts (exit 0)", rc == 0, failures)
         check("…with an 'aborted' message", "abort" in (out + err).lower(), failures)
 
+        # --- M9.4: verify against a SHA256SUMS file (the format release.yml publishes) ---
+        real = "pgs-eados-bundle.tar.gz"
+        real_sha = make_bundle(os.path.join(tmp, real))
+        with open(os.path.join(tmp, "SHA256SUMS"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"{real_sha}  {real}\n")
+            fh.write(f"{'0' * 64} *pgs-eados-bundle.zip\n")   # '*' (binary) form must be stripped
+            fh.write(f"{'1' * 64}  install.ps1\n")
+
+        tgt = fresh_target()
+        rc, out, err = run("-From", real, "-SumsFile", "SHA256SUMS", "-Mode", "existing",
+                           "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("verify via -SumsFile succeeds (picks the bundle line)", rc == 0, failures)
+        check("…extracted the bundle", os.path.exists(os.path.join(tmp, tgt, "AGENTS.md")), failures)
+
+        with open(os.path.join(tmp, "BAD_SUMS"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"{'a' * 64}  {real}\n")
+        tgt = fresh_target()
+        rc, out, err = run("-From", real, "-SumsFile", "BAD_SUMS", "-Mode", "existing",
+                           "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("a tampered -SumsFile fails (mismatch)",
+              rc != 0 and "mismatch" in (out + err).lower(), failures)
+
+        tgt = fresh_target()
+        rc, out, err = run("-From", real, "-SumsFile", "missing-sums", "-Mode", "existing",
+                           "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("a missing -SumsFile fails cleanly",
+              rc != 0 and "not found" in (out + err).lower(), failures)
+
     if failures:
         print("test-install-ps1: FAIL\n")
         for f in failures:

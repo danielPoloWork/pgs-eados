@@ -50,6 +50,7 @@ WHICH BUNDLE
 
 INTEGRITY (fail-closed: refuses to extract an unverified bundle)
   --sha256 HEX          expected SHA256 of the bundle (else read from the release SHA256SUMS)
+  --sums-file FILE      verify against a local SHA256SUMS file (skip the download; air-gapped)
   --no-verify           skip checksum verification (loudly; not recommended)
 
 OTHER
@@ -92,6 +93,7 @@ repo=$DEFAULT_REPO
 from=
 bundle_url_override=
 expected_sha=
+sums_file=
 no_verify=0
 print_plan=0
 
@@ -107,6 +109,7 @@ while [ $# -gt 0 ]; do
     --from)        shift; [ $# -ge 1 ] || die "--from requires a value";        from=$1;                shift ;;
     --bundle-url)  shift; [ $# -ge 1 ] || die "--bundle-url requires a value";  bundle_url_override=$1; shift ;;
     --sha256)      shift; [ $# -ge 1 ] || die "--sha256 requires a value";      expected_sha=$1;        shift ;;
+    --sums-file)   shift; [ $# -ge 1 ] || die "--sums-file requires a value";   sums_file=$1;           shift ;;
     --no-verify)   no_verify=1; shift ;;
     --print-plan)  print_plan=1; shift ;;
     --)            shift; break ;;
@@ -153,10 +156,12 @@ if [ "$no_verify" = 1 ]; then
   verify_desc="DISABLED (--no-verify)"
 elif [ -n "$expected_sha" ]; then
   verify_desc="pinned $expected_sha"
+elif [ -n "$sums_file" ]; then
+  verify_desc="$SUMS_NAME file ($sums_file)"
 elif [ -n "$sums_url" ]; then
   verify_desc="$SUMS_NAME from the release"
 else
-  verify_desc="REQUIRED but no source (pass --sha256 or --no-verify)"
+  verify_desc="REQUIRED but no source (pass --sha256, --sums-file, or --no-verify)"
 fi
 
 if [ "$print_plan" = 1 ]; then
@@ -206,10 +211,17 @@ if [ "$no_verify" = 1 ]; then
   warn "checksum verification DISABLED (--no-verify) — the bundle's provenance is NOT checked"
 else
   if [ -z "$expected_sha" ]; then
-    [ -n "$sums_url" ] || die "cannot verify integrity (no $SUMS_NAME source for --from / --bundle-url); pass --sha256 or --no-verify"
-    download "$sums_url" "$tmpdir/$SUMS_NAME" || offline "could not fetch $SUMS_NAME ($sums_url); pass --sha256 or --no-verify"
-    expected_sha=$(awk -v n="$BUNDLE_NAME" '{ f=$2; sub(/^[*]/,"",f); sub(/^\.\//,"",f); if (f==n) { print $1; exit } }' "$tmpdir/$SUMS_NAME")
-    [ -n "$expected_sha" ] || die "$SUMS_NAME has no entry for $BUNDLE_NAME; pass --sha256 or --no-verify"
+    if [ -n "$sums_file" ]; then
+      [ -f "$sums_file" ] || die "$SUMS_NAME file not found: $sums_file"
+      sums_src=$sums_file
+    elif [ -n "$sums_url" ]; then
+      download "$sums_url" "$tmpdir/$SUMS_NAME" || offline "could not fetch $SUMS_NAME ($sums_url); pass --sha256, --sums-file, or --no-verify"
+      sums_src=$tmpdir/$SUMS_NAME
+    else
+      die "cannot verify integrity (no $SUMS_NAME source for --from / --bundle-url); pass --sha256, --sums-file, or --no-verify"
+    fi
+    expected_sha=$(awk -v n="$BUNDLE_NAME" '{ f=$2; sub(/^[*]/,"",f); sub(/^\.\//,"",f); if (f==n) { print $1; exit } }' "$sums_src")
+    [ -n "$expected_sha" ] || die "$SUMS_NAME ($sums_src) has no entry for $BUNDLE_NAME; pass --sha256 or --no-verify"
   fi
   actual=$(sha256_of "$bundle") || die "no checksum tool (sha256sum / shasum / openssl) found; install one or use --no-verify"
   if [ "$actual" != "$expected_sha" ]; then
