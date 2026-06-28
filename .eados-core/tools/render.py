@@ -595,6 +595,10 @@ def _duplicate_top_level_keys(text):
 
 
 def main():
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="Render an EADOS manifest into a repository.")
     ap.add_argument("manifest", help="path to a filled project.yaml")
     ap.add_argument("--out", help="output directory, OUTSIDE the EADOS factory folder")

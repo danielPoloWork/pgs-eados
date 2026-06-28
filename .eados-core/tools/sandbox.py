@@ -65,6 +65,10 @@ def safe_write(root, rel, content, overwrite=False):
 
 
 def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     # This module is a library used by the refactor phase; there is no standalone action to run.
     print("sandbox.py is a write-containment library for the refactor phase (no CLI action).",
           file=sys.stderr)

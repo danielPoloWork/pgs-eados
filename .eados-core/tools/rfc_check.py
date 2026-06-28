@@ -52,6 +52,10 @@ def check_rfc(text, protocol):
 
 
 def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1:
         print("usage: rfc_check.py <rfc.md>", file=sys.stderr)

@@ -111,6 +111,10 @@ def report_propose(manifest_path, to_phase, out=sys.stdout):
 
 
 def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     import argparse
     ap = argparse.ArgumentParser(description="EADOS phase runner — report or validate a transition.")
     ap.add_argument("manifest", help="path to a project manifest (project.yaml)")

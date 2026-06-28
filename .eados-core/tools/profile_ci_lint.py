@@ -33,6 +33,10 @@ def _wrap(kind, fragment):
 
 
 def main():
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="Validate EADOS CI fragments are well-formed YAML.")
     ap.add_argument("--rendered", help="also validate every *.yml/*.yaml under this rendered repo")
     args = ap.parse_args()

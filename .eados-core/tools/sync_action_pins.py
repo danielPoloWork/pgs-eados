@@ -84,6 +84,10 @@ def template_workflow_files():
 
 
 def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     import argparse
     ap = argparse.ArgumentParser(description="Sync the workflow templates' action pins to the "
                                              "factory CI (the action-pins lockstep gate).")

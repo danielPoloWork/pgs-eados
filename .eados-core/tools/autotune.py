@@ -29,6 +29,10 @@ RUNS = os.path.join(ROOT, "learning", "runs")
 
 
 def main():
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="Propose default changes from run history.")
     ap.add_argument("--threshold", type=int, default=2,
                     help="min records overriding a key to the same value before proposing")

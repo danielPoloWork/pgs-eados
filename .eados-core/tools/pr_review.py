@@ -237,6 +237,10 @@ def fetch_pr(number, repo=None):
 
 
 def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     import argparse
     import json
     ap = argparse.ArgumentParser(description="Evaluate an inbound PR against the contribution policy.")

@@ -19,6 +19,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.3.0**.
 
 ### Fixed
 
+- **Tooling no longer mojibakes or crashes on a non-UTF-8 console (Windows `cp1252`) (#128).** Every
+  CLI tool now forces UTF-8 on `stdout`/`stderr` at `main()` entry, so non-ASCII output (the em-dash
+  in status lines, `eados_lint`'s i18n-staleness `!=`, `→`/`✓` on failure paths) renders correctly
+  instead of garbling — and the i18n-STALE path no longer raises `UnicodeEncodeError` on the
+  development platform (CI on Linux/UTF-8 never surfaced it). New
+  [`test_utf8_stdio.py`](.eados-core/tools/tests/test_utf8_stdio.py) proves it end-to-end (a tool run
+  under a simulated ascii console) and statically asserts every CLI tool carries the guard. Surfaced
+  by the post-v2.3.0 repository audit (milestone **M10**).
+
 ### Security
 
 ---
