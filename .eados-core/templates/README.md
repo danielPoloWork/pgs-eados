@@ -24,7 +24,7 @@ toolchain-shaped values.
 | `AGENTS.md.tmpl`, `CLAUDE.md.tmpl`, `GEMINI.md.tmpl` | the agent contract trinity |
 | `README.md.tmpl`, `ROADMAP.md.tmpl`, `CHANGELOG.md.tmpl`, `SECURITY.md.tmpl`, `gitignore.tmpl` | root governance |
 | `docs/**` | ADRs (+ template + index + 2 seeds), patterns catalogue + taxonomy, spec template + instance, bug ledger, journal, workflow docs, dev guide |
-| `.github/**` | PR template + the CI workflow |
+| `.github/**` | PR + issue templates, CODEOWNERS, Dependabot, label set, CI + release workflows |
 | `tools/consistency_lint.py` | the generic, profile-driven congruence checker |
 
 ## Editing rule

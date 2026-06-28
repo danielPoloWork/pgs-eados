@@ -27,6 +27,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.3.0**.
   [`test_utf8_stdio.py`](.eados-core/tools/tests/test_utf8_stdio.py) proves it end-to-end (a tool run
   under a simulated ascii console) and statically asserts every CLI tool carries the guard. Surfaced
   by the post-v2.3.0 repository audit (milestone **M10**).
+- **Documentation accuracy sweep (#130).** Post-v2.3.0 audit corrections: SECURITY.md's
+  supported-versions note said "pre-`v1.0.0`" (the project is **v2.3.0**); a `USAGE.md` link in the
+  zh-Hans + ja READMEs was repo-root-relative and 404'd from the translation's own directory; the
+  `contribution` OS spec (M8) was missing from the
+  [os/ spec index](.eados-core/orchestrator/os/README.md) and `AGENTS.md` §3; RFC-0001 §12 + the
+  RFC index still described the roadmap as "M1 → M5" (now M1 → M9); and `templates/README.md`'s
+  "What renders where" undercounted the rendered `.github/**` pack.
 
 ### Security
 

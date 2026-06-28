@@ -17,7 +17,7 @@ security surface is:
 
 ## Supported versions
 
-EADOS is pre-`v1.0.0`; only the latest `main` receives fixes.
+EADOS follows Semantic Versioning; only the latest release and `main` receive fixes.
 
 | Version | Supported |
 |---------|-----------|

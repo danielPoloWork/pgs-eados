@@ -53,7 +53,7 @@ EADOS is a **phase-based agentic delivery operating system**: an opt-in pipeline
 its lifecycle. It is *declarative, gate-enforced, and human-gated* (not a runtime kernel); the
 design is [RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md), the phases are
 [`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md), and the machine-readable
-specs (`workflow`, `authority`, `git`, `rfc`, `plan`, `risk`) live under
+specs (`workflow`, `authority`, `git`, `rfc`, `plan`, `risk`, `contribution`) live under
 [`orchestrator/os/`](.eados-core/orchestrator/os/README.md).
 
 The **`scaffold` phase is the factory**: it reproduces the enterprise agent system of

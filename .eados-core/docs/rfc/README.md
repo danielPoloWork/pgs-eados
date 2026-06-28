@@ -13,7 +13,7 @@ record* that ratifies it. Numbering is sequential and never reused.
 
 ## Roadmap
 
-The delivery plan (M1 → M5) is the **single source of truth** in [`ROADMAP.md`](ROADMAP.md) —
+The delivery plan (M1 → M9) is the **single source of truth** in [`ROADMAP.md`](ROADMAP.md) —
 living and checkbox-driven. RFC-0001 §12 points to it; it is not duplicated.
 
 ## Diagrams
