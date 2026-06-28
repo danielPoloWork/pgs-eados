@@ -29,7 +29,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M7 — onboarding & docs** | ✅ **done** — items 7.1–7.5 (#97–#101) |
 | **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 | **v2.2.0 release** | ✅ published 2026-06-28 — M7 onboarding + contributor-safety hardening + M8 inbound review (bundles attached; Latest) |
-| **M9 — guided installer** | 🚧 in progress — 9.1 installer core (POSIX `install.sh`) done; 9.2–9.6 next |
+| **M9 — guided installer** | 🚧 in progress — 9.1 core + 9.2 interactive layer (POSIX) done; 9.3–9.6 next |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -326,10 +326,13 @@ path made real: we build it our way and **co-author @AlexMnrs** (credited in the
       network or disk) and a `--from <file>` local-bundle seam — a pure, testable core that degrades
       cleanly offline (the `derive_links.py` pattern). Gated by a new `install/*.sh` `gate-coverage`
       class + the `test_install_sh.py` smoke (CI).
-- [ ] 9.2 **Interactive layer (POSIX)** — the Q&A wrapper around 9.1: prompt for new-vs-existing repo,
+- [x] 9.2 **Interactive layer (POSIX)** — the Q&A wrapper around 9.1: prompt for new-vs-existing repo,
       path, and repo name; on **new** run `git init` at `<path>/<name>` (offer `gh repo create` when
       `gh` is present); confirm before writing; clear success / next-steps output (point at `AGENTS.md`
-      / the deterministic path). A double-clickable macOS `.command` entry.
+      / the deterministic path). A double-clickable macOS `.command` entry. Shipped as
+      [`install/setup.sh`](../../../install/setup.sh) (it drives `install.sh`, adding no new install
+      logic) + the [`install/install.command`](../../../install/install.command) double-click shim;
+      a `--dry-run` + a `--` passthrough keep it scriptable/testable, gated by `test_setup_sh.py`.
 - [ ] 9.3 **PowerShell installer — `install.ps1`** (+ a `.bat`/`.cmd` shim for true double-click) — the
       Windows-native equivalent: same prompts + checksum verify + additive extract, mirroring 9.1/9.2
       (the 7.2 PowerShell-parity principle).

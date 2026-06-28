@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.2.0**.
 
 ### Added
 
+- **M9 / 9.2 — guided-installer interactive layer (POSIX).** New
+  [`install/setup.sh`](install/setup.sh): the Q&A wrapper around the 9.1 engine — it prompts for
+  new-vs-existing repo, the path, and (for new) the repo name, shows the resolved plan, **confirms
+  before writing**, then runs `install.sh` to download / verify / place the bundle. On a **new** repo
+  it `git init`s the target and (when `gh` is present) offers `gh repo create`. It adds **no new
+  install logic** — provenance, SHA256 verification, and the additive no-clobber guarantee stay in
+  `install.sh`. A double-clickable macOS [`install/install.command`](install/install.command) shim
+  delegates to it. `--dry-run`, `--no-gh`, and a `--` passthrough (to `install.sh`) keep it
+  scriptable and testable; gated by a new `install/*.command` `gate-coverage` class +
+  `test_setup_sh.py` (new/existing routing, the required-name re-prompt, the confirm/abort gate, and
+  an offline end-to-end via `--from`). The PowerShell equivalent (9.3) follows.
+
 - **M9 / 9.1 — guided-installer core (POSIX).** New [`install/install.sh`](install/install.sh): a
   non-interactive engine that downloads the release bundle (`pgs-eados-bundle.tar.gz`), **verifies its
   SHA256** (fail-closed — it refuses to extract an unverified bundle unless `--no-verify`), and

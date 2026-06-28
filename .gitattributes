@@ -43,3 +43,4 @@
 
 # The installer scripts must stay LF (POSIX shebang) regardless of the committer's platform.
 install/*.sh            text eol=lf
+install/*.command       text eol=lf
