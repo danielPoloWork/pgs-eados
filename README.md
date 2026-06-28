@@ -11,9 +11,8 @@
 
 > A language-agnostic **delivery operating system** for enterprise software, games, and mobile
 > apps: an opt-in phase pipeline — `init → design → plan → scaffold → audit → refactor` — that
-> governs a project from its first RFC to release. Its `scaffold` phase reproduces the **enterprise
-> agent system** of `pbr-cpp-memory-pool` for *any* language, from a single manifest and
-> parameterized templates.
+> governs a project from its first RFC to release. Its `scaffold` phase stamps out an **enterprise
+> agent system** for *any* language, from a single manifest and parameterized templates.
 
 EADOS is not a product you ship; it is the **operating system for how the work flows** — a
 declarative, gate-enforced, human-in-the-loop governance layer (not a runtime kernel). Its
@@ -29,9 +28,9 @@ governance across the whole delivery lifecycle.
 
 It exists to answer one question:
 
-> *"We built `pbr-cpp-memory-pool` to an enterprise bar — agents, ADRs, CI matrix,
-> consistency lint, SemVer governance. How do we get the **same** rigor on the next
-> project, which is in Rust / Python / TypeScript / Go / Java / …?"*
+> *"How do I get the **same** enterprise rigor — agents, ADRs, CI matrix, consistency lint,
+> SemVer governance — on every project, whatever the language: Rust / Python / TypeScript /
+> Go / Java / …?"*
 
 The answer: point the **Enterprise Project Architect** agent at EADOS, run the
 **intake interview**, and let it generate the new repository.
@@ -57,15 +56,15 @@ already contains, on day zero:
 | **Quality gates** | A GitHub Actions CI workflow wired to the chosen toolchain's build / test / format / lint / sanitize commands, plus the agent-runnable `consistency_lint.py` |
 | **Versioning & comms** | SemVer policy, milestone-driven release flow, post-release maintenance / hotfix / deprecation / security protocol, and an opt-in **announcements** workflow (X / Discord / LinkedIn / Reddit …) |
 
-Every one of these is a **parameterized copy** of what already works in
-`pbr-cpp-memory-pool`. The genericity lives in three places:
+Every one of these is a **parameterized artifact** held to an enterprise bar. The genericity lives
+in three places:
 
 1. **Language profiles** (`orchestrator/profiles/*.yaml`) encode the per-language
    toolchain knowledge (build tool, test framework, formatter, linter, sanitizers,
    CI matrix, source-file extension, namespace style, version-constant location).
 2. **The project manifest** (`orchestrator/project.yaml`) captures the maintainer's
    answers — one source of truth for every placeholder.
-3. **The templates** (`templates/**`) are the `pbr` artifacts with the
+3. **The templates** (`templates/**`) are the enterprise artifacts with the
    project-specific facts replaced by `{{PLACEHOLDERS}}`.
 
 ---
@@ -122,7 +121,7 @@ pgs-eados/
     │   ├── README.md  interview.md  generate.md  recovery.md  placeholders.md
     │   ├── questionnaire.yaml         # machine-readable question bank
     │   ├── project.yaml.template      # the project manifest skeleton (copied to project.yaml per run)
-    │   ├── examples/reference.yaml    # a worked manifest (pbr-cpp-memory-pool) + render-smoke fixture
+    │   ├── examples/reference.yaml    # a worked manifest + render-smoke fixture
     │   └── profiles/                  # per-language toolchain knowledge (+ _schema.md)
     ├── templates/                     # the parameterized enterprise scaffolding (the output)
     │   ├── AGENTS.md.tmpl  CLAUDE.md.tmpl  GEMINI.md.tmpl  README.md.tmpl  …
@@ -168,6 +167,15 @@ The recommended (conversational) path needs an **`AGENTS.md`-aware AI coding age
 
 "**Open the folder with your agent**" then means: start the agent in your project's repo root — it
 auto-loads `AGENTS.md` and adopts the Enterprise Project Architect persona, ready for the interview.
+
+**Which model?** EADOS leans on the agent's reasoning, so the strongest models do best. Today it
+performs best with **Claude Opus 4.8 (high)** — with **Fable 5** not yet available — followed by
+**OpenAI Codex 5.5** and **Gemini 3.5 Flash**; **Mistral AI** and **Sakana AI** are not yet tested.
+
+> **⚠ AI agents can hallucinate.** They draft confidently and are sometimes wrong — **review every
+> diff, RFC, and command** before acting on it. EADOS lowers the barrier for newcomers, but it is a
+> **power tool**: most effective in experienced hands, where you bring the engineering judgment and
+> the agent brings the speed. The human owns every irreversible step (open / merge / publish).
 
 **No agent? You're not blocked** — take the **deterministic path**: fill `project.yaml` and run
 `render.py` (Python 3.12+, standard-library only). See [Quickstart](#quickstart) and
@@ -290,9 +298,8 @@ placeholder**. The render-smoke job in EADOS's own CI runs this against
 - **The generated repo governs itself.** EADOS's job ends at generation. The new repo
   ships with its own `AGENTS.md`, CI, and lint, so it is self-sufficient and is *not*
   coupled back to EADOS.
-- **English on disk, any language in chat.** Like the reference project, every
-  generated artifact is English; the interview itself may be conducted in the
-  maintainer's language.
+- **English on disk, any language in chat.** Every generated artifact is English; the interview
+  itself may be conducted in the maintainer's language.
 - **Human owns the irreversible steps.** The agent drafts branches, commits, and PRs;
   the human opens, reviews, and merges. EADOS reproduces that boundary verbatim.
 
@@ -315,7 +322,14 @@ EADOS is **owner-governed**: contributors *suggest* via pull requests, the owner
 
 ## Provenance
 
-EADOS is reverse-engineered from `pbr-cpp-memory-pool` — every rule, template, and gate
-here has a concrete origin in that project's `AGENTS.md`, `docs/`, `.github/`, and
-`tools/consistency_lint.py`. See [`docs/adr/`](.eados-core/docs/adr/) for the decisions that shaped
-the generalization.
+Every rule, template, and gate in EADOS is deliberate: the design is ratified in
+[RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md), and each non-trivial decision is recorded
+in [`docs/adr/`](.eados-core/docs/adr/).
+
+## License & ownership
+
+EADOS is released under the **[MIT License](LICENSE)** — © 2026 **Daniel Polo**. It is maintained and
+**owner-governed** by **Daniel Polo** (`@danielPoloWork`): contributors *suggest* via pull requests,
+the owner *decides* and squash-merges (see [Contributing & governance](#contributing--governance)).
+The bundled `LICENSE` ships with the factory on purpose — `render.py` reads it as the source for every
+generated project's license, so each repo EADOS produces is MIT-licensed to its own owner.

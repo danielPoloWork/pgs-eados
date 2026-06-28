@@ -54,6 +54,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.2.0**.
 
 ### Changed
 
+- **README: standalone framing + license/owner + agent guidance.** The README (and its zh-Hans / ja
+  translations) drop the internal seed-project origin story — EADOS now reads as a **standalone**
+  enterprise factory (C++ remains a supported *language*); a new **License & ownership** section makes
+  the **MIT © Daniel Polo** licensing and owner-governance explicit. Under *Prerequisites*, new agent
+  guidance: which model does best today (**Claude Opus 4.8 high**; then **Codex 5.5**, **Gemini 3.5
+  Flash**; **Mistral AI** / **Sakana AI** untested) and an **AI-can-hallucinate** caveat — review every
+  diff/RFC/command; it is a power tool, most effective in expert hands. i18n source-hash refreshed.
+
 ### Deprecated
 
 ### Removed

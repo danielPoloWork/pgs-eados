@@ -15,8 +15,7 @@
 > ゲーム・モバイルアプリ向けに、オプトインのフェーズ・パイプライン
 > —— `init → design → plan → scaffold → audit → refactor` —— で、最初の RFC からリリースまで
 > プロジェクトを統治します。その `scaffold` フェーズは、単一の manifest とパラメータ化された
-> template から、*あらゆる*言語向けに `pbr-cpp-memory-pool` の**エンタープライズ・エージェント
-> 型システム**を再現します。
+> template から、*あらゆる*言語向けに**エンタープライズ・エージェント型システム**を打ち出します。
 
 EADOS は出荷する製品ではなく、**仕事の流れ方そのものを司るオペレーティング・システム**です
 —— 宣言的で、ゲートで強制され、人間が確認する統治層（ランタイムのカーネルではありません）。
@@ -32,9 +31,9 @@ EADOS は出荷する製品ではなく、**仕事の流れ方そのものを司
 
 EADOS はある一つの問いに答えるために存在します：
 
-> *「`pbr-cpp-memory-pool` をエンタープライズ水準で作り上げた —— エージェント、ADR、CI 行列、
-> consistency lint、SemVer ガバナンス。では、次のプロジェクト（Rust / Python / TypeScript /
-> Go / Java / ……）で**同じ**厳密さをどう得るのか？」*
+> *「どの言語でも —— Rust / Python / TypeScript / Go / Java / …… —— **すべての**プロジェクトで
+> **同じ**エンタープライズの厳密さ（エージェント、ADR、CI 行列、consistency lint、SemVer
+> ガバナンス）をどう得るのか？」*
 
 その答え：**Enterprise Project Architect** エージェントを EADOS に向け、**インテイク・
 インタビュー**を実行し、新しいリポジトリを生成させること。
@@ -61,7 +60,7 @@ EADOS はある一つの問いに答えるために存在します：
 | **品質ゲート** | 選択したツールチェーンの build / test / format / lint / sanitize コマンドに接続された GitHub Actions CI ワークフロー、加えてエージェントが実行可能な `consistency_lint.py` |
 | **バージョニングと対外発信** | SemVer 方針、マイルストーン駆動のリリースフロー、リリース後の保守 / ホットフィックス / 非推奨化 / セキュリティ手順、そしてオプトインの**アナウンス**ワークフロー（X / Discord / LinkedIn / Reddit ……） |
 
-これらはいずれも `pbr-cpp-memory-pool` で既に機能しているものの**パラメータ化されたコピー**です。
+これらはいずれもエンタープライズ水準で作られた**パラメータ化された成果物**です。
 汎用性は三つの場所に宿ります：
 
 1. **言語 profile**（`orchestrator/profiles/*.yaml`）は、言語ごとのツールチェーン知識を
@@ -70,7 +69,7 @@ EADOS はある一つの問いに答えるために存在します：
 2. **プロジェクト manifest**（`orchestrator/project.yaml`）は維持者の回答を取り込みます ——
    すべての placeholder にとっての唯一の真実の源です。
 3. **template**（`templates/**`）は、プロジェクト固有の事実を `{{PLACEHOLDERS}}` に
-   置き換えた `pbr` の成果物そのものです。
+   置き換えたエンタープライズの成果物そのものです。
 
 ---
 
@@ -126,7 +125,7 @@ pgs-eados/
     │   ├── README.md  interview.md  generate.md  recovery.md  placeholders.md
     │   ├── questionnaire.yaml         # machine-readable question bank
     │   ├── project.yaml.template      # the project manifest skeleton (copied to project.yaml per run)
-    │   ├── examples/reference.yaml    # a worked manifest (pbr-cpp-memory-pool) + render-smoke fixture
+    │   ├── examples/reference.yaml    # a worked manifest + render-smoke fixture
     │   └── profiles/                  # per-language toolchain knowledge (+ _schema.md)
     ├── templates/                     # the parameterized enterprise scaffolding (the output)
     │   ├── AGENTS.md.tmpl  CLAUDE.md.tmpl  GEMINI.md.tmpl  README.md.tmpl  …
@@ -172,6 +171,15 @@ EADOS は markdown/YAML のファクトリです —— コンパイルするも
 「**エージェントでフォルダを開く**」とは、プロジェクトのリポジトリ直下でエージェントを起動することです——
 エージェントは `AGENTS.md` を自動的に読み込み、Enterprise Project Architect（エンタープライズ・プロジェクト・
 アーキテクト）ペルソナを採用して、インタビューの準備が整います。
+
+**どのモデル？** EADOS はエージェントの推論に依存するため、強力なモデルほど良い結果になります。現時点では
+**Claude Opus 4.8（high）** が最も良く —— **Fable 5** はまだ利用できません —— 次いで **OpenAI Codex 5.5**
+と **Gemini 3.5 Flash**；**Mistral AI** と **Sakana AI** は未検証です。
+
+> **⚠ AI エージェントはハルシネーションを起こし得ます。** 自信ありげに、しかし時に誤って草案を作ります
+> —— 行動に移す前に、**すべての diff・RFC・コマンドをレビュー**してください。EADOS は初心者の敷居を
+> 下げますが、**強力なツール**です：経験者の手で最も効果を発揮します —— あなたが工学的判断を、
+> エージェントが速度をもたらします。不可逆な手順はすべて人間が所有します（open / merge / publish）。
 
 **エージェントがない？ それでも止まりません** —— **決定的パス**を使います：`project.yaml` を埋めて
 `render.py` を実行してください（Python 3.12+ のみ、標準ライブラリだけ）。[Quickstart](#quickstart) と
@@ -295,8 +303,8 @@ python tools/consistency_lint.py     # the generated repo's own gate (now at the
   知りません。「非対応の言語」は存在せず、あるのは「まだ profile 化していない」だけです。
 - **生成されたリポジトリは自己統治する。** EADOS の職務は生成で終わります。新リポジトリは
   自前の `AGENTS.md`、CI、lint を備えるため自給自足で、EADOS へ逆結合し*ません*。
-- **ディスク上は英語、チャットでは任意の言語。** 参照プロジェクトと同様、生成される成果物は
-  すべて英語です。インタビュー自体は維持者の言語で行えます。
+- **ディスク上は英語、チャットでは任意の言語。** 生成される成果物はすべて英語です。インタビュー
+  自体は維持者の言語で行えます。
 - **不可逆な手順は人間が所有する。** エージェントはブランチ・コミット・PR を起草し、人間が
   開き、レビューし、マージします。EADOS はこの境界を逐語的に再現します。
 
@@ -320,7 +328,15 @@ EADOS は **owner ガバナンス**です：コントリビューターは pull 
 
 ## 来歴
 
-EADOS は `pbr-cpp-memory-pool` からリバースエンジニアリングされています —— ここにあるすべての
-規則・template・ゲートは、そのプロジェクトの `AGENTS.md`、`docs/`、`.github/`、
-`tools/consistency_lint.py` に具体的な出自を持ちます。この一般化を形づくった決定については
-[`docs/adr/`](../../../../.eados-core/docs/adr/) を参照してください。
+EADOS のすべての規則・template・ゲートは意図的なものです：設計は
+[RFC-0001](../../../../.eados-core/docs/rfc/0001-eados-delivery-os.md) で批准され、各重要な決定は
+[`docs/adr/`](../../../../.eados-core/docs/adr/) に記録されています。
+
+## ライセンスと所有
+
+EADOS は **[MIT ライセンス](../../../../LICENSE)** の下で公開されています —— © 2026 **Daniel Polo**。
+**Daniel Polo**（`@danielPoloWork`）が保守し **owner ガバナンス**で運営します：コントリビューターは
+pull request で*提案*し、owner が*決定*して squash-merge します
+（[コントリビューションとガバナンス](#コントリビューションとガバナンス)を参照）。ファクトリと共に同梱される
+`LICENSE` は意図的なものです —— `render.py` が各生成プロジェクトのライセンスの源として読み取るため、
+EADOS が生み出す各リポジトリはそれぞれの owner に帰属し MIT ライセンスとなります。

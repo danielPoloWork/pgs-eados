@@ -13,8 +13,8 @@
 
 > 一个与语言无关的**交付操作系统**，面向企业级软件、游戏与移动应用：一条可选用的阶段流水线
 > —— `init → design → plan → scaffold → audit → refactor` —— 从第一份 RFC 一直治理到发布。其
-> `scaffold` 阶段为*任何*语言复刻 `pbr-cpp-memory-pool` 的**企业级智能体系统**，只需单一
-> manifest 与参数化的 template。
+> `scaffold` 阶段为*任何*语言批量生成一套**企业级智能体系统**，只需单一 manifest 与参数化的
+> template。
 
 EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统** —— 一个声明式、由门禁强制、保留
 人工确认的治理层（并非运行时内核）。其 **`scaffold` 阶段就是那座工厂**，批量生产共享同样企业级
@@ -28,9 +28,8 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 
 它的存在是为了回答一个问题：
 
-> *"我们把 `pbr-cpp-memory-pool` 做到了企业标准 —— 智能体、ADR、CI 矩阵、consistency
-> lint、SemVer 治理。下一个项目用的是 Rust / Python / TypeScript / Go / Java / ……，
-> 我们如何在它上面获得**同样**的严谨度？"*
+> *"无论用哪种语言 —— Rust / Python / TypeScript / Go / Java / …… —— 我如何在**每个**项目上
+> 获得**同样**的企业级严谨度：智能体、ADR、CI 矩阵、consistency lint、SemVer 治理？"*
 
 答案是：把 **Enterprise Project Architect** 智能体指向 EADOS，运行**接入访谈**，让它生成新仓库。
 
@@ -54,14 +53,14 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 | **质量门禁** | 一个接入所选工具链 build / test / format / lint / sanitize 命令的 GitHub Actions CI 工作流，外加可由智能体运行的 `consistency_lint.py` |
 | **版本与对外沟通** | SemVer 策略、里程碑驱动的发布流程、发布后维护 / 热修复 / 弃用 / 安全协议，以及可选的**公告**工作流（X / Discord / LinkedIn / Reddit ……） |
 
-以上每一项都是 `pbr-cpp-memory-pool` 中既有可用之物的**参数化副本**。通用性存在于三处：
+以上每一项都是按企业标准打造的**参数化产物**。通用性存在于三处：
 
 1. **语言 profile**（`orchestrator/profiles/*.yaml`）将每种语言的工具链知识编码为数据
    （build 工具、测试框架、formatter、linter、sanitizer、CI 矩阵、源文件扩展名、命名空间
    风格、版本常量位置）。
 2. **项目 manifest**（`orchestrator/project.yaml`）记录维护者的答案 —— 每个 placeholder
    的唯一事实来源。
-3. **template**（`templates/**`）就是把项目特定事实替换为 `{{PLACEHOLDERS}}` 后的 `pbr`
+3. **template**（`templates/**`）就是把项目特定事实替换为 `{{PLACEHOLDERS}}` 后的企业级
    产物。
 
 ---
@@ -118,7 +117,7 @@ pgs-eados/
     │   ├── README.md  interview.md  generate.md  recovery.md  placeholders.md
     │   ├── questionnaire.yaml         # machine-readable question bank
     │   ├── project.yaml.template      # the project manifest skeleton (copied to project.yaml per run)
-    │   ├── examples/reference.yaml    # a worked manifest (pbr-cpp-memory-pool) + render-smoke fixture
+    │   ├── examples/reference.yaml    # a worked manifest + render-smoke fixture
     │   └── profiles/                  # per-language toolchain knowledge (+ _schema.md)
     ├── templates/                     # the parameterized enterprise scaffolding (the output)
     │   ├── AGENTS.md.tmpl  CLAUDE.md.tmpl  GEMINI.md.tmpl  README.md.tmpl  …
@@ -162,6 +161,14 @@ EADOS 是一座 markdown/YAML 工厂 —— 没有东西需要编译，几乎没
 
 “**用你的智能体打开该文件夹**”的意思是：在你项目的仓库根目录启动该智能体——它会自动加载
 `AGENTS.md` 并采用 Enterprise Project Architect（企业项目架构师）人格，准备开始访谈。
+
+**该用哪个模型？** EADOS 依赖智能体的推理能力，因此越强的模型表现越好。目前它在
+**Claude Opus 4.8（high）** 上表现最佳 —— 而 **Fable 5** 尚不可用 —— 其次是 **OpenAI Codex 5.5**
+与 **Gemini 3.5 Flash**；**Mistral AI** 与 **Sakana AI** 尚未测试。
+
+> **⚠ AI 智能体可能产生幻觉。** 它们会自信地起草、有时却是错的 —— 在据此行动之前，请**审阅每一处
+> diff、RFC 与命令**。EADOS 降低了新手的门槛，但它是一件**强力工具**：在有经验者手中最有效 ——
+> 你提供工程判断，智能体提供速度。一切不可逆步骤都归人类所有（打开 / 合并 / 发布）。
 
 **没有智能体？你也不会被卡住** —— 走**确定性路径**：填写 `project.yaml` 并运行 `render.py`
 （仅需 Python 3.12+，只用标准库）。参见 [Quickstart](#quickstart) 与 [`USAGE.md`](../../USAGE.md) §3。
@@ -276,8 +283,7 @@ placeholder 时中止**。EADOS 自身 CI 中的 render-smoke 任务会在每次
   formatter），从不知道具体工具。不存在"不支持的语言"，只有"尚未建立 profile"。
 - **生成的仓库自我治理。** EADOS 的职责止于生成。新仓库自带其 `AGENTS.md`、CI 与 lint，
   因此自给自足，且*不*回耦到 EADOS。
-- **磁盘上是英文，聊天中可任意语言。** 与参考项目一样，每个生成的产物都是英文；访谈本身
-  可以用维护者的语言进行。
+- **磁盘上是英文，聊天中可任意语言。** 每个生成的产物都是英文；访谈本身可以用维护者的语言进行。
 - **不可逆步骤归人类所有。** 智能体起草分支、提交与 PR；人类负责打开、审阅与合并。EADOS 逐字
   复刻了这条边界。
 
@@ -299,6 +305,14 @@ EADOS 由 **owner 治理**：贡献者通过 pull request *提出建议*，owner
 
 ## 溯源
 
-EADOS 是从 `pbr-cpp-memory-pool` 逆向工程而来 —— 这里的每条规则、template 与门禁，都在那个
-项目的 `AGENTS.md`、`docs/`、`.github/` 和 `tools/consistency_lint.py` 中有确切的出处。
-塑造此次泛化的决策记录见 [`docs/adr/`](../../../../.eados-core/docs/adr/)。
+EADOS 中的每条规则、template 与门禁都是有意为之：设计在
+[RFC-0001](../../../../.eados-core/docs/rfc/0001-eados-delivery-os.md) 中得到批准，每个非平凡决策都记录于
+[`docs/adr/`](../../../../.eados-core/docs/adr/)。
+
+## 许可与归属
+
+EADOS 以 **[MIT 许可证](../../../../LICENSE)** 发布 —— © 2026 **Daniel Polo**。由 **Daniel Polo**
+（`@danielPoloWork`）维护并实行 **owner 治理**：贡献者通过 pull request *提出建议*，owner *决定*并执行
+squash-merge（见[贡献与治理](#贡献与治理)）。随工厂一起交付的 `LICENSE` 是有意为之的 ——
+`render.py` 会以它作为每个生成项目许可证的来源，因此 EADOS 产出的每个仓库都归其各自 owner 所有并采用
+MIT 许可。
