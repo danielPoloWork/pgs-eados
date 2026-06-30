@@ -8,7 +8,7 @@
 ownership:
   default_branch: ""        # e.g. main
   license_id: ""            # e.g. Apache-2.0
-  assignee: ""              # e.g. @me
+  assignee: ""              # blank -> the repo owner; never @me (it resolves to the drafting actor)
   author: ""                # e.g. ACME Corp
 
 language:

@@ -331,7 +331,7 @@ def build_context(m):
         "YEAR": own.get("year", ""),
         "LICENSE_ID": own.get("license_id", ""),
         "DEFAULT_BRANCH": own.get("default_branch", ""),
-        "ASSIGNEE": own.get("assignee", ""),
+        "ASSIGNEE": own.get("assignee") or own.get("owner", ""),   # #141: blank -> the owner, never "@me"
         "START_VERSION": gov.get("start_version", "0.0.0"),
         "VERSION_START": gov.get("version_start", ""),
         "LANG": lng,

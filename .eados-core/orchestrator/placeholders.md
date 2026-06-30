@@ -35,7 +35,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{YEAR}}` | Copyright year | `2026` |
 | `{{LICENSE_ID}}` | SPDX license id | `MIT` |
 | `{{DEFAULT_BRANCH}}` | Mainline branch | `main` |
-| `{{ASSIGNEE}}` | PR assignee handle (often `@me`) | `@me` |
+| `{{ASSIGNEE}}` | PR assignee handle — the repository **owner** by default (a blank manifest `assignee` resolves to `{{OWNER}}`); never `@me`, which would resolve to whichever actor drafts the PR | `danielPoloWork` |
 | `{{PROJECT_KIND}}` | `library` \| `service` \| `cli` \| `app` | `library` |
 | `{{START_VERSION}}` | Numeric start version (drives the README badge + day-zero version constant) | `0.0.0` |
 | `{{VERSION_START}}` | Versioning-start descriptor (prose) | `pre-1.0 milestone-driven` |

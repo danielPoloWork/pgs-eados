@@ -18,11 +18,19 @@ pr:
   opened_by: human                # the owner opens / marks ready
   merged_by: human                # the owner squash-merges — never the agent
   merge_method: squash            # the repository allows squash only
-  assignee: "@me"
   one_type_label: true
-  required_crosslinks: [rfc, milestone]   # PR body must reference its RFC and milestone item
+  required_crosslinks: [rfc, milestone]   # PR *body* references (traceability edges) — distinct from `metadata` below
   template: ".github/PULL_REQUEST_TEMPLATE.md"
   review_gate: contribution-review   # M8: /eados review drafts a recommendation on an inbound PR; the human disposes
+  # GitHub project-board fields SET ON CREATION via `gh pr create` (#141) — distinct from the body
+  # cross-links above (those are referenced *in* the body for traceability; these are gh metadata
+  # flags). `assignee` resolves to the OWNER, never "@me" (which is whichever actor — human or agent —
+  # drafts the PR): EADOS's own repo -> the owner (danielPoloWork); a generated repo -> the manifest owner.
+  metadata:
+    assignee: owner          # the repository owner, NOT "@me"/the gh actor that drafts the PR
+    label: one-type          # exactly one type label matching the lead commit's <type> (see one_type_label)
+    milestone: current-open  # the current open release / roadmap milestone
+    project: if-present      # the GitHub Project, attached when the repo has one
 
 release:
   scheme: semver

@@ -154,6 +154,19 @@ changes, but only the owner decides what lands on `main`.
 - Conventional Commits for messages. Scopes for this repo: `interview`, `profiles`,
   `templates`, `lint`, `agent`, `docs`, `adr`, `ci`.
 - One logical change per PR; prefer one PR at a time.
+- **PR metadata — set on every PR** (the data contract is `os/git/git.yaml` `pr.metadata`):
+  **assignee** = the owner `@danielPoloWork` (never `@me`, which resolves to whichever actor
+  runs `gh`), **exactly one type label**, the open **milestone**, and the **Project** where one
+  exists. These are the GitHub fields *set on creation* — distinct from the body cross-links
+  (`required_crosslinks`: the RFC + milestone item the body must *reference*).
+
+  ```bash
+  gh pr create --title "<type>(<scope>): <subject>" --body-file <file> \
+    --assignee danielPoloWork --label <type-label> --milestone "vX.Y.Z"
+    # --project "<name>"   # add when the repo has a Project
+  ```
+
+  Verify an open PR carries them: `python .eados-core/tools/pr_metadata_check.py --pr <N>`.
 
 ## 7. Documentation rules (for work ON EADOS)
 

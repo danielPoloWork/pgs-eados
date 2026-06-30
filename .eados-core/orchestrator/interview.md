@@ -118,9 +118,10 @@ How the repository is run — reproduces the reference project's GitHub rules.
   plus the standard `build, tests, docs, ci`. → the `EACH_SCOPE` list.
 - **Q4.4 — Versioning start point?** Pre-1.0 milestone-driven (default, matches the
   reference) or start at 1.0.0? Confirm SemVer and the release cadence.
-- **Q4.5 — PR metadata policy?** Confirm assignee (default `@me`), one-type-label scheme,
-  and per-release milestones (reference ADR-0040). Reviewers/projects are deferred until a
-  second collaborator or a board exists, exactly as upstream.
+- **Q4.5 — PR metadata policy?** Confirm assignee (defaults to the **owner** — never `@me`,
+  which resolves to whichever actor drafts the PR), the one-type-label scheme, and per-release
+  milestones (reference ADR-0040). A GitHub **Project** is attached where one exists; reviewers
+  are deferred until a second collaborator, exactly as upstream.
 - **Q4.6 — Packaging/distribution?** Distributed via a package registry? Sets
   `IF_PACKAGING`. Default off unless the maintainer asks.
 - **Q4.7 — Documentation translations (i18n)?** Default off. If on, capture the **canonical

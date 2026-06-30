@@ -43,17 +43,33 @@ configured to use the PR title/body as the squash-merge commit message).
 
 ### 4.2 Metadata (every PR)
 
-- `--assignee {{ASSIGNEE}}`
-- exactly **one** type label matching the lead commit's `type`
-- the current open release **milestone** (`vX.Y.Z`)
+Every PR carries complete project-board metadata, **set on creation** (not merely referenced in
+the body). The assignee is the repository **owner** (`{{ASSIGNEE}}`), never `@me` — `@me` resolves
+to whichever actor (human or agent) runs `gh`, which is wrong when an agent drafts the PR.
+
+- `--assignee {{ASSIGNEE}}` — the owner
+- `--label <type>` — exactly **one** type label matching the lead commit's `type`
+- `--milestone "vX.Y.Z"` — the current open release milestone
+- `--project "<name>"` — the GitHub **Project**, where the repo has one
+
+These are distinct from the body cross-links (§4.1): the body *references* the RFC and milestone
+item for traceability; the flags above *set* the GitHub fields.
 
 ### 4.3 Drafting flow
 
 1. Branch off `{{DEFAULT_BRANCH}}`.
 2. Make changes; commit in logical units.
 3. `python tools/consistency_lint.py` — must pass.
-4. Push; prepare the PR body. If authorized: `gh pr create --draft ...`. Otherwise print the
-   proposed command and wait.
+4. Push; prepare the PR body. If authorized, draft it **with the metadata flags**:
+
+   ```bash
+   gh pr create --draft \
+     --title "<type>(<scope>): <subject>" --body-file <body.md> \
+     --assignee {{ASSIGNEE}} --label <type> --milestone "vX.Y.Z"
+     # --project "<name>"   # add when the repo has a Project
+   ```
+
+   Otherwise print the proposed command and wait.
 5. **Stop.** The user opens the PR and merges manually.
 
 ### 4.4 Responding to review

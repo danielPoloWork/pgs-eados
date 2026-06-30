@@ -11,7 +11,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
 
 ### Added
 
+- **PR-metadata contract as data (#141, M11).** `os/git/git.yaml` now encodes a `pr.metadata`
+  block — the GitHub fields **set on creation** (`assignee`, one type `label`, `milestone`,
+  `project`-if-present) — kept distinct from `required_crosslinks` (the RFC/milestone references
+  the PR *body* carries for traceability). The git-workflow docs (`AGENTS.md` §6 + the
+  `git-workflow.md.tmpl` / `AGENTS.md.tmpl` / PR-template renders) now show the exact
+  `gh pr create` flags, including `--project`. New advisory tool
+  `tools/pr_metadata_check.py --pr N` verifies an open PR carries assignee + label + milestone
+  (Project advisory); pure core fixture-tested, thin `gh` shell degrading offline, wired into CI.
+
 ### Changed
+
+- **Assignee resolves to the owner, never `@me` (#141).** A blank manifest `assignee` now renders
+  to `{{OWNER}}` (`render.py`), and the defaults/interview/placeholder hints recommend the owner —
+  `@me` was wrong because it resolves to whichever actor (human or agent) runs `gh`.
 
 ### Deprecated
 

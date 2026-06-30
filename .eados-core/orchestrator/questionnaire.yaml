@@ -129,8 +129,8 @@ phases:
         default: "pre-1.0 milestone-driven"
         sets: [VERSION_START]
       - id: Q4.5
-        prompt: "PR metadata policy (assignee, one-type-label, per-release milestone)?"
-        defaults: { ASSIGNEE: "@me" }
+        prompt: "PR metadata policy (assignee, one-type-label, per-release milestone, project)?"
+        defaults: { ASSIGNEE: "" }   # blank -> the owner; never "@me" (it resolves to the drafting actor)
         sets: [ASSIGNEE]
       - id: Q4.6
         prompt: "Packaging/distribution via a package registry?"
