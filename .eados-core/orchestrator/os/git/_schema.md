@@ -14,6 +14,7 @@ below.
 version:            # integer schema version
 branch_naming:      # pattern + the allowed type vocabulary
 commit:             # convention, scopes, one-change-per-PR / one-PR-at-a-time
+  squash_body:      # the squash-merge commit carries a verbose body (subject one-liner + PR summary)
 pr:                 # who drafts/opens/merges, the body cross-links, the project-board metadata
   metadata:         # GitHub fields set on creation: assignee(owner), one type label, milestone, project-if-present
 release:            # SemVer flow, tag flow, the merge!=deploy boundary, delegation flag
@@ -23,7 +24,13 @@ traceability:       # the artifact lineage the graph + lint (M3/M4) are built fr
 ## Item shapes (runtime-enforced, M3/M4)
 
 - **`branch_naming`** — `{ pattern, types[] }`. `types` is the Conventional-Commit type set.
-- **`commit`** — `{ convention, scopes[], one_logical_change_per_pr, one_pr_at_a_time }`.
+- **`commit`** — `{ convention, scopes[], one_logical_change_per_pr, one_pr_at_a_time,
+  squash_body{} }`. `squash_body` requires the squash-merge commit (squash is the only merge
+  method) to carry a **verbose, professional body**, not a one-line subject collapse:
+  `subject` = the Conventional-Commit one-liner (the PR title), `body_from: pull_request` = the
+  PR description (context, change, verification) preserved into the merge commit. The repo is
+  configured (`github-setup` §1) to take the PR title/body as the squash message, so a structured
+  PR body *is* the merge-commit body.
 - **`pr`** — `{ draft_by, opened_by, merged_by, merge_method, one_type_label,
   required_crosslinks[], template, review_gate, metadata{} }`. `required_crosslinks` (e.g.
   `[rfc, milestone]`) are the references a PR *body* must carry; the traceability lint fails on a

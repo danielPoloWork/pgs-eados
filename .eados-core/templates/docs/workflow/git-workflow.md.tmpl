@@ -34,12 +34,22 @@ chore, ci}`. Lowercase kebab, ≤40 chars, describe the *what* not the issue num
 
 ## 4. Pull Requests
 
-### 4.1 Title & body
+### 4.1 Title & body — the squash-merge commit
 
-PR title = lead commit subject. Body follows
-[`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md) — GitHub
-auto-populates it. Write the body as you want it to read in `git log` forever (the repo is
-configured to use the PR title/body as the squash-merge commit message).
+Squash is the only merge method, so **the PR title and body become the commit that lands on
+`{{DEFAULT_BRANCH}}` forever** (the repo is configured to take the PR title/body as the squash
+message — see [`github-setup.md`](github-setup.md) §1). Write them accordingly:
+
+- **Subject** = the lead commit's Conventional-Commit one-liner (`<type>(<scope>): <subject>`,
+  ≤72 chars). This is the PR title.
+- **Body** = a verbose, professional summary — **never** just the subject collapsed to one line.
+  Follow [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md), whose
+  sections map straight into a good squash body: **what** changed and **why** (context /
+  motivation), the meaningful **changes**, and how it was **verified**. Footers (`Refs:`,
+  `BREAKING CHANGE:`, `Closes #NN`) belong at the end.
+
+A one-line squash body is a defect: the permanent `git log` should explain the change without
+opening the PR.
 
 ### 4.2 Metadata (every PR)
 

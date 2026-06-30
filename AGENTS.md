@@ -144,6 +144,11 @@ changes, but only the owner decides what lands on `main`.
   reaches the owner as a pull request. See [`CONTRIBUTING.md`](https://github.com/danielPoloWork/pgs-eados/blob/main/CONTRIBUTING.md).
 - **The owner is the sole decider.** Every change reaches `main` through a PR the owner
   reviews and **squash-merges** — the repository allows the *squash* merge method only.
+- **Verbose squash body** (the data contract is `os/git/git.yaml` `commit.squash_body`): because
+  squash is the only method, the PR title/body *becomes* the permanent `main` commit. Subject = the
+  Conventional-Commit one-liner; **body = a verbose, professional summary** (context, change,
+  verification) — never a one-line collapse. The repo is configured to take the PR title/body as the
+  squash message, so a structured PR body *is* the merge-commit body.
 - **`main` is protected:** PR required, **squash-merge only**, no direct pushes, no
   force-push, no deletion, linear history. Squash-only is enforced at the repository level
   today; the full branch-protection ruleset (require-PR + restrict who can push) is enabled

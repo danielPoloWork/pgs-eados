@@ -159,9 +159,11 @@ gh pr create --title "<full Conventional-Commits subject>" --body-file <file> \
   # --project "<name>"   # add when the repo has a Project
 ```
 
-The PR body template lives in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md);
-write it as you want it to read in `git log` forever (the repo is configured to use the PR
-title/body as the squash-merge commit message).
+The PR body template lives in [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
+Squash is the only merge method, so the PR title/body **becomes the commit on
+`{{DEFAULT_BRANCH}}`**: subject = the Conventional-Commit one-liner, body = a verbose,
+professional summary (context, change, verification) — never a one-line collapse. Write it as it
+should read in `git log` forever.
 
 **Pre-PR congruence check (mandatory).** Before drafting any PR, run and pass:
 

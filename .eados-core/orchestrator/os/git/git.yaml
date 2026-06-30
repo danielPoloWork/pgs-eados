@@ -12,6 +12,12 @@ commit:
   scopes: [interview, profiles, templates, lint, agent, docs, adr, ci, os, workflow, authority, git, rfc, plan, risk, contribution, commands, traceability, tools, setup, release]
   one_logical_change_per_pr: true
   one_pr_at_a_time: true
+  # The squash-merge commit (squash is the only merge method) MUST carry a verbose, professional
+  # body — context / change / verification — NOT just the PR title collapsed to a one-liner (#144).
+  squash_body:
+    required: true                # the merge commit body is mandatory, not a one-line subject collapse
+    subject: conventional-commit  # subject line = the Conventional-Commit one-liner (the PR title)
+    body_from: pull_request       # body = the PR description (context, change, verification), kept on squash
 
 pr:
   draft_by: implementing-role     # the agent role that owns the phase drafts the PR

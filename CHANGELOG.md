@@ -19,6 +19,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
   `gh pr create` flags, including `--project`. New advisory tool
   `tools/pr_metadata_check.py --pr N` verifies an open PR carries assignee + label + milestone
   (Project advisory); pure core fixture-tested, thin `gh` shell degrading offline, wired into CI.
+- **Verbose squash-body policy as data (#144, M11).** `os/git/git.yaml` `commit.squash_body`
+  now requires the squash-merge commit (squash is the only method) to carry a verbose,
+  professional body — subject = the Conventional-Commit one-liner, body = the PR description
+  (context, change, verification) preserved on squash — never a one-line collapse. Documented in
+  `AGENTS.md` §6 and the `git-workflow.md.tmpl` / `AGENTS.md.tmpl` renders; the PR templates
+  already carry the Summary/Motivation/Changes/Verification sections that map into it.
 
 ### Changed
 
