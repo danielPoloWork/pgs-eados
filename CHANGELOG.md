@@ -19,6 +19,14 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
   `gh pr create` flags, including `--project`. New advisory tool
   `tools/pr_metadata_check.py --pr N` verifies an open PR carries assignee + label + milestone
   (Project advisory); pure core fixture-tested, thin `gh` shell degrading offline, wired into CI.
+- **Seed all roadmap milestones on GitHub (#143, M11).** New helper
+  `tools/seed_milestones.py ROADMAP.md` reads the roadmap and prints (or `--run` executes) the exact
+  `gh api …/milestones` calls to create **every** milestone as `MN — <name>` (em-dash) with a
+  goal-derived description — not just the first. `generate.md` Step 6 and `github-setup.md.tmpl` §5
+  now seed the full board so milestone-scoped PR delivery starts against a complete project, and the
+  PR-metadata docs reference the open **roadmap** milestone (`MN — name`) rather than a `vX.Y.Z`
+  release milestone — matching EADOS's own `M1 … MN`. Parser is markdown-only, dependency-free,
+  UTF-8-guarded, fixture-tested (incl. the shipped EADOS roadmap), and wired into CI.
 - **Verbose squash-body policy as data (#144, M11).** `os/git/git.yaml` `commit.squash_body`
   now requires the squash-merge commit (squash is the only method) to carry a verbose,
   professional body — subject = the Conventional-Commit one-liner, body = the PR description

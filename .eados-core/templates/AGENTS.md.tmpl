@@ -149,13 +149,14 @@ creation in the current session. PR title = lead commit subject.
   resolves to whichever actor — human or agent — runs `gh`).
 - **Label** — **exactly one type label** matching the lead commit's Conventional-Commit
   `type` (one PR = one type).
-- **Milestone** — the current open **release milestone** (per-release scheme, e.g.
-  `vX.Y.Z`). Create it with `gh api repos/:owner/:repo/milestones` if absent.
+- **Milestone** — the current open **roadmap milestone** (`MN — name`, seeded from `ROADMAP.md`;
+  see [`github-setup.md`](docs/workflow/github-setup.md) §5). Create it with
+  `gh api repos/:owner/:repo/milestones` if absent.
 - **Project** — the GitHub **Project**, where the repo has one (`--project "<name>"`).
 
 ```bash
 gh pr create --title "<full Conventional-Commits subject>" --body-file <file> \
-  --assignee {{ASSIGNEE}} --label <type-label> --milestone "<vX.Y.Z>"
+  --assignee {{ASSIGNEE}} --label <type-label> --milestone "<MN — name>"
   # --project "<name>"   # add when the repo has a Project
 ```
 

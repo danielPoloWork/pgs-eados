@@ -79,14 +79,25 @@ gh api -X POST repos/$OWNER/$REPO/pages \
 Private vulnerability reporting (the SECURITY.md target) is enabled in the web UI:
 **Settings → Code security → Private vulnerability reporting → Enable**.
 
-## 5. First release milestone
+## 5. Roadmap milestones — seed every `MN — name`
 
-PRs carry the current open release milestone (AGENTS.md §6.4):
+PRs are delivered against the **roadmap milestones** (AGENTS.md §6.4), so seed **all** of them
+from [`ROADMAP.md`](../../ROADMAP.md) up front — the board is then complete before milestone-scoped
+delivery begins. Each is titled `MN — <name>` (em-dash, matching the `## Milestone N — <name>`
+headers) with a professional description from the milestone's Goal.
 
 ```bash
-gh api -X POST repos/$OWNER/$REPO/milestones -f title="v{{START_VERSION}}" \
-  -f state=open -f description="First release slice (Milestone 1)."
+# One POST per roadmap milestone — worked example for Milestone 1:
+gh api -X POST repos/$OWNER/$REPO/milestones \
+  -f title="M1 — Project bootstrap & CI" -f state=open \
+  -f description="The thinnest slice that compiles, tests, and ships under the full quality bar."
 ```
+
+To generate the create-commands for **every** milestone straight from `ROADMAP.md`, the EADOS
+factory ships a helper (available in the in-place model): `python
+.eados-core/tools/seed_milestones.py ROADMAP.md` prints the exact `gh api` calls — add `--run` to
+execute them. Creating a milestone that already exists returns HTTP 422, so the seeder is
+safely re-runnable.
 
 ## Re-running
 

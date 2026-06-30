@@ -128,8 +128,9 @@ Non-Functional Requirements, Logical Architecture, Public Interface, Verificatio
 
 `docs/workflow/github-setup.md` (rendered in Step 4) carries the one-time, admin-only repo
 configuration that cannot be a committed file — branch protection / ruleset for
-`{{DEFAULT_BRANCH}}`, squash-only merge, Discussions, Pages, label import, the first
-milestone. Surface it in the hand-off report so the maintainer runs it once.
+`{{DEFAULT_BRANCH}}`, squash-only merge, Discussions, Pages, label import, and seeding **all**
+roadmap milestones (`MN — name`; see Step 6). Surface it in the hand-off report so the maintainer
+runs it once.
 
 The CI workflow's setup steps and extra jobs come from the profile's `ci.setup_steps` /
 `ci.extra_jobs`; the build/test/format/lint commands come from `toolchain.commands`. Drop
@@ -141,6 +142,12 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
   `spec.milestone1_items`) and **every** `spec.milestones` entry (`number`, `title`, `goal`,
   `items`) — plus the *Spec Coverage Map* skeleton (one row per spec section) so the lint's
   `spec-map` check passes. Mirror the same milestone list into the README milestone table.
+- **Seed every roadmap milestone on GitHub** as `MN — <name>` (em-dash) with a goal-derived
+  description, so milestone-scoped PR delivery starts against a complete board (matching EADOS's
+  own `M1 … MN`). Once the remote exists, run the helper:
+  `python .eados-core/tools/seed_milestones.py ROADMAP.md --run` (omit `--run` to print the exact
+  `gh api …/milestones` calls first). Re-runnable: an existing milestone returns HTTP 422. This is
+  also the seeding step listed in `docs/workflow/github-setup.md` §5.
 - `CHANGELOG.md`: a single `[Unreleased]` block + an empty *Released versions* index.
 - The version constant in `version_file` set to `{{START_VERSION}}` (the same value the
   README `Status-vX.Y.Z` badge renders) — `0.0.0` pre-1.0, or as decided in Q4.4. Keeping

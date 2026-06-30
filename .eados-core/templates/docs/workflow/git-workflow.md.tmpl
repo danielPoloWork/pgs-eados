@@ -59,7 +59,8 @@ to whichever actor (human or agent) runs `gh`, which is wrong when an agent draf
 
 - `--assignee {{ASSIGNEE}}` — the owner
 - `--label <type>` — exactly **one** type label matching the lead commit's `type`
-- `--milestone "vX.Y.Z"` — the current open release milestone
+- `--milestone "MN — name"` — the current open roadmap milestone (seeded from `ROADMAP.md`,
+  [`github-setup.md`](github-setup.md) §5)
 - `--project "<name>"` — the GitHub **Project**, where the repo has one
 
 These are distinct from the body cross-links (§4.1): the body *references* the RFC and milestone
@@ -75,7 +76,7 @@ item for traceability; the flags above *set* the GitHub fields.
    ```bash
    gh pr create --draft \
      --title "<type>(<scope>): <subject>" --body-file <body.md> \
-     --assignee {{ASSIGNEE}} --label <type> --milestone "vX.Y.Z"
+     --assignee {{ASSIGNEE}} --label <type> --milestone "MN — name"
      # --project "<name>"   # add when the repo has a Project
    ```
 
