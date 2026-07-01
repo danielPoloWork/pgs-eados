@@ -175,6 +175,14 @@ Walk these, asking follow-ups until each is concrete enough to test against:
   review expectation). These seed the generated `docs/patterns/README.md` (architecture-style note +
   the *Planned* table), so the choice shapes the repo instead of leaving the catalogue empty. →
   `SPEC_ARCHITECTURE`, `spec.architecture_style`, `spec.patterns`, `spec.pattern_discipline`.
+- **Q5.4a — Layered package skeleton? (service / app / web only).** For a `service`/`app`, or a
+  `web` project, offer an optional **layered layout** driven by the style above: which internal
+  packages to scaffold under `src/main/…` (mirrored under `src/test/…`) — e.g. `controller`,
+  `service`, `repository`, `dto`, `mapper` (add `config`, `api`, `domain`, `query` as the style
+  needs). A **library keeps the flat shape — do not offer it.** Opting in sets
+  `capabilities.layered: true` and records the package names in `spec.layers`; the generator seeds
+  each as an empty (`.gitkeep`) package and notes the layout in the generated ADR-0002. →
+  `capabilities.layered`, `spec.layers`.
 - **Q5.5 — Public interface.** The functions/types/endpoints consumers depend on, with the
   error model. → `EACH_PUBLIC_API`, `PUBLIC_INCLUDE_HINT`.
 - **Q5.6 — Verification & test strategy.** How correctness and performance are *proven* —

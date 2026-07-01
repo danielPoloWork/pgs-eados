@@ -91,6 +91,7 @@ governance:
     packaging:  false                             # Packaging/distribution artifacts.
     service:    false                             # Service-specific templates.
     announce:   false                             # Enables the announce block below.
+    layered:    false                             # Lay down a layered package skeleton from spec.layers (service/app/web).
 
 i18n:                          # Doc translations (used when capabilities.i18n).
   default_lang: "en"           # Canonical on-disk language. -> {{DOC_DEFAULT_LANG}}
@@ -107,6 +108,7 @@ spec:                         # Filled from Phase 5 of the intake interview.
   architecture_style: ""      # Structured style from design-patterns.md §5 (Layered|Hexagonal|Clean|MVC|Event-Driven|CQRS|DDD|…); blank for a library. -> {{ARCHITECTURE_STYLE}}
   patterns:         []        # Expected first-class patterns: [{name, why}]. Seeds docs/patterns/README.md. -> {{#EACH_PATTERN}}
   pattern_discipline: advisory # advisory (agent advises, human decides) | enforced (force pattern discipline). -> {{PATTERN_DISCIPLINE}}
+  layers:           []        # Layered package names (used when capabilities.layered), e.g. [controller, service, repository, dto, mapper]. -> {{#EACH_LAYER}}
   public_api:       []        # Public API (used when capabilities.public_api). -> {{#EACH_PUBLIC_API}}
   verification:     ""        # Verification strategy. -> {{SPEC_VERIFICATION}}
   milestone1_items: []        # Extra M1 items beyond the bootstrap. -> {{#EACH_MILESTONE1_ITEM}}

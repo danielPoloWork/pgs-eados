@@ -389,6 +389,7 @@ def build_context(m):
         "IF_PKG_ECOSYSTEM": bool(pkg_eco.strip()),
         "IF_HOUSE_RULES": bool(str(gov.get("house_rules", "") or "").strip()),
         "IF_ARCHITECTURE_STYLE": bool(str(spec.get("architecture_style", "") or "").strip()),  # #151
+        "IF_LAYERED": bool(caps.get("layered")),   # #152: opt-in layered package skeleton
     }
 
     sections = {
@@ -400,6 +401,7 @@ def build_context(m):
         "EACH_MILESTONE1_ITEM": spec.get("milestone1_items", []) or [],
         "EACH_MILESTONE": spec.get("milestones", []) or [],
         "EACH_PATTERN": spec.get("patterns", []) or [],   # #151: expected first-class patterns (name, why)
+        "EACH_LAYER": spec.get("layers", []) or [],       # #152: layered package skeleton (name, purpose)
         "EACH_DOC_LANG": i18n.get("targets", []) or [],
         "EACH_ANNOUNCE_CHANNEL": ann.get("channels", []) or [],
     }
@@ -694,6 +696,19 @@ def main():
     for key in ("SRC_MAIN", "SRC_TEST", "SRC_BENCH"):
         if scalars[key]:
             write_file(out_dir, f"{scalars[key]}/.gitkeep", "")
+
+    # Optional layered skeleton (#152): materialize the chosen internal packages under the main and
+    # test source roots when the maintainer opted into a layered layout (capabilities.layered). A
+    # library keeps the flat shape (no layers -> nothing seeded here). Only plain package segments are
+    # honoured; write_file's containment guard backstops anything unexpected.
+    if flags["IF_LAYERED"]:
+        for layer in sections["EACH_LAYER"]:
+            name = (layer.get("name") if isinstance(layer, dict) else str(layer or "")).strip()
+            if not re.match(r"^[A-Za-z0-9_]+$", name):
+                continue   # skip non-identifier names rather than create an odd/unsafe path
+            for root_key in ("SRC_MAIN", "SRC_TEST"):
+                if scalars[root_key]:
+                    write_file(out_dir, f"{scalars[root_key]}/{name}/.gitkeep", "")
 
     if errors:
         print("Render: FAIL\n")

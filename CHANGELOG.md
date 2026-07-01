@@ -11,6 +11,17 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
 
 ### Added
 
+- **Optional layered package scaffold (#152, M12).** A `service` / `app` / `web` project can now opt
+  into a **layered internal layout** instead of the flat source tree. A new Phase-5 interview
+  follow-up (gated on `PROJECT_KIND in {service, app}` or `domain == web`, driven by the architecture
+  style from #151) captures the layer packages; the manifest carries `capabilities.layered` +
+  `spec.layers` (e.g. `[controller, service, repository, dto, mapper]`), and the generator seeds each
+  as an empty (`.gitkeep`) package under **both** `src/main/…` and `src/test/…`, recording the layout
+  in the generated **ADR-0002**. Non-identifier layer names are skipped (write containment
+  backstops it), and a **library keeps the flat shape** (nothing seeded). New render placeholders
+  `{{#IF_LAYERED}}` + `{{#EACH_LAYER}}` (documented in `placeholders.md`). Fixture-tested
+  (`tests/test_layered_scaffold.py`: build_context wiring, end-to-end render of main+test packages,
+  name-sanitisation, library-stays-flat, ADR record) and wired into CI.
 - **Architecture-style & design-pattern elicitation (#151, M12).** The interview now captures the
   project's **architectural style** and **pattern posture** instead of shipping a rich taxonomy
   nobody commits to and an empty catalogue. `Q5.4` elicits a structured `spec.architecture_style`

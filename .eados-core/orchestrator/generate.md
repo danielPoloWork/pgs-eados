@@ -64,8 +64,8 @@ language segment substituted):
 ```text
 <output>/
 ├── src/
-│   ├── main/<lang>/<group_path>/<project_slug>/
-│   ├── test/<lang>/<group_path>/<project_slug>/
+│   ├── main/<lang>/<group_path>/<project_slug>/         # + <layer>/ dirs if capabilities.layered
+│   ├── test/<lang>/<group_path>/<project_slug>/         # mirrors the main layers when layered
 │   └── bench/<lang>/<group_path>/<project_slug>/        # only if capabilities.bench
 ├── docs/{adr,patterns,specs,bugs,journal,workflow,development}/   # + i18n/ when capabilities.i18n
 ├── .github/{ISSUE_TEMPLATE/,workflows/}        # PR template, CODEOWNERS, issue forms, CI + release

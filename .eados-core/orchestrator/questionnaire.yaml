@@ -194,3 +194,7 @@ phases:
       - for_each: requirement
         ask: "How would CI mechanically prove this requirement was violated?"
         rule: "refine until there is a check, or mark it an explicit manual gate"
+      - when: "PROJECT_KIND in {service, app} or domain == web"    # a library keeps the flat shape
+        ask: ["Lay down a layered package skeleton (controller/service/repository/dto/mapper/…)?",
+              "Which layer packages, driven by the architecture style?"]
+        sets: [LAYERED, LAYERS]                                     # capabilities.layered + spec.layers

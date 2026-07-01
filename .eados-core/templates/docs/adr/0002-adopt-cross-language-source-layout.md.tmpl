@@ -27,6 +27,16 @@ mirroring the path. Subdivision inside `{{PROJECT_SLUG}}/` is by **component**, 
 type. This layout is **normative** for every sibling project; only the `<lang>` segment and
 the language's native namespace idiom change.
 
+{{#IF_LAYERED}}
+For this project the component subdivision is a **layered package skeleton** under
+`src/main/{{LANG}}/{{GROUP_PATH}}/{{PROJECT_SLUG}}/` (mirrored under `src/test/...`):
+
+{{#EACH_LAYER}}- `{{.}}/`
+{{/EACH_LAYER}}
+The layers are seeded empty (`.gitkeep`) at generation; production code lands in the layer it
+belongs to, and adding or renaming a layer supersedes this ADR.
+{{/IF_LAYERED}}
+
 ## Alternatives Considered
 
 - **The language's default flat layout.** Rejected — it optimizes for one ecosystem at the
