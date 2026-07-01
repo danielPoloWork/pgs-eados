@@ -89,6 +89,7 @@ announce:
   channels: []
 
 spec:
+  provenance: coauthor        # this reference spec was co-authored through Phase 5 (Q5.0)
   objective: A fixed-block O(1) memory pool that removes allocation jitter on hot paths.
   functional_reqs:
     - O(1) allocate and deallocate

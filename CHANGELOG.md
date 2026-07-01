@@ -11,6 +11,17 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
 
 ### Added
 
+- **Spec provenance: import-and-validate branch (#153, M12).** Phase 5 no longer assumes the spec is
+  co-authored from scratch: a new **`Q5.0 — provenance`** question (asked **first**; `import` |
+  `coauthor`, default `coauthor`) lets a maintainer who already has a technical spec / PRD / SRS take
+  an **import-and-validate** path — the document is mapped onto the six-section spec shape and run
+  through a **gap audit** (each section/requirement gets the Phase-5 testability follow-up, "how
+  would CI prove this failed?"), and only the flagged gaps are asked, instead of re-narrating the
+  whole document through Q5.1–Q5.7. Both paths converge on the same frozen
+  `docs/specs/01_spec_<slug>.md`; the manifest records `spec.provenance`. ADR-0002
+  (interview-driven intake) updated. Fixture-tested (`tests/test_spec_provenance.py`) and wired
+  into CI.
+
 - **Optional layered package scaffold (#152, M12).** A `service` / `app` / `web` project can now opt
   into a **layered internal layout** instead of the flat source tree. A new Phase-5 interview
   follow-up (gated on `PROJECT_KIND in {service, app}` or `domain == web`, driven by the architecture
@@ -97,6 +108,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.4.0**.
 ### Removed
 
 ### Fixed
+
+- **`questionnaire.yaml` silently truncated by the hand-rolled loader (#153 discovery).** The
+  loader does not fold multi-line double-quoted scalars or parse flow lists (`[…]`) spanning lines;
+  the first such construct (`Q4.7`'s wrapped prompt) made it silently drop everything after —
+  phases 4–5 were partly invisible to every machine consumer while `data-file-validity` still
+  passed (the file "parsed"). All questionnaire prompts are now single-line and multi-line `ask`
+  lists are block sequences (the loader-supported subset, same policy as `git.yaml` `scopes`), with
+  a full-parse guard + an opportunistic PyYAML differential in `tests/test_spec_provenance.py`
+  (executed with real PyYAML in the render-smoke CI job) so the truncation cannot silently return.
 
 ### Security
 

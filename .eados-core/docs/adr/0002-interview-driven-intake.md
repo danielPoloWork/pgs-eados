@@ -25,6 +25,11 @@ Frame, Languages, Frameworks, Tools, Governance, Specification. The architect:
 - **asks only what it cannot safely default**, stating each assumed default for confirmation;
 - treats Phase 5 (the spec) as the substantive conversation, pushing every requirement to a
   testable, CI-checkable form;
+- opens Phase 5 with a **provenance branch** (`Q5.0`): a maintainer who already has a technical
+  spec / PRD / SRS takes an **import-and-validate** path — the document is mapped onto the six-section
+  shape and run through a **gap audit** (each section/requirement gets the testability follow-up),
+  and only the gaps are asked — instead of re-narrating a finished spec through Q5.1–Q5.7; both paths
+  converge on the same frozen `docs/specs/01_spec_<slug>.md` (`spec.provenance` records which);
 - ends by writing `project.yaml` and **getting explicit confirmation before rendering**.
 
 ## Alternatives Considered

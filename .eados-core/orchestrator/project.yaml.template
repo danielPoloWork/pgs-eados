@@ -101,6 +101,7 @@ announce:                      # Release/news announcements (used when capabilit
   channels: []                 # e.g. [{name: X, handle: "@d4np", mode: draft}]. -> {{#EACH_ANNOUNCE_CHANNEL}}
 
 spec:                         # Filled from Phase 5 of the intake interview.
+  provenance:       coauthor  # import | coauthor — how the spec was produced (Q5.0); import = an existing PRD/SRS was validated in.
   objective:        ""        # Project objective. -> {{SPEC_OBJECTIVE}}
   functional_reqs:  []        # Functional requirements. -> {{#EACH_FUNCTIONAL_REQ}}
   nonfunctional_reqs: []      # Non-functional requirements. -> {{#EACH_NONFUNCTIONAL_REQ}}

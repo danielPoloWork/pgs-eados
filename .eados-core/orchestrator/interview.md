@@ -150,7 +150,21 @@ This is the real conversation. The goal is a frozen spec
 the reference spec's shape: Objective, Functional Requirements, Non-Functional
 Requirements, Logical Architecture, Public Interface, Verification Strategy.
 
-Walk these, asking follow-ups until each is concrete enough to test against:
+- **Q5.0 — Provenance: do you already have a spec?** Ask this **first**. `import` (a) or
+  `coauthor` (b), default `coauthor`.
+  - **(a) I already have one** — a technical spec / PRD / SRS, however partial. Then **import &
+    validate**, do *not* re-interview: ingest the document and **map it onto the six-section shape**
+    (Objective, Functional, Non-Functional, Architecture, Public Interface, Verification). Run the
+    **gap audit** — for every section and every requirement apply the Phase-5 testability follow-up
+    ("how would CI prove this failed?") — and produce an explicit list of what is **missing** or
+    **untestable**. Then ask Q5.1–Q5.7 *only for the gaps*; everything the document already covers is
+    carried over, not re-asked. (Still run the Q5.1 language-fit check once the objective is clear.)
+  - **(b) Let's build it together** — the Q5.1–Q5.7 co-authoring flow below.
+  Either path ends in the **same** frozen `docs/specs/01_spec_<slug>.md` and is held to the same
+  testability discipline. → `spec.provenance`.
+
+Walk these — **all** of them for **(b)**, and for **(a)** only the gaps the audit flagged — asking
+follow-ups until each is concrete enough to test against:
 
 - **Q5.1 — Objective & business context.** What problem does this solve, and for whom?
   What pain (latency, fragmentation, correctness, cost) does it remove? → `SPEC_OBJECTIVE`.

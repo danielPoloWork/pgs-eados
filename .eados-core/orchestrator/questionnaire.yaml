@@ -142,30 +142,41 @@ phases:
         default: false
         sets: [IF_PACKAGING]
       - id: Q4.7
-        prompt: "Translate the documentation (i18n)? If yes, which is the canonical source
-                 language and which are the target languages?"
+        # NOTE: prompts stay SINGLE-LINE — the hand-rolled loader does not fold multi-line quoted
+        # scalars and silently truncated everything after the first one here (#153 discovery).
+        prompt: "Translate the documentation (i18n)? If yes, which is the canonical source language and which are the target languages?"
         default: { IF_I18N: false, DOC_DEFAULT_LANG: en }
         sets: [IF_I18N, DOC_DEFAULT_LANG, DOC_LANGS]
       - id: Q4.8
-        prompt: "Announce releases/news on social channels? If yes, which (X, Discord,
-                 LinkedIn, Reddit, Mastodon, a blog, …)?"
+        prompt: "Announce releases/news on social channels? If yes, which (X, Discord, LinkedIn, Reddit, Mastodon, a blog, …)?"
         default: { IF_ANNOUNCE: false }
         sets: [IF_ANNOUNCE, ANNOUNCE_CHANNELS]
     follow_ups:
+      # NOTE: multi-line ask lists are BLOCK sequences — the hand-rolled loader does not parse a
+      # flow sequence ([...]) that spans lines and silently truncated the file here (#153 discovery).
       - when: "IF_I18N == true"
-        ask: ["Canonical on-disk language (default en — the English-only rule keeps sources
-               English; translations are derived copies)?",
-              "Target languages as code + name pairs (e.g. it=Italian, es=Spanish)?"]
+        ask:
+          - "Canonical on-disk language (default en — the English-only rule keeps sources English; translations are derived copies)?"
+          - "Target languages as code + name pairs (e.g. it=Italian, es=Spanish)?"
         sets: [DOC_DEFAULT_LANG, DOC_LANGS]
       - when: "IF_ANNOUNCE == true"
-        ask: ["Which channels, and who owns each handle/webhook?",
-              "Auto-draft the announcement at release time, or fully manual?"]
+        ask:
+          - "Which channels, and who owns each handle/webhook?"
+          - "Auto-draft the announcement at release time, or fully manual?"
         sets: [ANNOUNCE_CHANNELS]
 
   - id: 5
     name: Specification
     note: "The substantive conversation; produces docs/specs/01_spec.md for the new repo."
     questions:
+      - id: Q5.0
+        prompt: "Do you already have a technical spec / PRD / SRS to import, or shall we co-author one?"
+        choices: [import, coauthor]
+        default: coauthor
+        sets: [spec.provenance]
+        # import (a): ingest the doc, map onto the six sections, run the gap audit (apply the
+        #   testability follow-up to each requirement), then ask Q5.1-Q5.7 ONLY for the gaps.
+        # coauthor (b): the full Q5.1-Q5.7 flow below. Either path -> the same frozen 01_spec.
       - id: Q5.1
         prompt: "Objective & business context — what problem, for whom, what pain removed?"
         sets: [SPEC_OBJECTIVE]
@@ -176,9 +187,7 @@ phases:
         prompt: "Non-functional requirements (perf, memory, security, deps, portability)?"
         sets: [NONFUNCTIONAL_REQS]
       - id: Q5.4
-        prompt: "Logical architecture & core algorithm/data structure? Plus a STRUCTURED architecture
-                 style (design-patterns.md §5: Layered|Hexagonal|Clean|MVC|Event-Driven|CQRS|DDD|…;
-                 none for a library), the expected first-class patterns, and the pattern-discipline posture."
+        prompt: "Logical architecture & core algorithm/data structure? Plus a STRUCTURED architecture style (design-patterns.md §5: Layered|Hexagonal|Clean|MVC|Event-Driven|CQRS|DDD|…; none for a library), the expected first-class patterns, and the pattern-discipline posture."
         default: { architecture_style: "", pattern_discipline: advisory }   # per kind/domain: library->none; service/app->Layered|Hexagonal; web->Layered|MVC|Clean; mobile->MVVM|Clean
         sets: [SPEC_ARCHITECTURE, ARCHITECTURE_STYLE, PATTERNS, PATTERN_DISCIPLINE]
       - id: Q5.5
@@ -195,6 +204,7 @@ phases:
         ask: "How would CI mechanically prove this requirement was violated?"
         rule: "refine until there is a check, or mark it an explicit manual gate"
       - when: "PROJECT_KIND in {service, app} or domain == web"    # a library keeps the flat shape
-        ask: ["Lay down a layered package skeleton (controller/service/repository/dto/mapper/…)?",
-              "Which layer packages, driven by the architecture style?"]
+        ask:
+          - "Lay down a layered package skeleton (controller/service/repository/dto/mapper/…)?"
+          - "Which layer packages, driven by the architecture style?"
         sets: [LAYERED, LAYERS]                                     # capabilities.layered + spec.layers
