@@ -415,7 +415,7 @@ EADOS is **owner-governed**: contributors *suggest* via pull requests, the owner
 (`@danielPoloWork`) *decides* and **squash-merges**. Nobody pushes to `main` directly.
 
 - Start with [`CONTRIBUTING.md`](CONTRIBUTING.md): fork → feature branch → Conventional
-  Commits → run the gates (`eados_lint`, render-smoke, `tools/tests/`) → open a PR.
+  Commits → run the gates (`eados_lint`, render-smoke, `tools/tests/run_all.py`) → open a PR.
 - `main` accepts the **squash** merge method only; the full branch-protection ruleset
   (require-PR, restrict who can push) is active once the repo is public.
 - Security issues never go in a public issue — see [`SECURITY.md`](SECURITY.md). Questions and

@@ -424,7 +424,7 @@ EADOS は **owner ガバナンス**です：コントリビューターは pull 
 （`@danielPoloWork`）が*決定*し **squash-merge** します。誰も `main` へ直接 push しません。
 
 - まず [`CONTRIBUTING.md`](../../../../CONTRIBUTING.md) から：fork → フィーチャーブランチ →
-  Conventional Commits → ゲート実行（`eados_lint`、render-smoke、`tools/tests/`）→ PR を開く。
+  Conventional Commits → ゲート実行（`eados_lint`、render-smoke、`tools/tests/run_all.py`）→ PR を開く。
 - `main` は **squash** マージ方式のみを受け付けます。完全なブランチ保護 ruleset（PR 必須、
   push できる者の制限）はリポジトリ公開後に有効になります。
 - セキュリティ問題は公開 issue に書きません —— [`SECURITY.md`](../../../../SECURITY.md) を参照。

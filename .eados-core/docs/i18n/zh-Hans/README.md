@@ -398,7 +398,7 @@ EADOS 由 **owner 治理**：贡献者通过 pull request *提出建议*，owner
 **squash-merge**。任何人都不得直接向 `main` 推送。
 
 - 从 [`CONTRIBUTING.md`](../../../../CONTRIBUTING.md) 开始：fork → 特性分支 → Conventional Commits →
-  运行门禁（`eados_lint`、render-smoke、`tools/tests/`）→ 开启 PR。
+  运行门禁（`eados_lint`、render-smoke、`tools/tests/run_all.py`）→ 开启 PR。
 - `main` 仅接受 **squash** 合并方式；完整的分支保护 ruleset（要求 PR、限制谁可推送）在仓库公开后生效。
 - 安全问题绝不走公开 issue —— 见 [`SECURITY.md`](../../../../SECURITY.md)。问题与想法请使用 GitHub
   Discussions。发布遵循 SemVer 并记录于 [`CHANGELOG.md`](../../../../CHANGELOG.md)。完整契约见

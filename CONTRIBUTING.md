@@ -23,9 +23,9 @@ humans and AI agents alike).
 
    ```bash
    python .eados-core/tools/eados_lint.py                                   # factory integrity
+   python .eados-core/tools/tests/run_all.py                                # the whole test suite (discovered, never enumerated)
    python .eados-core/tools/render.py .eados-core/orchestrator/examples/reference.yaml --out /tmp/r
-   python /tmp/r/tools/consistency_lint.py                                # generated-repo gate
-   python .eados-core/tools/tests/test_render_engine.py                    # + the other tools/tests/*
+   python /tmp/r/tools/consistency_lint.py                                # generated-repo gate (render smoke)
    ```
 
 6. **Open a pull request.** Fill the [PR template](.github/PULL_REQUEST_TEMPLATE.md); update

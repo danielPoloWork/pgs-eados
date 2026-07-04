@@ -24,6 +24,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Changed
 
+- **The test suite is discovered, never enumerated (#168, M13).** New
+  `tools/tests/run_all.py` globs `test_*.py`, runs each in its own interpreter, echoes a failing
+  script's output, and exits non-zero on any failure (`--exclude NAME`, repeatable, for scripts
+  another job runs in a special context). `ci.yml`'s hand-maintained ~33-line unit block and
+  ~60-path `py_compile` mega-line — two lists a new test had to remember to join, where a
+  forgotten line meant a test that exists and **never runs** — are replaced by the single runner
+  invocation and a recursive `python -m compileall -q .eados-core/tools`. A new `test_*.py`
+  dropped into `tools/tests/` now runs in CI with **zero** ci.yml edits. `CONTRIBUTING.md` §5 and
+  the README contribution flow (EN/zh-Hans/ja, i18n hash refreshed) now point at the runner.
 - **`eados_lint` checks are reentrant — the failure reporter is threaded, not global (#167,
   M13).** Signature-only refactor: every `check_*(fail)` receives the reporting callable and the
   new `run_checks()` owns the per-run accumulator (mirroring how `render()` threads its `errors`
