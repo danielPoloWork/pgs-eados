@@ -616,9 +616,13 @@ def main():
     ap.add_argument("--in-place", action="store_true",
                     help="render into the folder that holds .eados-core/ (a bundle copied into "
                          "your own repo): the project files land next to .eados-core/")
+    ap.add_argument("--check", action="store_true",
+                    help="validate the manifest and exit — nothing is written (the manifest-valid "
+                         "gate command, workflow.yaml)")
     args = ap.parse_args()
-    if bool(args.out) == bool(args.in_place):
-        ap.error("provide exactly one of --out <dir> or --in-place")
+    if sum((bool(args.out), args.in_place, args.check)) != 1:
+        ap.error("provide exactly one of --out <dir>, --in-place, or --check")
+    mode = "Check" if args.check else "Render"
 
     with open(args.manifest, encoding="utf-8") as handle:
         raw = handle.read()
@@ -629,11 +633,14 @@ def main():
     problems += [f"duplicate top-level key '{k}' (only the last value is kept)"
                  for k in _duplicate_top_level_keys(raw)]
     if problems:
-        print("Render: FAIL — manifest validation\n")
+        print(f"{mode}: FAIL — manifest validation\n")
         for p in sorted(set(problems)):
             print(f"  {p}")
         print(f"\n{len(set(problems))} manifest problem(s).")
         return 1
+    if args.check:
+        print("Check: OK — manifest is valid (nothing written).")
+        return 0
 
     slug = scalars["PROJECT_SLUG"]
     eados_repo = os.path.realpath(os.path.dirname(ROOT))   # the folder that holds .eados-core/

@@ -731,7 +731,7 @@ GATE_COVERAGE = [
     (".eados-core/templates/**",                          "render-smoke + placeholder-integrity"),
     (".eados-core/orchestrator/profiles/*.yaml",          "profile-completeness"),
     (".eados-core/orchestrator/profiles/_schema.md",      "profile-completeness (schema)"),
-    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency"),
+    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:)"),
     (".eados-core/orchestrator/domains/*.yaml",           "domains + data-file-validity"),
     (".eados-core/orchestrator/placeholders.md",          "placeholder-integrity (the dictionary)"),
     (".eados-core/orchestrator/generate.md",              "generate-references"),
@@ -918,6 +918,86 @@ def check_workflow_safety():
                        f"'{fname}'")
 
 
+# ---------------------------------------------------------------------------
+# 17. Gate executability — the data→code seam of the workflow spec (#164). workflow.yaml's gate
+#     registry documents `runs:` commands and `wired:` execution claims, but nothing executed the
+#     declarative side, so it had already drifted (the documented `render.py --check` did not
+#     exist). This check keeps the data honest: every `python <script> …` gate must name a script
+#     that exists — in the factory checkout, or shipped under templates/ into every generated
+#     repo — whose source mentions each `--flag` it is invoked with (a cheap static proxy for
+#     "the flag is real"), and the set of gates marked `wired: in-process` must equal the
+#     GATE_EVALUATORS registry in eados.py, so a gate wired (or unwired) in code without
+#     updating the data fails here instead of rotting silently.
+# ---------------------------------------------------------------------------
+GATE_WIRED_VALUES = {"in-process", "external"}
+
+
+def wired_in_process_ids(eados_source):
+    """Gate ids the checker evaluates in-process, read statically from eados.py's
+    GATE_EVALUATORS dict source (no import: the lint stays side-effect-free)."""
+    m = re.search(r"GATE_EVALUATORS\s*=\s*\{(.*?)\}", eados_source, re.DOTALL)
+    return set(re.findall(r"\"([\w-]+)\"\s*:", m.group(1))) if m else set()
+
+
+def gate_executability_problems(gates, find_script, wired_in_code):
+    """Pure check of the gate registry's executable claims. `gates`: workflow.yaml gates[];
+    `find_script(rel)` -> the script's source text or None if it exists nowhere;
+    `wired_in_code`: gate ids evaluated in-process. Returns problem strings (empty == honest)."""
+    problems = []
+    wired_in_data = set()
+    for g in (gates if isinstance(gates, list) else []):
+        if not isinstance(g, dict):
+            continue
+        gid = g.get("id", "?")
+        wired = g.get("wired")
+        if wired not in GATE_WIRED_VALUES:
+            problems.append(f"gate '{gid}': wired must be one of "
+                            f"{sorted(GATE_WIRED_VALUES)}, got {wired!r}")
+        elif wired == "in-process":
+            wired_in_data.add(gid)
+        runs = str(g.get("runs") or "")
+        if not runs.startswith("python "):
+            continue                       # manual:/human: gates make no executable claim
+        tokens = runs.split()
+        script = tokens[1] if len(tokens) > 1 else ""
+        source = find_script(script)
+        if source is None:
+            problems.append(f"gate '{gid}': runs references missing script '{script}'")
+            continue
+        for flag in (t for t in tokens[2:] if t.startswith("--")):
+            if flag not in source:
+                problems.append(f"gate '{gid}': script '{script}' does not know flag '{flag}'")
+    for gid in sorted(wired_in_data - wired_in_code):
+        problems.append(f"gate '{gid}' claims wired: in-process but eados.py's "
+                        "GATE_EVALUATORS has no entry for it")
+    for gid in sorted(wired_in_code - wired_in_data):
+        problems.append(f"eados.py evaluates gate '{gid}' in-process but workflow.yaml "
+                        "does not mark it wired: in-process")
+    return problems
+
+
+def find_gate_script(rel):
+    """Resolve a gate's script path to its source text: a factory path (repo-root-relative,
+    e.g. .eados-core/tools/render.py) or a generated-repo path the factory ships via
+    templates/ (e.g. tools/consistency_lint.py, with or without a .tmpl suffix)."""
+    for cand in (os.path.join(REPO_ROOT, rel.replace("/", os.sep)),
+                 os.path.join(TEMPLATES, rel.replace("/", os.sep)),
+                 os.path.join(TEMPLATES, rel.replace("/", os.sep) + ".tmpl")):
+        if os.path.isfile(cand):
+            return read(cand)
+    return None
+
+
+def check_gate_executability():
+    name = "gate-executability"
+    workflow = _load_spec("workflow")
+    if not isinstance(workflow, dict):
+        return  # a missing/unparseable workflow spec is os-spec-completeness's report
+    wired = wired_in_process_ids(read(os.path.join(TOOLS, "eados.py")))
+    for problem in gate_executability_problems(workflow.get("gates"), find_gate_script, wired):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -935,6 +1015,7 @@ CHECKS = [
     check_data_files,
     check_gate_coverage,
     check_workflow_safety,
+    check_gate_executability,
 ]
 
 

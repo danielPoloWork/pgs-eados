@@ -28,10 +28,13 @@ domain_overlays:    # per-domain adaptations (insert/remove states, add gates, r
   kinds the phase writes.
 - **`transitions[]`** — `{ from, to, entry_gates[], human_gate }`. `entry_gates` are gate
   ids that must pass before the move; `human_gate: true` requires explicit human confirmation.
-- **`gates[]`** — `{ id, kind, runs, blocking, required_for[] }`. `kind ∈
+- **`gates[]`** — `{ id, kind, runs, wired, blocking, required_for[] }`. `kind ∈
   {lint, test, security, build, human, manual}`; `runs` is the command or `human:<who>` /
-  `manual:<description>`; `blocking: true` means a red gate halts the transition; `required_for`
-  lists the transition `to`-states that depend on it.
+  `manual:<description>`; `wired ∈ {in-process, external}` says who executes it —
+  `in-process` = the deterministic checker (`eados.py`'s `GATE_EVALUATORS`; the
+  `gate-executability` lint keeps the two in exact sync), `external` = the agent following the
+  phase procedure, CI, or a human; `blocking: true` means a red gate halts the transition;
+  `required_for` lists the transition `to`-states that depend on it.
 - **`domain_overlays`** — a mapping `domain → { insert_states[], add_gates[], … }`. Absent
   keys mean "inherit the base machine unchanged".
 
@@ -39,6 +42,10 @@ domain_overlays:    # per-domain adaptations (insert/remove states, add gates, r
 
 - Every `transitions[].from`/`to` is a declared `states[].id`.
 - Every `transitions[].entry_gates[]` and `gates[].required_for[]` references a declared id.
+- Every executable `runs:` (`python <script> …`) names a script that exists — in the factory
+  or shipped under `templates/` into every generated repo — and each `--flag` it passes appears
+  in that script's source; gates marked `wired: in-process` are exactly `eados.py`'s
+  `GATE_EVALUATORS` (both enforced by `eados_lint`'s `gate-executability`, #164).
 - `scaffold` is the only state that renders the repository (today's factory); it reads the
   manifest like every other phase and writes files — it never calls another phase directly,
   so generation stays decoupled from governance (they share state via the manifest only).

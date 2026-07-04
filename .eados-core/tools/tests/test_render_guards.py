@@ -161,7 +161,7 @@ def main():
         check("--in-place in the EADOS dev repo -> .eados-dev message",
               ".eados-dev" in (proc.stdout + proc.stderr), failures)
 
-    # --- the CLI requires exactly one of --out / --in-place ---
+    # --- the CLI requires exactly one of --out / --in-place / --check ---
     with tempfile.TemporaryDirectory() as work:
         manifest = os.path.join(work, "ok.yaml")
         with open(manifest, "w", encoding="utf-8") as fh:
@@ -173,6 +173,30 @@ def main():
                                "--out", os.path.join(work, "o"), "--in-place"],
                               capture_output=True, text=True)
         check("both --out and --in-place -> error exit", both.returncode != 0, failures)
+        mixed = subprocess.run([sys.executable, RENDER_PY, manifest,
+                                "--out", os.path.join(work, "o"), "--check"],
+                               capture_output=True, text=True)
+        check("--check with --out -> error exit", mixed.returncode != 0, failures)
+
+    # --- #164: --check validates without writing — OK on a valid manifest, FAIL on a broken
+    #     one, and the working tree stays untouched either way ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "ok.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID)
+        ok = subprocess.run([sys.executable, RENDER_PY, manifest, "--check"],
+                            capture_output=True, text=True, cwd=work)
+        check("--check on a valid manifest -> exit 0", ok.returncode == 0, failures)
+        check("--check reports Check: OK", "Check: OK" in ok.stdout, failures)
+        bad = os.path.join(work, "bad.yaml")
+        with open(bad, "w", encoding="utf-8") as fh:
+            fh.write(VALID.replace("owner: o, ", ""))
+        broken = subprocess.run([sys.executable, RENDER_PY, bad, "--check"],
+                                capture_output=True, text=True, cwd=work)
+        check("--check on a broken manifest -> exit 1", broken.returncode == 1, failures)
+        check("--check failure labelled Check:", "Check: FAIL" in broken.stdout, failures)
+        check("--check wrote nothing",
+              sorted(os.listdir(work)) == ["bad.yaml", "ok.yaml"], failures)
 
     if failures:
         print("test-render-guards: FAIL\n")
