@@ -24,6 +24,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Changed
 
+- **`eados_lint` checks are reentrant — the failure reporter is threaded, not global (#167,
+  M13).** Signature-only refactor: every `check_*(fail)` receives the reporting callable and the
+  new `run_checks()` owns the per-run accumulator (mirroring how `render()` threads its `errors`
+  list), removing the last module-global mutable state from the linter. All 17 checks become
+  independently runnable/testable units without splitting the file; output is byte-identical
+  (verified on the green tree and on a seeded broken fixture).
 - **The YAML loader is its own module, and the #153 truncation class is rejected loudly (#166,
   M13).** The dependency-free loader moved from `render.py` into **`tools/yamlmini.py`** — every
   gate tool parses through this one module, so renderer changes can no longer perturb the parser
