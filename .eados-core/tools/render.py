@@ -312,7 +312,7 @@ def build_context(m):
     ann = _map(m, "announce")
 
     slug = ident.get("project_slug", "")
-    gpath = lang.get("group_path", "it/d4np")
+    gpath = lang.get("group_path", "")  # no fallback: REQUIRED_SCALARS guards {{GROUP_PATH}} (#163)
     lng = lang.get("lang", "")
     bench = bool(caps.get("bench"))
     pkg_eco = tool.get("package_ecosystem", "") or ""

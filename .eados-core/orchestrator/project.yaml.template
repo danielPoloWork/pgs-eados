@@ -39,8 +39,8 @@ language:
   lang_name:       ""        # Language name + version (e.g. C++17). -> {{LANG_NAME}}
   lang_standard:   ""        # Standard or spec (e.g. C++17 (ISO/IEC 14882:2017)). -> {{LANG_STANDARD}}
   secondary_lang:  ""        # Interop language, or "" if none (e.g. c).
-  group_path:      "it/d4np" # Namespace path, '/'-separated. -> {{GROUP_PATH}}
-  group_dotted:    "it.d4np" # Same namespace, '.'-separated. -> {{GROUP_DOTTED}}
+  group_path:      ""        # REQUIRED — your own reverse-domain path, '/'-separated (e.g. com/acme); no default. -> {{GROUP_PATH}}
+  group_dotted:    ""        # Same namespace, '.'-separated (e.g. com.acme). -> {{GROUP_DOTTED}}
   namespace:       ""        # Native namespace idiom (e.g. it::d4np::memorypool). -> {{NAMESPACE}}
   src_ext:         ""        # Primary source extension (e.g. cpp, rs, py). -> {{SRC_EXT}}
   comment_lang:    "en"      # Natural language for source comments (Q4.7); identifiers/API stay English (ADR-0016). -> {{CODE_COMMENT_LANG}}
