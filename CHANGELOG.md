@@ -24,6 +24,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Changed
 
+- **The YAML loader is its own module, and the #153 truncation class is rejected loudly (#166,
+  M13).** The dependency-free loader moved from `render.py` into **`tools/yamlmini.py`** — every
+  gate tool parses through this one module, so renderer changes can no longer perturb the parser
+  under every gate (`render.load_yaml` stays a re-export; zero caller changes). The two constructs
+  behind the #153 silent truncation are promoted from comment discipline to **mechanical
+  rejection** in `_reject_unsupported`: a quoted scalar that opens but does not close on its line,
+  and a flow collection (`[…]`/`{…}`) left open at end-of-line, each raise a loud `ValueError`
+  naming the line instead of silently dropping everything after it (block-scalar bodies stay
+  exempt — they are literal content). The PyYAML differential test gains a `SUBSET_REJECTIONS`
+  corpus proving each rejected construct is *legal* YAML — so the loud rejection, never a
+  misparse, is the honest subset boundary — plus false-positive guards (apostrophes in plain
+  scalars, quoted list items, unbalanced quotes/brackets inside block scalars); the
+  `questionnaire.yaml` #153 comments now point at the mechanical gate (ADR-0006/0008 posture:
+  reject, never guess).
+
 ### Deprecated
 
 ### Removed
