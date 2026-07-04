@@ -69,6 +69,11 @@ def main():
           has(VALID.replace("lang: go", 'lang: "../x"'), "not a safe path segment"), failures)
     check("missing required field rejected",
           has(VALID.replace("owner: o, ", ""), "required field"), failures)
+    # #163: no silent it/d4np fallback — a manifest without language.group_path must trip the
+    # GROUP_PATH required-field guard (the old build_context default made this guard dead code).
+    check("missing group_path rejected (no it/d4np fallback)",
+          has(VALID.replace(", group_path: it/d4np", ""),
+              "required field for {{GROUP_PATH}}"), failures)
     check("unknown top-level section rejected",
           has(VALID + "\nbogus: { x: 1 }\n", "unknown top-level section"), failures)
     check("non-numeric start_version rejected",
@@ -118,6 +123,19 @@ def main():
         check("traversal manifest wrote nothing outside out_dir",
               not os.path.exists(os.path.join(work, "pwned")) and
               not os.path.exists(os.path.join(os.path.dirname(work), "pwned")), failures)
+
+    # --- end-to-end (#163): a manifest missing group_path fails naming GROUP_PATH — it must not
+    #     render "OK" with the reference project's it/d4np namespace stamped in ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "nogroup.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID.replace(", group_path: it/d4np", ""))
+        out = os.path.join(work, "out")
+        proc = subprocess.run([sys.executable, RENDER_PY, manifest, "--out", out],
+                              capture_output=True, text=True)
+        check("missing group_path -> non-zero exit", proc.returncode == 1, failures)
+        check("missing group_path -> message names GROUP_PATH",
+              "{{GROUP_PATH}}" in (proc.stdout + proc.stderr), failures)
 
     # --- end-to-end: render.py refuses an --out inside the EADOS repo (self-overwrite guard) ---
     with tempfile.TemporaryDirectory() as work:

@@ -54,7 +54,7 @@ phases:
         sets: [SECONDARY_LANG]
       - id: Q1.3
         prompt: "Reverse-domain group path?"
-        default: "it/d4np"
+        # ask-always: no built-in default — it/d4np is only the reference project's value (#163)
         sets: [GROUP_PATH, GROUP_DOTTED]    # NAMESPACE derived by the profile
     follow_ups:
       - when: "LANG in {c, cpp, rust}"

@@ -19,6 +19,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Fixed
 
+- **No silent `it/d4np` namespace fallback (#163, M13).** `render.py` no longer defaults a missing
+  `language.group_path` to the reference project's `it/d4np` — the `{{GROUP_PATH}}` required-field
+  guard (previously dead code, since the fallback was injected before validation) now fires, so the
+  deterministic path fails loudly instead of stamping the factory owner's namespace into a
+  stranger's repository. The questionnaire (Q1.3) and `project.yaml.template` drop their `it/d4np`
+  pre-fills to match `interview.md` ("no built-in default"); `it/d4np` survives only in
+  `examples/reference.yaml`, where it is truthful. Regression tests (unit + end-to-end) in
+  `test_render_guards.py`.
+
 ### Security
 
 ---
