@@ -13,6 +13,7 @@ Dependency-free: the Python standard library plus the sibling renderer's YAML lo
     python .eados-core/tools/phase_runner.py <manifest>     # report the legal next transitions
 """
 
+import copy
 import os
 import sys
 
@@ -46,10 +47,46 @@ def legal_transitions(workflow, phase):
             if isinstance(t, dict) and t.get("from") == phase]
 
 
+def manifest_domain(manifest):
+    """The manifest's target domain (the top-level `domain` scalar); `software` when absent."""
+    dom = manifest.get("domain") if isinstance(manifest, dict) else None
+    return dom.strip() if isinstance(dom, str) and dom.strip() else "software"
+
+
+def apply_overlay(workflow, domain):
+    """The workflow adapted to `domain` (#165): `domain_overlays[<domain>]` merged into a deep
+    copy. `insert_states` are appended as human-owner states (no automated role exists for them),
+    and each `add_gates` id joins the entry_gates of every transition into a state its REGISTRY
+    entry names in `required_for` — the registry, not code, says where a domain gate bites
+    (cross-spec lint guarantees every add_gates id has an entry). The merge is recorded under
+    `applied_overlay` so the doctor can surface it. A domain with no overlay effects (`software`,
+    absent, unknown) returns the SAME object, so the base machine stays byte-identical."""
+    overlays = workflow.get("domain_overlays") if isinstance(workflow, dict) else None
+    ov = overlays.get(domain) if isinstance(overlays, dict) else None
+    if not isinstance(ov, dict) or not (ov.get("insert_states") or ov.get("add_gates")):
+        return workflow
+    merged = copy.deepcopy(workflow)
+    inserted = [s for s in (ov.get("insert_states") or []) if isinstance(s, str)]
+    added = [g for g in (ov.get("add_gates") or []) if isinstance(g, str)]
+    for sid in inserted:
+        merged.setdefault("states", []).append(
+            {"id": sid, "role": "human-owner", "produces": [], "overlay": domain})
+    required = {g.get("id"): (g.get("required_for") or [])
+                for g in (merged.get("gates") or []) if isinstance(g, dict)}
+    for gid in added:
+        for t in (merged.get("transitions") or []):
+            if isinstance(t, dict) and t.get("to") in required.get(gid, []):
+                entry = t.setdefault("entry_gates", [])
+                if gid not in entry:
+                    entry.append(gid)
+    merged["applied_overlay"] = {"domain": domain, "insert_states": inserted, "add_gates": added}
+    return merged
+
+
 def report(manifest_path, out=sys.stdout):
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
-    workflow = load_workflow()
+    workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
     states = state_ids(workflow)
     phase = current_phase(manifest)
     print(f"current phase: {phase}", file=out)
@@ -87,7 +124,7 @@ def emit_checkpoint(from_phase, transition):
 def report_propose(manifest_path, to_phase, out=sys.stdout):
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
-    workflow = load_workflow()
+    workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
     states = state_ids(workflow)
     frm = current_phase(manifest)
     print(f"proposed transition: {frm} -> {to_phase}", file=out)

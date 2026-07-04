@@ -144,7 +144,8 @@ def main(argv=None):
     except (OSError, ValueError) as exc:
         print(f"eados: cannot read manifest {args.manifest!r}: {exc}", file=sys.stderr)
         return 2
-    workflow = phase_runner.load_workflow()
+    workflow = phase_runner.apply_overlay(phase_runner.load_workflow(),
+                                          phase_runner.manifest_domain(manifest))
     root = args.root or os.path.dirname(os.path.abspath(args.manifest))
     roadmap_path = args.roadmap or os.path.join(root, "ROADMAP.md")
     roadmap_text = _read(roadmap_path) if os.path.isfile(roadmap_path) else None

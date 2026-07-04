@@ -115,9 +115,41 @@ gates:
     wired: external
     blocking: false
     required_for: []
+  # Domain-overlay gates (#165): the registry entries for the ids domain_overlays adds — a bare
+  # overlay id used to have no kind/runs/blocking at all (cross-spec now rejects that). kind:
+  # manual until real tooling exists, and `runs` is honest about it; `required_for` is where
+  # apply_overlay attaches each gate (the transition INTO that state gains it for the domain).
+  - id: accessibility-review
+    kind: manual
+    runs: "manual:WCAG conformance review of the rendered UI"
+    wired: external
+    blocking: true
+    required_for: [audit]
+  - id: web-vitals-budget
+    kind: manual
+    runs: "manual:Core Web Vitals budget verified against a production build"
+    wired: external
+    blocking: true
+    required_for: [audit]
+  - id: hardware-budget
+    kind: manual
+    runs: "manual:RAM / GPU / framerate budget verified on target hardware"
+    wired: external
+    blocking: true
+    required_for: [audit]
+  - id: store-compliance
+    kind: manual
+    runs: "manual:App Store / Play Store compliance review"
+    wired: external
+    blocking: true
+    required_for: [audit]
 
 # Per-domain adaptations. Absent keys inherit the base machine. These encode the delivery
 # guide's domain specifics (e.g. a game's asset pipeline, a mobile store-compliance gate).
+# Applied at runtime by phase_runner.apply_overlay (#165): insert_states join the state set as
+# human-owner states; each add_gates id joins the entry_gates of every transition into the
+# state(s) its registry entry (above) names in required_for. Every add_gates id MUST have a
+# registry entry — cross-spec-consistency fails a bare id.
 domain_overlays:
   software: {}
   web:

@@ -85,6 +85,13 @@ def main():
           has(lines, "[manual] consistency-lint") and has(lines, "[manual] self-review"), failures)
     check("scaffold is ok (nothing auto-failed)", ok, failures)
 
+    # --- #165: a game project's overlay gate surfaces as [manual] on the scaffold exit ---
+    lines, ok = eados.run_phase("scaffold", manifest_at("scaffold"),
+                                phase_runner.apply_overlay(wf, "game"))
+    check("game overlay: [manual] hardware-budget gates scaffold",
+          has(lines, "[manual] hardware-budget"), failures)
+    check("game overlay: scaffold stays ok (manual never auto-fails)", ok, failures)
+
     # --- init: manifest-valid OK; an invalid manifest FAILs it ---
     lines, ok = eados.run_phase("init", manifest_at("init"), wf)
     check("init runs manifest-valid OK", has(lines, "[OK] manifest-valid") and ok, failures)
@@ -118,6 +125,16 @@ def main():
         rc, out = run("status", manifest)
         check("CLI `eados.py status` runs the doctor (exit 0)",
               rc == 0 and "phase: plan" in out, failures)
+        # #165: the CLI reads the manifest's domain and applies its overlay end-to-end
+        game = os.path.join(d, "game.yaml")
+        with open(game, "w", encoding="utf-8") as h:
+            h.write(MANIFEST_YAML.replace("phase: plan", "phase: scaffold") + "domain: game\n")
+        rc, out = run("scaffold", game)
+        check("CLI applies the manifest's domain overlay ([manual] hardware-budget)",
+              rc == 0 and "[manual] hardware-budget" in out, failures)
+        rc, out = run("status", game)
+        check("CLI status surfaces the applied overlay",
+              rc == 0 and "domain: game" in out and "asset-pipeline-review" in out, failures)
 
     if failures:
         print("test-eados: FAIL\n")
