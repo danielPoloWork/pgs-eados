@@ -36,11 +36,10 @@ PROFILES = os.path.join(ROOT, "orchestrator", "profiles")
 # The actual git repository root is one level above .eados-core/ — README.md and .github/
 # live there, not under the factory folder (the i18n docs moved under .eados-core/docs/).
 REPO_ROOT = os.path.dirname(ROOT)
-failures = []  # (check, message)
 
-
-def fail(check, message):
-    failures.append((check, message))
+# #167: no module-global failures list. Every check_*(fail) receives the reporting callable —
+# fail(check, message) — and main() owns the accumulator, mirroring how render() threads its
+# `errors` list. Checks are reentrant and standalone-runnable; a test never resets module state.
 
 
 def read(path):
@@ -88,7 +87,7 @@ def known_placeholders():
 NOT_RENDERED = {"templates/README.md"}
 
 
-def check_placeholder_integrity():
+def check_placeholder_integrity(fail):
     name = "placeholder-integrity"
     scalars, sections = known_placeholders()
     if not scalars:
@@ -158,7 +157,7 @@ def schema_required_paths():
     return yaml_key_paths(block.group(1))
 
 
-def check_profile_completeness():
+def check_profile_completeness(fail):
     name = "profile-completeness"
     required = schema_required_paths()
     if not required:
@@ -181,7 +180,7 @@ def check_profile_completeness():
 # ---------------------------------------------------------------------------
 # 3. Generation playbook references exist
 # ---------------------------------------------------------------------------
-def check_generate_references():
+def check_generate_references(fail):
     name = "generate-references"
     gen = read(os.path.join(ROOT, "orchestrator", "generate.md"))
     refs = set(re.findall(r"templates/[A-Za-z0-9_./*-]+", gen))
@@ -200,7 +199,7 @@ def check_generate_references():
 # ---------------------------------------------------------------------------
 # 4. Agent registry — every role file is indexed in agent/README.md
 # ---------------------------------------------------------------------------
-def check_agent_registry():
+def check_agent_registry(fail):
     name = "agent-registry"
     agent_dir = os.path.join(ROOT, "agent")
     index_path = os.path.join(agent_dir, "README.md")
@@ -226,7 +225,7 @@ LESSON_SCOPES_PREFIX = ("global", "lang:", "kind:")
 LESSON_REQUIRED = ("id", "date", "scope", "context", "rule")
 
 
-def check_lessons():
+def check_lessons(fail):
     name = "lessons"
     ledger = os.path.join(ROOT, "learning", "lessons.yaml")
     if not os.path.exists(ledger):
@@ -260,7 +259,7 @@ def check_lessons():
 PIN_RE = re.compile(r"uses:\s*([\w.-]+/[\w.-]+)@([0-9a-fA-F]{40})\s*#\s*(v[0-9][\w.-]*)")
 
 
-def check_action_pins():
+def check_action_pins(fail):
     name = "action-pins"
     factory_ci = os.path.join(os.path.dirname(ROOT), ".github", "workflows", "ci.yml")
     tmpl_wf = os.path.join(TEMPLATES, ".github", "workflows")
@@ -288,7 +287,7 @@ def _source_hash(path):
         return hashlib.sha256(handle.read()).hexdigest()[:12]
 
 
-def check_i18n_freshness():
+def check_i18n_freshness(fail):
     name = "i18n-freshness"
     manifest_path = os.path.join(ROOT, "docs", "i18n", "translation-status.md")
     if not os.path.exists(manifest_path):
@@ -325,7 +324,7 @@ def check_i18n_freshness():
 #    The same data+schema contract as profile-completeness, applied to the machine-readable
 #    delivery-OS specs (ADR-0011). Opt-in: skipped until the os/ directory exists.
 # ---------------------------------------------------------------------------
-def check_os_specs():
+def check_os_specs(fail):
     name = "os-spec-completeness"
     os_dir = os.path.join(ROOT, "orchestrator", "os")
     if not os.path.isdir(os_dir):
@@ -362,7 +361,7 @@ def check_os_specs():
 #    same data+schema contract as the language profiles (RFC-0001 §3-4). Underscore-prefixed files
 #    (_template.yaml) are scaffolds, not domains. Opt-in: skipped until the domains/ dir exists.
 # ---------------------------------------------------------------------------
-def check_domains():
+def check_domains(fail):
     name = "domain-completeness"
     ddir = os.path.join(ROOT, "orchestrator", "domains")
     if not os.path.isdir(ddir):
@@ -393,7 +392,7 @@ def check_domains():
 #     in `pending_personas`; every agent/<role>.md persona maps to a declared role; a pending role
 #     must not already have a persona. Opt-in: skipped until the authority spec exists.
 # ---------------------------------------------------------------------------
-def check_authority_personas():
+def check_authority_personas(fail):
     name = "authority-personas"
     auth = os.path.join(ROOT, "orchestrator", "os", "authority", "authority.yaml")
     agent_dir = os.path.join(ROOT, "agent")
@@ -582,7 +581,7 @@ def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, dom
     return problems
 
 
-def check_cross_spec_consistency():
+def check_cross_spec_consistency(fail):
     name = "cross-spec-consistency"
     if not os.path.isdir(os.path.join(ROOT, "orchestrator", "os")):
         return  # the OS specs arrive with the delivery-OS pivot; absent before it
@@ -626,7 +625,7 @@ def version_lockstep_problems(changelog_text, readmes):
     return problems
 
 
-def check_version_lockstep():
+def check_version_lockstep(fail):
     name = "version-lockstep"
     changelog_path = os.path.join(REPO_ROOT, "CHANGELOG.md")
     if not os.path.exists(changelog_path):
@@ -684,7 +683,7 @@ def manifest_template_problems(text, scalars, sections):
     return problems
 
 
-def check_manifest_template():
+def check_manifest_template(fail):
     name = "manifest-template"
     if not os.path.exists(MANIFEST_TEMPLATE):
         return  # a partial checkout without the template — nothing to validate
@@ -712,7 +711,7 @@ def data_file_problems(items):
     return problems
 
 
-def check_data_files():
+def check_data_files(fail):
     name = "data-file-validity"
     items = []
     for cur, _dirs, fns in os.walk(ROOT):
@@ -823,7 +822,7 @@ def gate_coverage_problems(tracked, covered=GATE_COVERAGE, allowlist=GATE_ALLOWL
     return problems
 
 
-def check_gate_coverage():
+def check_gate_coverage(fail):
     name = "gate-coverage"
     tracked = _tracked_files()
     if tracked is None:
@@ -903,7 +902,7 @@ def _workflow_items():
     return items
 
 
-def check_workflow_safety():
+def check_workflow_safety(fail):
     name = "workflow-safety"
     items = _workflow_items()
     if not items:
@@ -993,7 +992,7 @@ def find_gate_script(rel):
     return None
 
 
-def check_gate_executability():
+def check_gate_executability(fail):
     name = "gate-executability"
     workflow = _load_spec("workflow")
     if not isinstance(workflow, dict):
@@ -1024,16 +1023,28 @@ CHECKS = [
 ]
 
 
+def run_checks(checks=CHECKS):
+    """Run `checks`, each receiving its own view of the one reporter. Returns the (check,
+    message) findings — the accumulator lives HERE, per run, not in the module (#167)."""
+    failures = []
+
+    def fail(check, message):
+        failures.append((check, message))
+
+    for fn in checks:
+        try:
+            fn(fail)
+        except Exception as exc:  # a crashing check is itself a failure
+            fail(fn.__name__, f"check crashed: {exc!r}")
+    return failures
+
+
 def main():
     # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
     for _stream in (sys.stdout, sys.stderr):
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
-    for fn in CHECKS:
-        try:
-            fn()
-        except Exception as exc:  # a crashing check is itself a failure
-            fail(fn.__name__, f"check crashed: {exc!r}")
+    failures = run_checks()
     if failures:
         print("EADOS self-lint: FAIL\n")
         for check, message in failures:
