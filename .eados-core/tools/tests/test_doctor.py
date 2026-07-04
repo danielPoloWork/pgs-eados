@@ -69,6 +69,20 @@ def main():
     check("no roadmap -> coverage not checked", has(lines, "no ROADMAP.md found"), failures)
     check("a fresh manifest is healthy", healthy, failures)
 
+    # --- #165: a game project's overlay is applied AND surfaced; software stays byte-identical ---
+    merged = phase_runner.apply_overlay(wf, "game")
+    lines, healthy = doctor.status_report(manifest_at("scaffold"), merged, None, None)
+    check("game overlay: the domain line surfaces states + gates",
+          has(lines, "domain: game") and has(lines, "+state asset-pipeline-review")
+          and has(lines, "+gate hardware-budget"), failures)
+    check("game overlay: hardware-budget gates the scaffold -> audit move",
+          any("-> audit" in ln and "hardware-budget" in ln for ln in lines), failures)
+    check("game overlay: an applied overlay stays healthy", healthy, failures)
+    base_lines, _ = doctor.status_report(manifest_at("plan"), wf, ROADMAP, WHOLE)
+    sw_lines, _ = doctor.status_report(
+        manifest_at("plan"), phase_runner.apply_overlay(wf, "software"), ROADMAP, WHOLE)
+    check("software status is byte-identical to the base machine", sw_lines == base_lines, failures)
+
     # --- an undeclared phase -> structural error, unhealthy ---
     lines, healthy = doctor.status_report(manifest_at("bogus"), wf, ROADMAP, WHOLE)
     check("an undeclared phase is flagged", has(lines, "not a declared workflow state"), failures)

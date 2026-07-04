@@ -472,9 +472,6 @@ def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, dom
     if not isinstance(overlays_map, dict):
         overlays_map = {}
     overlays = set(overlays_map)
-    for ov in overlays_map.values():        # an overlay may DEFINE extra gates — legitimate ids too
-        if isinstance(ov, dict):
-            gates |= set(ov.get("add_gates") or [])
     levels = set(risk.get("levels") or []) if isinstance(risk, dict) else set()
     domain_ids = {d["domain"] for d in domains.values()
                   if isinstance(d, dict) and d.get("domain") is not None}
@@ -511,6 +508,14 @@ def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, dom
     for g in (workflow.get("gates") or []):
         if isinstance(g, dict):
             many(f"workflow.gate {g.get('id')!r}.required_for", g.get("required_for"), states, "state")
+    # #165: an overlay's add_gates must resolve to the gate REGISTRY — a bare id is a reference,
+    # never a definition (the old lenience left overlay gates with no kind/runs/blocking, and the
+    # hole was codified in tests; apply_overlay needs the entry's required_for to place the gate).
+    for ov_key in sorted(overlays):
+        ov = overlays_map[ov_key]
+        if isinstance(ov, dict):
+            many(f"workflow.domain_overlays[{ov_key!r}].add_gates", ov.get("add_gates"),
+                 gates, "gate")
     if domain_ids:
         for ov_key in sorted(overlays):
             one("workflow.domain_overlays key", ov_key, domain_ids, "domain")

@@ -61,6 +61,30 @@ def main():
         check(f"transition to '{t.get('to')}' is a declared state",
               t.get("to") in states, failures)
 
+    # --- #165: domain overlays are applied by apply_overlay, data-driven from the registry ---
+    check("manifest_domain defaults to software", pr.manifest_domain({}) == "software", failures)
+    check("manifest_domain reads the top-level scalar",
+          pr.manifest_domain({"domain": "game"}) == "game", failures)
+    merged = pr.apply_overlay(wf, "game")
+    check("game overlay appends asset-pipeline-review as a human-owner state",
+          any(isinstance(s, dict) and s.get("id") == "asset-pipeline-review"
+              and s.get("role") == "human-owner" for s in merged.get("states") or []), failures)
+    sc_m = pr.legal_transitions(merged, "scaffold")
+    check("game overlay gates scaffold -> audit with hardware-budget",
+          sc_m and "hardware-budget" in (sc_m[0].get("entry_gates") or []), failures)
+    check("the applied overlay is recorded for the doctor",
+          (merged.get("applied_overlay") or {}).get("domain") == "game", failures)
+    check("the base workflow object is not mutated",
+          "hardware-budget" not in (pr.legal_transitions(wf, "scaffold")[0].get("entry_gates") or [])
+          and "asset-pipeline-review" not in pr.state_ids(wf), failures)
+    web = pr.apply_overlay(wf, "web")
+    check("web overlay gates the audit entry with both web gates",
+          all(g in (pr.legal_transitions(web, "scaffold")[0].get("entry_gates") or [])
+              for g in ("accessibility-review", "web-vitals-budget")), failures)
+    check("software is a pass-through (same object, byte-identical machine)",
+          pr.apply_overlay(wf, "software") is wf, failures)
+    check("an unknown domain is a pass-through", pr.apply_overlay(wf, "quantum") is wf, failures)
+
     # --- propose_transition: legal vs illegal, and the emitted checkpoint (M2-C) ---
     legal = pr.propose_transition(wf, "init", "design")
     check("propose init->design is legal", legal is not None, failures)

@@ -30,6 +30,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Fixed
 
+- **Domain overlays are actually applied (#165, M13).** `workflow.yaml`'s `domain_overlays`
+  (web → `accessibility-review` + `web-vitals-budget`; game → `asset-pipeline-review` +
+  `hardware-budget`; mobile → `store-compliance`) were read by no engine — a game/web/mobile
+  project silently got the base pipeline. New pure merge `phase_runner.apply_overlay(workflow,
+  domain)` (wired into `eados.py`, `doctor.py`, and the phase-runner CLI via the manifest's
+  `domain` scalar): `insert_states` join the machine as human-owner states and each `add_gates`
+  id joins the `entry_gates` of every transition into the state(s) its registry entry names in
+  `required_for` — the registry, not code, says where a domain gate bites. The four overlay gates
+  now have honest registry entries (`kind: manual`, `wired: external`, `blocking: true`), `/eados
+  status` surfaces the applied overlay (`domain: game (overlay applied: +state
+  asset-pipeline-review, +gate hardware-budget)`), and cross-spec-consistency **rejects** a bare
+  overlay id with no registry entry (the old lenience — an overlay id counted as a definition —
+  is removed, and the test that codified the hole is flipped). A `software`/base project is
+  byte-identical to before (pass-through, same object).
 - **No silent `it/d4np` namespace fallback (#163, M13).** `render.py` no longer defaults a missing
   `language.group_path` to the reference project's `it/d4np` — the `{{GROUP_PATH}}` required-field
   guard (previously dead code, since the fallback was injected before validation) now fires, so the

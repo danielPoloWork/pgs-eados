@@ -37,7 +37,8 @@ def clean():
         "transitions": [{"from": "design", "to": "plan", "entry_gates": ["rfc-approved"]},
                         {"from": "plan", "to": "scaffold", "entry_gates": ["roadmap-covers-rfcs"]}],
         "gates": [{"id": "rfc-approved", "required_for": ["plan"]},
-                  {"id": "roadmap-covers-rfcs", "required_for": ["scaffold"]}],
+                  {"id": "roadmap-covers-rfcs", "required_for": ["scaffold"]},
+                  {"id": "hardware-budget", "required_for": []}],   # the game overlay's gate (#165)
         "domain_overlays": {"software": {}, "game": {"add_gates": ["hardware-budget"]}},
     }
     plan = {"roles": {"proposes": "product-manager", "sizes": "tech-lead",
@@ -104,11 +105,16 @@ def main():
           caught(lambda a, w, p, r, rk, d: d["software.yaml"].__setitem__(
               "roles", ["tech-lead", "ghost"]), "ghost"), failures)
 
-    # No false positives: a gate DEFINED by a domain overlay (add_gates) is a legitimate id.
+    # #165: an overlay add_gates id is a REFERENCE into the gate registry, never a definition.
+    # With the registry entry present (clean()), using it in a transition is fine; a bare id
+    # with no entry — the hole the audit found codified here as a feature — is now caught.
     a, w, p, r, rk, d = clean()
-    w["transitions"][1]["entry_gates"] = ["hardware-budget"]   # defined via the game overlay
-    check("an overlay-defined gate (add_gates) is accepted, not flagged",
+    w["transitions"][1]["entry_gates"] = ["hardware-budget"]   # registry-backed overlay gate
+    check("a registry-backed overlay gate in a transition is accepted",
           el.cross_spec_problems(a, w, p, r, rk, d) == [], failures)
+    check("an overlay add_gates id with no registry entry is caught",
+          caught(lambda a, w, p, r, rk, d: w["domain_overlays"]["game"].__setitem__(
+              "add_gates", ["phantom-budget"]), "phantom-budget"), failures)
 
     # 6.8: a cross-cutting (non-phase) gate referenced by git.yaml resolves to the gate registry —
     # the scope deferred from #62. traceability-lint is registered with required_for: [].

@@ -52,6 +52,15 @@ def status_report(manifest, workflow, roadmap_text=None, links=None):
     lines.append(f"phase: {phase}   (role: {st.get('role', '-')}; "
                  f"produces: {', '.join(st.get('produces') or []) or '-'})")
 
+    # #165: an applied domain overlay is surfaced — visibility is the minimum viable enforcement.
+    # apply_overlay records it only when it changed something, so a software/base project keeps
+    # a byte-identical readout.
+    ov = workflow.get("applied_overlay") if isinstance(workflow, dict) else None
+    if isinstance(ov, dict):
+        parts = ([f"+state {s}" for s in ov.get("insert_states") or []] +
+                 [f"+gate {g}" for g in ov.get("add_gates") or []])
+        lines.append(f"domain: {ov.get('domain')}   (overlay applied: {', '.join(parts)})")
+
     transitions = phase_runner.legal_transitions(workflow, phase)
     if transitions:
         lines.append("legal next transitions:")
@@ -114,7 +123,8 @@ def main(argv=None):
     except (OSError, ValueError) as exc:
         print(f"doctor: cannot read manifest {args.manifest!r}: {exc}", file=sys.stderr)
         return 2
-    workflow = phase_runner.load_workflow()
+    workflow = phase_runner.apply_overlay(phase_runner.load_workflow(),
+                                          phase_runner.manifest_domain(manifest))
 
     root = args.root or os.path.dirname(os.path.abspath(args.manifest))
     roadmap_path = args.roadmap or os.path.join(root, "ROADMAP.md")

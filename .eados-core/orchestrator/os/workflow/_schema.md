@@ -36,12 +36,18 @@ domain_overlays:    # per-domain adaptations (insert/remove states, add gates, r
   phase procedure, CI, or a human; `blocking: true` means a red gate halts the transition;
   `required_for` lists the transition `to`-states that depend on it.
 - **`domain_overlays`** — a mapping `domain → { insert_states[], add_gates[], … }`. Absent
-  keys mean "inherit the base machine unchanged".
+  keys mean "inherit the base machine unchanged". Applied at runtime by
+  `phase_runner.apply_overlay` (#165): `insert_states` are appended as human-owner states,
+  and each `add_gates` id joins the `entry_gates` of every transition into a state its
+  registry entry names in `required_for` — so the registry, not code, says where a domain
+  gate bites.
 
 ## Invariants
 
 - Every `transitions[].from`/`to` is a declared `states[].id`.
 - Every `transitions[].entry_gates[]` and `gates[].required_for[]` references a declared id.
+- Every `domain_overlays.*.add_gates[]` id has a `gates[]` registry entry — a bare overlay id
+  is a reference, never a definition (cross-spec-enforced, #165).
 - Every executable `runs:` (`python <script> …`) names a script that exists — in the factory
   or shipped under `templates/` into every generated repo — and each `--flag` it passes appears
   in that script's source; gates marked `wired: in-process` are exactly `eados.py`'s
