@@ -11,6 +11,17 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **Gate `runs:` commands are executable again — and gated (#164, M13).** `render.py` gains
+  `--check` (validate-only: load → `build_context` → `validate_manifest` → report; **writes
+  nothing**; mutually exclusive with `--out`/`--in-place`), so the `manifest-valid` gate command
+  documented at `workflow.yaml` is now real. New `eados_lint` check #17 **`gate-executability`**
+  guards the whole data→code seam: every `python <script> …` gate must name a script that exists
+  (in the factory, or shipped via `templates/` into generated repos) whose source knows each
+  `--flag` it is passed, and the new machine-readable `wired: in-process | external` gate key must
+  match `eados.py`'s `GATE_EVALUATORS` exactly — the pre-M6 "future tooling" comment is replaced by
+  enforcement. Schema updated; `tests/test_gate_executability.py` (incl. running the exact
+  documented command against `reference.yaml`) wired into CI.
+
 ### Changed
 
 ### Deprecated

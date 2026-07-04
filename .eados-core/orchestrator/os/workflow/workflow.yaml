@@ -54,37 +54,46 @@ transitions:
     human_gate: false
 
 # The gate registry. lint/test/security/build/human/manual share one shape, so the checker
-# treats them uniformly. `runs` referencing future tooling is wired in the milestone that
-# builds it (see RFC §12); `manual:`/`human:` gates are human-confirmed.
+# treats them uniformly. `wired: in-process` marks the gates `eados.py` evaluates via its
+# GATE_EVALUATORS; everything else is `wired: external` — run by the agent following the phase
+# procedure, by CI, or confirmed by a human. Both claims are lint-enforced (`gate-executability`,
+# #164): every `python <script> --flag` command must name a real script whose source knows the
+# flag, and the in-process set must match eados.py exactly — so this data can no longer drift.
 gates:
   - id: manifest-valid
     kind: lint
     runs: "python .eados-core/tools/render.py <manifest> --check"
+    wired: in-process
     blocking: true
     required_for: [design, scaffold]
   - id: rfc-approved
     kind: lint
     runs: "python .eados-core/tools/rfc_check.py <rfc>"   # verifies the tech-lead approval record
+    wired: in-process
     blocking: true
     required_for: [plan]
   - id: roadmap-covers-rfcs
     kind: lint
     runs: "python .eados-core/tools/traceability.py <roadmap> <rfc-ids>"   # every RFC -> a milestone
+    wired: in-process
     blocking: true
     required_for: [scaffold]
   - id: consistency-lint
     kind: lint
-    runs: "python tools/consistency_lint.py"
+    runs: "python tools/consistency_lint.py"   # the GENERATED repo's copy (shipped via templates/)
+    wired: external
     blocking: true
     required_for: [audit]
   - id: self-review
     kind: lint
     runs: "python .eados-core/tools/self_review.py <repo>"
+    wired: external
     blocking: true
     required_for: [audit]
   - id: risk-register-present
     kind: security
     runs: "manual:security-auditor produced a risk register"
+    wired: external
     blocking: true
     required_for: [refactor]
   # Cross-cutting CI gate (NOT a phase-transition gate): it runs on every PR / in `audit`, not as a
@@ -94,6 +103,7 @@ gates:
   - id: traceability-lint
     kind: lint
     runs: "python .eados-core/tools/traceability.py <roadmap> <rfc-ids> --links <links>"
+    wired: external
     blocking: true
     required_for: []
   # Inbound-contribution review gate (M8): advisory + cross-cutting — it runs on a PR via
@@ -102,6 +112,7 @@ gates:
   - id: contribution-review
     kind: lint
     runs: "python .eados-core/tools/pr_review.py --pr <PR#>"
+    wired: external
     blocking: false
     required_for: []
 
