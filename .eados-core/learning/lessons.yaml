@@ -16,3 +16,17 @@
   context: A capability flag (i18n) gated a lint check whose required file had no template, so enabling it failed the generated lint on day zero.
   rule: Every capability flag that a check depends on must ship the artifact that check reads; verify by rendering a variant with the flag on.
   source: feat i18n subsystem
+
+- id: L-0003
+  date: 2026-07-01
+  scope: global
+  context: The hand-rolled YAML loader silently truncated constructs outside its subset (unclosed flow collections and quoted scalars at end-of-line) in the questionnaire, so a maintainer's input could vanish with no error.
+  rule: A hand-rolled parser must loudly reject any construct it cannot represent instead of silently truncating it, and prove its supported subset with a differential against a reference parser.
+  source: audit #153; fix #166 (yamlmini loud rejection; ADR-0006/0008)
+
+- id: L-0004
+  date: 2026-06-28
+  scope: global
+  context: A re-audit flagged profile CI actions shipping version-tag pins (vs the factory's SHA pins) as an inconsistency, but ADR-0009 §3 had already decided it — profile actions stay tag-pinned and Dependabot-managed by design.
+  rule: Before filing an apparent inconsistency as a gap, check whether the governing ADR already decided it; a re-discovered trade-off is an addendum, not a new issue.
+  source: audit #132; ADR-0009 §3 addendum (PR #137)
