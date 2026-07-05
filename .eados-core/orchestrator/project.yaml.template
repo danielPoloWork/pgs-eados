@@ -117,3 +117,19 @@ spec:                         # Filled from Phase 5 of the intake interview.
   # The full forward roadmap, defined UP FRONT (Milestone 1 = the universal bootstrap, automatic).
   # Each entry: {number, title, goal, items: ["<n>.<m> task", ...]}.        -> {{#EACH_MILESTONE}}
   milestones: []
+
+# Interview provenance (#169) — filled by the architect DURING the interview, never
+# retrospectively: for each top-level answer key above, how it got its value.
+#   asked     — the question was posed and the maintainer answered.
+#   defaulted — assumed from the questionnaire default and echoed back at confirmation.
+#   imported  — carried in from an existing artifact (e.g. a validated PRD/SRS, Q5.0 import).
+# State, not a placeholder source: the confirmation step reads the `defaulted` entries; the
+# learning loop consumes the block. validate_manifest rejects a wrong value or a key that is
+# not a top-level key of this manifest. Example:
+#
+# interview:
+#   questionnaire_version: 1        # questionnaire.yaml meta.version at interview time
+#   provenance:
+#     identity: asked
+#     toolchain: defaulted
+#     spec: imported

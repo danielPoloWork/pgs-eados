@@ -169,12 +169,19 @@ KNOWN_SECTIONS = {
     "identity", "ownership", "language", "toolchain", "ci",
     "governance", "i18n", "announce", "spec",
     "delivery_state",   # EADOS persistent delivery state (M1-B); state, not a placeholder source
+    "interview",        # interview provenance — asked|defaulted|imported per answer key (#169);
+                        # state for the confirmation step + the learning loop, never a placeholder source
 }
 
 # Known top-level SCALARS (not sections). `schema_version` versions the manifest schema for
 # backward-compatible evolution (RFC-0001 §8 / OQ1); `domain` selects the target profile
 # (orchestrator/domains/<domain>.yaml, M1-C). Both are metadata, not sections/placeholders.
 KNOWN_SCALARS = {"schema_version", "domain"}
+
+# How an interview answer got its value (#169): posed to the maintainer, assumed from the
+# questionnaire default (and echoed back at confirmation), or carried in from an existing
+# artifact (e.g. a validated PRD/SRS import, Q5.0).
+_PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without
@@ -236,6 +243,25 @@ def validate_manifest(m, scalars):
             f"governance.start_version '{sv}' is not a numeric X.Y.Z version "
             "(did you swap it with version_start?)"
         )
+    # #169: the interview provenance block is state with a fixed shape — a wrong value or a
+    # dangling key would silently defeat the asked-vs-defaulted audit trail it exists to carry.
+    # Optional (legacy manifests pass), but when present it must be honest.
+    iv = m.get("interview")
+    if isinstance(iv, dict):
+        prov = iv.get("provenance")
+        if not isinstance(prov, dict) or not prov:
+            problems.append("interview.provenance must be a non-empty mapping of "
+                            "top-level manifest key -> asked|defaulted|imported")
+        else:
+            for key in sorted(prov):
+                if prov[key] not in _PROVENANCE_VALUES:
+                    problems.append(
+                        f"interview.provenance['{key}'] must be one of "
+                        f"asked|defaulted|imported, got {prov[key]!r}")
+                if key not in m:
+                    problems.append(
+                        f"interview.provenance names '{key}' which is not a top-level key "
+                        "of this manifest")
     return problems
 
 

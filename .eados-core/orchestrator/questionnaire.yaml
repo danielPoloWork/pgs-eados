@@ -12,6 +12,10 @@ meta:
   version: 1
   conducted_in: maintainer_language     # answers transcribed to English in project.yaml
   output: orchestrator/project.yaml
+  # #169: record asked|defaulted|imported per top-level answer key in the manifest's
+  # interview: block AS the interview proceeds (never retrospectively); copy `version`
+  # above into interview.questionnaire_version.
+  provenance: as-you-go
 
 phases:
 

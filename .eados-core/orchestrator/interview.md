@@ -16,6 +16,11 @@ protocol with the *why* and the follow-up logic.
 - **Ask only what you cannot safely default.** Each question below carries a default. If
   the default is obviously right for the stated project, state the assumption and move on
   rather than asking. Reserve real questions for decisions that change the output.
+- **Record provenance as you go — never retrospectively.** The manifest's `interview:` block
+  (#169) records, for every top-level answer key, whether it was `asked`, `defaulted`, or
+  `imported`, plus `questionnaire_version` (questionnaire.yaml `meta.version`). Write each
+  entry the moment the phase settles it; a block reconstructed at the end is a guess about
+  your own behavior. `validate_manifest` rejects a wrong value or a dangling key.
 - **Batch related questions.** Prefer a few grouped questions over a long interrogation.
   Phases 1–4 are usually 1–2 rounds; Phase 5 (the spec) is the substantive conversation.
 - **Echo back.** After each phase, restate what you captured in one line so the maintainer
@@ -226,8 +231,12 @@ follow-ups until each is concrete enough to test against:
 
 ## Closing the interview
 
-1. Merge the answers with the resolved profile(s) into `orchestrator/project.yaml`.
-2. **Present the manifest to the maintainer**, highlighting every value you defaulted
-   rather than asked, so a wrong default is caught now.
+1. Merge the answers with the resolved profile(s) into `orchestrator/project.yaml`, and
+   verify the `interview:` provenance block you filled as you went is complete — one entry
+   per top-level answer key, `questionnaire_version` set.
+2. **Present the manifest to the maintainer**, pointing them at the `interview.provenance`
+   entries marked **`defaulted`** — every value you assumed rather than asked — so a wrong
+   default is caught now. A considered answer and a silent assumption must never look the
+   same at confirmation time.
 3. On confirmation, proceed to [`generate.md`](generate.md). On any change, edit the
    manifest and re-confirm — never render from an unconfirmed manifest.

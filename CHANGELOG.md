@@ -11,6 +11,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **The manifest records interview provenance — asked vs defaulted vs imported (#169, M13).**
+  New `interview:` **state block** (same class as `delivery_state`; in `KNOWN_SECTIONS`, never a
+  placeholder source): per top-level answer key, `asked | defaulted | imported`, plus
+  `questionnaire_version`. `validate_manifest` rejects a wrong value, a key that is not a
+  top-level key of the manifest, or a shapeless block — so a considered answer and a silent
+  assumption can no longer look the same, and a manifest produced by a phase-skipping agent is
+  distinguishable from a diligent one. `interview.md` now mandates transcribing provenance **as
+  the interview proceeds** (never retrospectively) and its confirmation step points the
+  maintainer at the `defaulted` entries; `questionnaire.yaml` `meta.provenance: as-you-go`
+  records the rule as data; `project.yaml.template` carries a commented example and
+  `examples/reference.yaml` a real block (render output byte-identical — state, not
+  substitution input). This is the input feed `autotune.py` and the M13 run-recorder (#172)
+  have been starving for.
+
 - **Gate `runs:` commands are executable again — and gated (#164, M13).** `render.py` gains
   `--check` (validate-only: load → `build_context` → `validate_manifest` → report; **writes
   nothing**; mutually exclusive with `--out`/`--in-place`), so the `manifest-valid` gate command
