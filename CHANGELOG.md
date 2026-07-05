@@ -11,6 +11,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **README: complete the tools table, add "How EADOS learns", date-stamp the model claims (#176,
+  M13).** New **"The tools"** section groups the full `tools/` surface (all 27 tools) into
+  *generate / govern / verify / learn* — the phase-pipeline spine (`eados.py`, `doctor.py`,
+  `preflight.py`, `pr_review.py`, `seed_milestones.py`, …) is no longer invisible; the repo-layout
+  tree gains `orchestrator/os/`, `domains/`, and `commands/`. New **"How EADOS learns"** section
+  documents the versioned, human-gated memory (the `lessons.yaml` / `runs/` / `autotune` +
+  `lesson_audit` / ADR table — who writes, approves, enforces) and the escalation path *incident →
+  lesson → gate → meta-gate*, describing behavior that has now shipped (#171–#175). The stale
+  *"Fable 5 not yet available"* model claim is fixed and **date-stamped** ("as of 2026-07") in both
+  the prerequisites and the FAQ. i18n: EN source hash refreshed (`b8c027cdd842` → `dbf449c097c2`)
+  and the `zh-Hans` / `ja` translations updated in the same PR (version-lockstep + i18n-freshness
+  green).
+
 - **The learning loop is inside the enforcement perimeter — `run-records` self-lint gate (#175,
   M13).** Per the gate-coverage mandate (*gate every externally-modifiable file class*),
   `learning/runs/**` moves from allow-listed prose to a **validated** class. A new `eados_lint`

@@ -21,10 +21,10 @@ time (`sha256sum <file>` / `hashlib.sha256`). It is `—` while a row is `missin
 
 | Source page | Source hash | Status | Reviewer |
 |-------------|:-----------:|:------:|----------|
-| [`README.md`](../../../README.md) | `b8c027cdd842` | `translated` | — |
+| [`README.md`](../../../README.md) | `dbf449c097c2` | `translated` | — |
 
 ## `ja` (Japanese)
 
 | Source page | Source hash | Status | Reviewer |
 |-------------|:-----------:|:------:|----------|
-| [`README.md`](../../../README.md) | `b8c027cdd842` | `translated` | — |
+| [`README.md`](../../../README.md) | `dbf449c097c2` | `translated` | — |

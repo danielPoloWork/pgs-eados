@@ -31,7 +31,7 @@ gate-checked manifest (design: [RFC-0001](.eados-core/docs/rfc/0001-eados-delive
 
 - [Why EADOS](#why-eados) · [Capabilities at a glance](#capabilities-at-a-glance)
 - [What you get out of it](#what-you-get-out-of-it) · [The phase pipeline](#the-phase-pipeline) · [How generation works](#how-generation-works)
-- [Repository layout](#repository-layout) · [Getting started](#getting-started) · [Quickstart](#quickstart)
+- [Repository layout](#repository-layout) · [The tools](#the-tools) · [How EADOS learns](#how-eados-learns) · [Getting started](#getting-started) · [Quickstart](#quickstart)
 - [Design principles](#design-principles-why-it-is-shaped-this-way) · [Security posture](#security-posture) · [FAQ](#faq)
 - [Contributing & governance](#contributing--governance) · [Provenance](#provenance) · [License & ownership](#license--ownership)
 
@@ -182,7 +182,10 @@ pgs-eados/
     │   ├── questionnaire.yaml         # machine-readable question bank
     │   ├── project.yaml.template      # the project manifest skeleton (copied to project.yaml per run)
     │   ├── examples/reference.yaml    # a worked manifest + render-smoke fixture
-    │   └── profiles/                  # per-language toolchain knowledge (+ _schema.md)
+    │   ├── profiles/                  # per-language toolchain knowledge (+ _schema.md)
+    │   ├── os/                        # machine-readable delivery-OS specs (git, workflow, rfc, contribution, …)
+    │   ├── domains/                   # domain overlays (game / web / mobile) + schema
+    │   └── commands/                  # the /eados <phase> command playbooks
     ├── templates/                     # the parameterized enterprise scaffolding (the output)
     │   ├── AGENTS.md.tmpl  CLAUDE.md.tmpl  GEMINI.md.tmpl  README.md.tmpl  …
     │   ├── docs/**                    # adr/, patterns/, specs/, bugs/, journal/, workflow/, i18n/
@@ -199,6 +202,84 @@ pgs-eados/
     ├── maintenance/stay-current.md    # the profile-refresh routine (+ cron recipe)
     └── docs/adr/                      # ADRs governing EADOS's own design decisions
 ```
+
+---
+
+## The tools
+
+Everything under `.eados-core/tools/` is standard-library Python (3.12+) — no `pip install`. On
+the conversational path you never invoke these by hand (the agent does), but they are the
+deterministic spine, grouped by what they do:
+
+**Generate — turn a manifest into a governed repo**
+
+| Tool | What it does |
+|------|--------------|
+| `render.py` | Deterministic Mustache-subset renderer (manifest → the full scaffold) |
+| `render_artifact.py` | Render one template and place it (single-artifact sandbox) |
+| `eados.py` | Thin phase orchestrator — the executable `/eados <phase>` |
+| `phase_runner.py` | State-driven checker behind each phase (gates + domain overlays) |
+| `preflight.py` | Verify the toolchain the pipeline assumes is present & authenticated |
+| `seed_milestones.py` | Read `ROADMAP.md` and seed every milestone on GitHub |
+| `brownfield.py` · `migration_planner.py` · `sandbox.py` | Read an existing repo, plan a migration, contain refactor writes |
+
+**Govern — authority, traceability, PRs, releases**
+
+| Tool | What it does |
+|------|--------------|
+| `authority_check.py` | The path→role gate (who may touch what) |
+| `doctor.py` | `/eados status` — an at-a-glance health readout |
+| `traceability.py` · `derive_links.py` | The lineage graph + its `roadmap-covers-rfcs` / `traceability-lint` gates, derived from merged PRs |
+| `risk_score.py` | The audit phase's deterministic risk model |
+| `pr_review.py` · `pr_metadata_check.py` | Inbound-PR evaluation + PR-metadata presence |
+| `rfc_check.py` | Verify an RFC against the review protocol |
+| `sync_action_pins.py` | Keep rendered workflow pins in lockstep with the factory CI |
+| `cleanup_installer.py` | Remove guided-installer leftovers after `init` |
+
+**Verify — the gates that keep it honest**
+
+| Tool | What it does |
+|------|--------------|
+| `eados_lint.py` | The factory self-lint (18 congruence + coverage checks) |
+| `self_review.py` | Structural completeness of a generated repo |
+| `profile_ci_lint.py` | Every shipped CI fragment parses as valid YAML |
+| `consistency_lint.py` *(shipped into the repo)* | Generic, profile-driven congruence checker |
+| `yamlmini.py` | The dependency-free YAML loader shared by all of the above |
+
+**Learn — the versioned, human-gated memory loop**
+
+| Tool | What it does |
+|------|--------------|
+| `record_run.py` | Mechanized run records (Step 9) — provenance-derived overrides + failure/rubric channels |
+| `autotune.py` | Propose default changes from the accumulated run records |
+| `lesson_audit.py` | Regressions vs. lessons, dead lessons, low rubric trends (report-only) |
+| `lesson_sweep.py` | Harvest review-time `Lesson:` fields into draft ledger entries |
+
+See [How EADOS learns](#how-eados-learns) for how the *learn* group closes the loop.
+
+---
+
+## How EADOS learns
+
+EADOS improves without a vector database or opaque fine-tuning: its memory is **versioned,
+human-gated, and mechanical**. Four artifacts, each with a clear writer / approver / enforcer:
+
+| Memory | What it holds | Who writes | Who approves | Who enforces |
+|--------|---------------|------------|--------------|--------------|
+| `learning/lessons.yaml` | Durable, generalizable rules | agent drafts (at review time via the PR `Lesson:` field, or `lesson_sweep.py`) | the owner — a merged PR body is approval by construction | `eados_lint` `lessons` |
+| `learning/runs/*.yaml` | One record per generation run (overrides, failures, rubric) | `record_run.py`, mechanically from manifest provenance | — (facts, never edited) | `eados_lint` `run-records` schema gate |
+| `autotune.py` · `lesson_audit.py` | Proposals mined from the records | the tools (report-only) | the owner | — (advisory) |
+| `docs/adr/**` | Load-bearing design decisions | agent drafts | the owner | ADR index + review |
+
+The spine is an **escalation path** — knowledge hardens one rung at a time:
+
+> **incident → lesson (advisory) → gate (mechanical) → meta-gate (coverage)**
+
+A mistake becomes a recorded *lesson*; a lesson that keeps recurring (surfaced by
+`lesson_audit.py`) is promoted to a *gate* in `eados_lint.py` so it cannot recur silently; and the
+**gate-coverage meta-gate** guarantees every externally-modifiable file class sits inside that
+perimeter. L-0001 ("a multi-line placeholder must carry its indentation") already made the full
+trip — it is renderer logic and a lint check today, not a sticky note.
 
 ---
 
@@ -228,9 +309,11 @@ The recommended (conversational) path needs an **`AGENTS.md`-aware AI coding age
 "**Open the folder with your agent**" then means: start the agent in your project's repo root — it
 auto-loads `AGENTS.md` and adopts the Enterprise Project Architect persona, ready for the interview.
 
-**Which model?** EADOS leans on the agent's reasoning, so the strongest models do best. Today it
-performs best with **Claude Opus 4.8 (high)** — with **Fable 5** not yet available — followed by
-**OpenAI Codex 5.5** and **Gemini 3.5 Flash**; **Mistral AI** and **Sakana AI** are not yet tested.
+**Which model?** EADOS leans on the agent's reasoning, so the strongest models do best. **As of
+2026-07**, it performs best with **Claude Opus 4.8 (high)**, followed by **OpenAI Codex 5.5** and
+**Gemini 3.5 Flash**; the rest of the Claude 5 family (including **Fable 5**) and **Mistral AI** /
+**Sakana AI** are not yet benchmarked for EADOS. *(Model rankings rotate fast — treat this as a
+dated snapshot, not a standing claim.)*
 
 > **⚠ AI agents can hallucinate.** They draft confidently and are sometimes wrong — **review every
 > diff, RFC, and command** before acting on it. EADOS lowers the barrier for newcomers, but it is a
@@ -401,8 +484,8 @@ CI, and lint travel with it. EADOS's job ends at generation.
 **Can I use it offline / air-gapped?** Yes. The installer supports `--from` + `--sums-file` (verify a
 hand-downloaded bundle), and the deterministic render + gates need no network.
 
-**Which model works best?** See [Prerequisites](#prerequisites--getting-an-ai-coding-agent) — today
-**Claude Opus 4.8 (high)** leads, then Codex 5.5 and Gemini 3.5 Flash.
+**Which model works best?** See [Prerequisites](#prerequisites--getting-an-ai-coding-agent) — **as of
+2026-07**, **Claude Opus 4.8 (high)** leads, then Codex 5.5 and Gemini 3.5 Flash.
 
 **Does EADOS send my code or data anywhere?** No — it is markdown / YAML / standard-library Python with
 no telemetry. Your AI agent is a separate tool with its own data policy.
