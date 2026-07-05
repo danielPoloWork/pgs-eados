@@ -50,3 +50,9 @@ Records are facts about past runs — never edited after the fact (`record_run.p
 overwrite an existing file). They contain no secrets (the manifest's identity/spec is fine;
 tokens/webhooks never live in a manifest). The auto-tuner reads `overrides` and ignores the
 other channels; it is a no-op until enough records accumulate.
+
+Every record here is **schema-validated by the self-lint** (`eados_lint`'s `run-records` gate,
+#175): the five required keys, the `outcome` vocabulary, override triples, `failures` shape (a
+failure implies `outcome: failed`), and rubric dimensions 0–2 drawn from the ten. A malformed
+record fails CI rather than silently poisoning the auto-tuner and the lesson audit — the write
+side (`record_run.py`) and the gate share one schema.
