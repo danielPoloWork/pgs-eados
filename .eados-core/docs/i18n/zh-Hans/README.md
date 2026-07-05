@@ -31,7 +31,7 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 
 - [为什么选择 EADOS](#为什么选择-eados) · [能力一览](#能力一览)
 - [你能得到什么](#你能得到什么) · [阶段流水线](#阶段流水线) · [生成如何运作](#生成如何运作)
-- [仓库布局](#仓库布局) · [快速上手](#快速上手) · [Quickstart](#quickstart)
+- [仓库布局](#仓库布局) · [工具](#工具) · [EADOS 如何学习](#eados-如何学习) · [快速上手](#快速上手) · [Quickstart](#quickstart)
 - [设计原则](#设计原则为何如此塑形) · [安全态势](#安全态势) · [常见问题](#常见问题)
 - [贡献与治理](#贡献与治理) · [溯源](#溯源) · [许可与归属](#许可与归属)
 
@@ -177,7 +177,10 @@ pgs-eados/
     │   ├── questionnaire.yaml         # machine-readable question bank
     │   ├── project.yaml.template      # the project manifest skeleton (copied to project.yaml per run)
     │   ├── examples/reference.yaml    # a worked manifest + render-smoke fixture
-    │   └── profiles/                  # per-language toolchain knowledge (+ _schema.md)
+    │   ├── profiles/                  # per-language toolchain knowledge (+ _schema.md)
+    │   ├── os/                        # machine-readable delivery-OS specs (git, workflow, rfc, contribution, …)
+    │   ├── domains/                   # domain overlays (game / web / mobile) + schema
+    │   └── commands/                  # the /eados <phase> command playbooks
     ├── templates/                     # the parameterized enterprise scaffolding (the output)
     │   ├── AGENTS.md.tmpl  CLAUDE.md.tmpl  GEMINI.md.tmpl  README.md.tmpl  …
     │   ├── docs/**                    # adr/, patterns/, specs/, bugs/, journal/, workflow/, i18n/
@@ -194,6 +197,82 @@ pgs-eados/
     ├── maintenance/stay-current.md    # the profile-refresh routine (+ cron recipe)
     └── docs/adr/                      # ADRs governing EADOS's own design decisions
 ```
+
+---
+
+## 工具
+
+`.eados-core/tools/` 下的一切都是标准库 Python（3.12+）—— 无需 `pip install`。在对话式路径上你
+从不手动调用它们（由智能体调用），但它们是确定性的骨架，按用途分组如下：
+
+**Generate —— 把清单变成受治理的仓库**
+
+| 工具 | 作用 |
+|------|------|
+| `render.py` | 确定性的 Mustache 子集渲染器（清单 → 完整脚手架） |
+| `render_artifact.py` | 渲染单个模板并就位（单件沙箱） |
+| `eados.py` | 精简的阶段编排器 —— 可执行的 `/eados <phase>` |
+| `phase_runner.py` | 每个阶段背后的状态驱动检查器（门禁 + 领域叠加） |
+| `preflight.py` | 校验流水线假定的工具链已就位且已认证 |
+| `seed_milestones.py` | 读取 `ROADMAP.md` 并在 GitHub 上播种每个里程碑 |
+| `brownfield.py` · `migration_planner.py` · `sandbox.py` | 读取既有仓库、规划迁移、隔离重构写入 |
+
+**Govern —— 权限、可追溯性、PR、发布**
+
+| 工具 | 作用 |
+|------|------|
+| `authority_check.py` | 路径→角色门禁（谁可以改动什么） |
+| `doctor.py` | `/eados status` —— 一目了然的健康读数 |
+| `traceability.py` · `derive_links.py` | 血缘图 + 其 `roadmap-covers-rfcs` / `traceability-lint` 门禁（源自已合并的 PR） |
+| `risk_score.py` | 审计阶段的确定性风险模型 |
+| `pr_review.py` · `pr_metadata_check.py` | 入站 PR 评估 + PR 元数据存在性 |
+| `rfc_check.py` | 依据评审协议校验 RFC |
+| `sync_action_pins.py` | 使渲染出的工作流 pin 与工厂 CI 保持锁步 |
+| `cleanup_installer.py` | 在 `init` 后清除引导安装器的残留 |
+
+**Verify —— 保持诚实的门禁**
+
+| 工具 | 作用 |
+|------|------|
+| `eados_lint.py` | 工厂自检（18 项一致性 + 覆盖检查） |
+| `self_review.py` | 生成仓库的结构完整性 |
+| `profile_ci_lint.py` | 每个随附的 CI 片段都是合法 YAML |
+| `consistency_lint.py`（随仓库交付） | 通用的、以 profile 驱动的一致性检查器 |
+| `yamlmini.py` | 上述所有工具共享的无依赖 YAML 加载器 |
+
+**Learn —— 版本化、人工把关的记忆闭环**
+
+| 工具 | 作用 |
+|------|------|
+| `record_run.py` | 机械化的运行记录（第 9 步）—— 由溯源推导的覆盖项 + 失败/评分通道 |
+| `autotune.py` | 从累积的运行记录中提议默认值变更 |
+| `lesson_audit.py` | 回归 vs. 教训、失效教训、低评分趋势（仅报告） |
+| `lesson_sweep.py` | 把评审期的 `Lesson:` 字段收割为教训台账草稿 |
+
+关于 *Learn* 组如何闭合闭环，见 [EADOS 如何学习](#eados-如何学习)。
+
+---
+
+## EADOS 如何学习
+
+EADOS 无需向量数据库或不透明的微调即可自我改进：它的记忆是**版本化、人工把关且机械化的**。
+四类工件，各有清晰的书写者 / 批准者 / 强制者：
+
+| 记忆 | 保存什么 | 谁书写 | 谁批准 | 谁强制 |
+|------|---------|--------|--------|--------|
+| `learning/lessons.yaml` | 持久的、可泛化的规则 | 智能体起草（评审期经 PR 的 `Lesson:` 字段，或 `lesson_sweep.py`） | 所有者 —— 一个已合并的 PR 正文即构成批准 | `eados_lint` 的 `lessons` |
+| `learning/runs/*.yaml` | 每次生成运行一条记录（覆盖项、失败、评分） | `record_run.py`，机械地取自清单溯源 | ——（事实，从不事后编辑） | `eados_lint` 的 `run-records` 模式门禁 |
+| `autotune.py` · `lesson_audit.py` | 从记录中挖掘的提议 | 工具（仅报告） | 所有者 | ——（仅建议） |
+| `docs/adr/**` | 承重的设计决策 | 智能体起草 | 所有者 | ADR 索引 + 评审 |
+
+其骨架是一条**升级路径** —— 知识逐级固化：
+
+> **事故 → 教训（建议）→ 门禁（机械）→ 元门禁（覆盖）**
+
+一个失误变成一条记录在案的*教训*；一条反复出现的教训（由 `lesson_audit.py` 浮现）被提升为
+`eados_lint.py` 中的一道*门禁*，使其不再悄然重演；而**门禁覆盖元门禁**保证每一类可被外部修改的
+文件都处在该边界之内。L-0001（"多行占位符必须携带其缩进"）已走完全程 —— 今天它是渲染器逻辑
+与一项 lint 检查，而非一张便利贴。
 
 ---
 
@@ -221,9 +300,10 @@ EADOS 是一座 markdown/YAML 工厂 —— 没有东西需要编译，几乎没
 “**用你的智能体打开该文件夹**”的意思是：在你项目的仓库根目录启动该智能体——它会自动加载
 `AGENTS.md` 并采用 Enterprise Project Architect（企业项目架构师）人格，准备开始访谈。
 
-**该用哪个模型？** EADOS 依赖智能体的推理能力，因此越强的模型表现越好。目前它在
-**Claude Opus 4.8（high）** 上表现最佳 —— 而 **Fable 5** 尚不可用 —— 其次是 **OpenAI Codex 5.5**
-与 **Gemini 3.5 Flash**；**Mistral AI** 与 **Sakana AI** 尚未测试。
+**该用哪个模型？** EADOS 依赖智能体的推理能力，因此越强的模型表现越好。**截至 2026-07**，它在
+**Claude Opus 4.8（high）** 上表现最佳，其次是 **OpenAI Codex 5.5** 与 **Gemini 3.5 Flash**；
+Claude 5 家族的其余成员（包括 **Fable 5**）以及 **Mistral AI** / **Sakana AI** 尚未针对 EADOS
+做基准测试。*（模型排名更替很快 —— 请把它当作一份带日期的快照，而非长期结论。）*
 
 > **⚠ AI 智能体可能产生幻觉。** 它们会自信地起草、有时却是错的 —— 在据此行动之前，请**审阅每一处
 > diff、RFC 与命令**。EADOS 降低了新手的门槛，但它是一件**强力工具**：在有经验者手中最有效 ——
@@ -384,8 +464,8 @@ EADOS 把供应链与智能体边界视为一等公民：
 **能离线 / 气隙使用吗？** 能。安装器支持 `--from` + `--sums-file`（校验手工下载的 bundle），确定性
 渲染与门禁都无需网络。
 
-**哪个模型最好？** 见[前置准备](#前置准备--获取一个-ai-编码智能体) —— 目前 **Claude Opus 4.8
-（high）** 领先，其次是 Codex 5.5 与 Gemini 3.5 Flash。
+**哪个模型最好？** 见[前置准备](#前置准备--获取一个-ai-编码智能体) —— **截至 2026-07**，
+**Claude Opus 4.8（high）** 领先，其次是 Codex 5.5 与 Gemini 3.5 Flash。
 
 **EADOS 会把我的代码或数据发往任何地方吗？** 不会 —— 它是 markdown / YAML / 标准库 Python，无遥测。
 你的 AI 智能体是独立工具，有其自己的数据策略。
