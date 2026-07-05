@@ -11,6 +11,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **The learning loop is inside the enforcement perimeter — `run-records` self-lint gate (#175,
+  M13).** Per the gate-coverage mandate (*gate every externally-modifiable file class*),
+  `learning/runs/**` moves from allow-listed prose to a **validated** class. A new `eados_lint`
+  check (`run_record_problems` + `check_run_records`) validates every `learning/runs/*.yaml`
+  against the recorder schema (#172): the five required keys (`slug`/`date`/`lang`/`kind`/
+  `outcome`), the `outcome` vocabulary, `date` shape, override `{key, default, chosen}` triples,
+  `failures` `{gate, message}` shape (with the rule that a recorded failure implies
+  `outcome: failed`), `lessons_applied` id form, and rubric dimensions 0–2 drawn from the ten —
+  reusing `record_run.py`'s own `OUTCOMES`/`RUBRIC_DIMENSIONS` so the writer and the gate share
+  **one** schema. A malformed record now fails CI with a named, actionable message instead of
+  silently poisoning the auto-tuner and the lesson audit; the gate-coverage meta-gate accounts
+  for `learning/runs/**` as validated. The empty-dir state (only `runs/README.md`) stays green
+  until the first record lands.
+
 - **Review-time lesson capture — PR `Lesson:` field + `lesson_sweep.py` + ledger backfill (#174,
   M13).** The lessons ledger held two entries across ~160 merged PRs because the capture point was
   wrong: end-of-run recollection instead of review time. The factory **PR template** (and the

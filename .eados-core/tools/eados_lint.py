@@ -29,6 +29,7 @@ import sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import render  # noqa: E402  — the dependency-free YAML loader, reused to parse the OS specs
+import record_run  # noqa: E402  — the run-record schema authority (OUTCOMES, RUBRIC_DIMENSIONS)
 
 ROOT = os.path.dirname(TOOLS)
 TEMPLATES = os.path.join(ROOT, "templates")
@@ -724,6 +725,99 @@ def check_data_files(fail):
 
 
 # ---------------------------------------------------------------------------
+# 14b. Run-record schema — learning/runs/*.yaml is an externally-modifiable data class (per the
+#      gate-coverage mandate). record_run.py (#172) gives it a real schema; a malformed record
+#      silently poisons the auto-tuner and the lesson audit, so it must be inside the perimeter,
+#      not prose. Syntax is data-file-validity's job (parse errors are its report); this validates
+#      the STRUCTURE of the records that parse. The empty-dir state (only runs/README.md) is
+#      trivially green — there is nothing to validate until the first record lands.
+# ---------------------------------------------------------------------------
+RUN_RECORD_REQUIRED = ("slug", "date", "lang", "kind", "outcome")
+
+
+def run_record_problems(records):
+    """records: (relpath, parsed_record) pairs. Validate each against the recorder schema
+    (record_run.py: the five required keys; outcome vocabulary; date shape; overrides triples;
+    failures {gate, message} with the outcome-consistency rule; rubric dims 0-2 drawn from the
+    ten). Pure so the contract is unit-testable — empty == every record is well-formed."""
+    problems = []
+
+    def bad(rel, msg):
+        problems.append(f"{rel}: {msg}")
+
+    for rel, rec in records:
+        if not isinstance(rec, dict):
+            bad(rel, "a run record must be a YAML mapping")
+            continue
+        for key in RUN_RECORD_REQUIRED:
+            if key not in rec or str(rec.get(key)).strip() == "":
+                bad(rel, f"missing or empty required key '{key}'")
+        date = str(rec.get("date", "")).strip()
+        if date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+            bad(rel, f"date '{date}' is not YYYY-MM-DD")
+        outcome = rec.get("outcome")
+        if outcome is not None and outcome not in record_run.OUTCOMES:
+            bad(rel, f"outcome {outcome!r} not one of {'|'.join(record_run.OUTCOMES)}")
+
+        overrides = rec.get("overrides", [])
+        if not isinstance(overrides, list):
+            bad(rel, "overrides must be a list")
+        else:
+            for i, ov in enumerate(overrides):
+                if not isinstance(ov, dict) or not all(k in ov for k in ("key", "default", "chosen")):
+                    bad(rel, f"overrides[{i}] must be a {{key, default, chosen}} mapping")
+                elif str(ov.get("key")).strip() == "":
+                    bad(rel, f"overrides[{i}] has an empty key")
+
+        failures = rec.get("failures", [])
+        if not isinstance(failures, list):
+            bad(rel, "failures must be a list")
+        else:
+            for i, f in enumerate(failures):
+                if not isinstance(f, dict) or "gate" not in f or "message" not in f:
+                    bad(rel, f"failures[{i}] must be a {{gate, message}} mapping")
+                elif str(f.get("gate")).strip() == "":
+                    bad(rel, f"failures[{i}] has an empty gate")
+            if failures and outcome != "failed":
+                bad(rel, "a recorded failure means the run failed — outcome must be 'failed'")
+
+        applied = rec.get("lessons_applied", [])
+        if not isinstance(applied, list):
+            bad(rel, "lessons_applied must be a list")
+        else:
+            for lid in applied:
+                if not re.fullmatch(r"L-\d{4}", str(lid).strip()):
+                    bad(rel, f"lessons_applied entry {lid!r} is not an L-NNNN id")
+
+        rubric = rec.get("rubric", {})
+        if not isinstance(rubric, dict):
+            bad(rel, "rubric must be a mapping")
+        else:
+            for dim, score in rubric.items():
+                if dim not in record_run.RUBRIC_DIMENSIONS:
+                    bad(rel, f"rubric dimension {dim!r} is not one of the ten eval/rubric.md "
+                             "dimensions")
+                elif str(score).strip() not in ("0", "1", "2"):
+                    bad(rel, f"rubric {dim} score {score!r} is not 0, 1, or 2")
+    return problems
+
+
+def check_run_records(fail):
+    name = "run-records"
+    runs_dir = os.path.join(ROOT, "learning", "runs")
+    records = []
+    for path in sorted(glob.glob(os.path.join(runs_dir, "*.yaml"))):
+        rel = os.path.relpath(path, REPO_ROOT).replace("\\", "/")
+        try:
+            rec = render.load_yaml(read(path))
+        except Exception:
+            continue                        # a syntax error is data-file-validity's report
+        records.append((rel, rec))
+    for problem in run_record_problems(records):
+        fail(name, problem)
+
+
+# ---------------------------------------------------------------------------
 # 15. Gate coverage (meta-gate) — every tracked file is either covered by a named gate or
 #     consciously allow-listed as human-reviewed prose (with a reason). A NEW file class that
 #     nobody gated fails CI until it is gated or allow-listed — so coverage can never silently
@@ -745,6 +839,7 @@ GATE_COVERAGE = [
     (".eados-core/config/defaults.yaml",                  "data-file-validity"),
     (".eados-core/agent/*.md",                            "agent-registry"),
     (".eados-core/learning/lessons.yaml",                 "lessons + data-file-validity"),
+    (".eados-core/learning/runs/**",                      "run-records (schema) + data-file-validity"),
     (".eados-core/tools/*.py",                            "byte-compile + unit tests (CI)"),
     (".eados-core/tools/tests/*.py",                      "byte-compile + unit tests (CI)"),
     (".eados-core/docs/i18n/**",                          "i18n-freshness"),
@@ -780,7 +875,6 @@ GATE_ALLOWLIST = [
     (".eados-core/config/*.md",                    "config prose (README, house-rules)"),
     (".eados-core/config/agents/**",               "user role-override dir"),
     (".eados-core/learning/*.md",                  "learning-ledger prose"),
-    (".eados-core/learning/runs/**",               "run-notes prose"),
     (".eados-core/docs/*.md",                      "docs prose (USAGE, walkthrough)"),
     (".eados-core/docs/adr/**",                    "ADR prose"),
     (".eados-core/docs/rfc/**",                    "RFC / roadmap / diagram prose"),
@@ -1017,6 +1111,7 @@ CHECKS = [
     check_version_lockstep,
     check_manifest_template,
     check_data_files,
+    check_run_records,
     check_gate_coverage,
     check_workflow_safety,
     check_gate_executability,
