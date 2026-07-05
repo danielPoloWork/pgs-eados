@@ -74,6 +74,25 @@ def main():
     check("missing group_path rejected (no it/d4np fallback)",
           has(VALID.replace(", group_path: it/d4np", ""),
               "required field for {{GROUP_PATH}}"), failures)
+
+    # --- #169: the interview provenance block — honest state passes; a wrong value, a
+    #     dangling key, or a shapeless block is rejected; absence stays legal (the positive
+    #     control at the top carries no block) ---
+    WITH_PROV = VALID + (
+        "\ninterview:\n  questionnaire_version: 1\n  provenance:\n"
+        "    identity: asked\n    ownership: defaulted\n    language: asked\n"
+    )
+    check("manifest with an interview provenance block passes clean",
+          _problems(WITH_PROV) == [], failures)
+    check("invalid provenance value rejected",
+          has(WITH_PROV.replace("ownership: defaulted", "ownership: guessed"),
+              "asked|defaulted|imported"), failures)
+    check("dangling provenance key rejected",
+          has(WITH_PROV.replace("    language: asked\n", "    toolchain: asked\n"),
+              "not a top-level key"), failures)
+    check("shapeless interview block rejected (no provenance mapping)",
+          has(VALID + "\ninterview:\n  questionnaire_version: 1\n",
+              "non-empty mapping"), failures)
     check("unknown top-level section rejected",
           has(VALID + "\nbogus: { x: 1 }\n", "unknown top-level section"), failures)
     check("non-numeric start_version rejected",

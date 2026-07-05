@@ -128,3 +128,19 @@ spec:
         - "3.1 Add the reproducible allocation/deallocation benchmarks"
         - "3.2 Freeze the public interface and record the API-stability ADR"
         - "3.3 Cut v1.0.0 (SemVer) with the release workflow"
+
+# Interview provenance (#169): how each top-level answer got its value — asked (posed to the
+# maintainer), defaulted (assumed and echoed back), imported (carried in from an existing
+# artifact). State for the confirmation step and the learning loop; never rendered.
+interview:
+  questionnaire_version: 1
+  provenance:
+    identity: asked
+    ownership: asked
+    language: asked
+    toolchain: asked          # profile pre-fill, confirmed per project (Phase 3)
+    ci: asked
+    governance: asked
+    i18n: defaulted           # no translations wanted — the en-only default stood
+    announce: defaulted       # no channels — the off default stood
+    spec: asked               # co-authored through Phase 5 (spec.provenance: coauthor)
