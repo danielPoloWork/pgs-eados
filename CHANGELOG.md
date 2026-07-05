@@ -11,6 +11,16 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **The deterministic path has a spec-substance floor (#170, M13).** `validate_manifest` now
+  rejects a hollow spec with actionable messages: an empty `spec.objective` or
+  `spec.verification`, zero `spec.functional_reqs`, or zero `spec.milestones` each fail the
+  render/`--check`/`manifest-valid` gate instead of producing "Render: OK" and a hollow
+  repository (blank SPEC.md, a roadmap with nothing beyond the bootstrap). A **floor, not a
+  taste test** — presence only; measurability stays the rubric's job — and no library escape
+  hatch (even a library has an objective and one requirement). Documented at the authoring
+  point (`project.yaml.template`); `examples/reference.yaml` passes untouched; minimal test
+  fixtures raised to the floor.
+
 - **The manifest records interview provenance — asked vs defaulted vs imported (#169, M13).**
   New `interview:` **state block** (same class as `delivery_state`; in `KNOWN_SECTIONS`, never a
   placeholder source): per top-level answer key, `asked | defaulted | imported`, plus

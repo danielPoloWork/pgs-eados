@@ -24,11 +24,22 @@ RFC_OK = (
     "# RFC-0001\n\n## Context\nx\n\n## Decision\ny\n\n## Alternatives\nz\n\n"
     "## Consequences\nw\n\n## Approval\napproved-by: tech-lead (2026-06-27)\n"
 )
-# A minimal manifest that passes validate_manifest (so manifest-valid is OK).
+# A minimal manifest that passes validate_manifest (so manifest-valid is OK). The spec block
+# is the minimum the #170 substance floor accepts.
+SPEC_FLOOR = {
+    "objective": "A demo library.",
+    "functional_reqs": ["do one thing"],
+    "verification": "unit tests",
+    "milestones": [{"number": 2, "title": "Harden", "goal": "Stable API",
+                    "items": ["2.1 freeze the API"]}],
+}
 MANIFEST_YAML = (
     "identity:\n  project_name: Demo\n  project_slug: demo\n  project_kind: library\n"
     "ownership:\n  owner: me\n  license_id: MIT\n  default_branch: main\n"
     "language:\n  lang: cpp\n  group_path: it/x\n"
+    "spec:\n  objective: A demo library.\n  functional_reqs: [do one thing]\n"
+    "  verification: unit tests\n"
+    "  milestones:\n    - { number: 2, title: Harden, goal: Stable API, items: [\"2.1 freeze the API\"] }\n"
     "delivery_state:\n  phase: plan\n  refs:\n    rfcs:\n      - RFC-0001\n    milestones:\n      - \"1\"\n"
 )
 
@@ -38,6 +49,7 @@ def manifest_at(phase, rfcs=("RFC-0001",)):
         "identity": {"project_name": "Demo", "project_slug": "demo", "project_kind": "library"},
         "ownership": {"owner": "me", "license_id": "MIT", "default_branch": "main"},
         "language": {"lang": "cpp", "group_path": "it/x"},
+        "spec": dict(SPEC_FLOOR),
         "delivery_state": {"phase": phase, "refs": {"rfcs": list(rfcs), "milestones": ["1"]}},
     }
 

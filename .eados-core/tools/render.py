@@ -243,6 +243,27 @@ def validate_manifest(m, scalars):
             f"governance.start_version '{sv}' is not a numeric X.Y.Z version "
             "(did you swap it with version_start?)"
         )
+    # #170: the spec-substance floor. The deterministic (no-agent) path had no floor at all — a
+    # manifest with an empty spec rendered "Render: OK" and a hollow repository (blank SPEC.md,
+    # a roadmap with nothing beyond the bootstrap). A FLOOR, not a taste test: presence only;
+    # measurability stays the rubric's job (eval/rubric.md). No library escape hatch — even a
+    # library has an objective and one requirement.
+    spec = _map(m, "spec")
+    if not str(spec.get("objective") or "").strip():
+        problems.append("spec.objective is empty — the spec floor requires a stated objective "
+                        "(what the project exists to do)")
+    freqs = spec.get("functional_reqs")
+    if not [r for r in (freqs if isinstance(freqs, list) else []) if str(r or "").strip()]:
+        problems.append("spec.functional_reqs is empty — the spec floor requires at least one "
+                        "functional requirement")
+    if not str(spec.get("verification") or "").strip():
+        problems.append("spec.verification is empty — the spec floor requires a verification "
+                        "strategy (how CI proves a requirement failed)")
+    mss = spec.get("milestones")
+    if not (isinstance(mss, list) and any(isinstance(e, dict) for e in mss)):
+        problems.append("spec.milestones is empty — the roadmap is defined up front (interview "
+                        "Phase 5): record at least one forward milestone (number, title, goal, "
+                        "items)")
     # #169: the interview provenance block is state with a fixed shape — a wrong value or a
     # dangling key would silently defeat the asked-vs-defaulted audit trail it exists to carry.
     # Optional (legacy manifests pass), but when present it must be honest.
