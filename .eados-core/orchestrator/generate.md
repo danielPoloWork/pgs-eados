@@ -206,11 +206,16 @@ Reproduce the reference project's agent-vs-human boundary exactly:
 
 Close the learning loop — a run is not finished until it is recorded (#171):
 
-1. **Append the run record** under [`../learning/runs/`](../learning/runs/README.md): what was
-   asked vs defaulted (the manifest's `interview:` provenance block), the lesson ids applied at
-   Step 0.a, the gate outcomes, and any failure met on the way. A recorder tool mechanizes this
-   later in the milestone; until it lands, write the record by hand in the shape the runs
-   README documents.
+1. **Append the run record** under [`../learning/runs/`](../learning/runs/README.md) with one
+   command (#172) — the `overrides:` derive mechanically from the manifest's `interview:`
+   provenance block, so nothing is reconstructed from recollection:
+   ```bash
+   python .eados-core/tools/record_run.py .eados-core/orchestrator/project.yaml \
+       [--outcome ok|failed] [--failure GATE=MESSAGE] [--lesson L-NNNN] [--rubric DIM=SCORE]
+   ```
+   Pass every lesson id applied at Step 0.a via `--lesson`; score the ten `eval/rubric.md`
+   dimensions via `--rubric` after the Step 7 verification. **A red bootstrap CI (Step 8.3) is
+   recorded, not shrugged off:** `--outcome failed --failure ci-bootstrap="<one-line summary>"`.
 2. **Draft any generalizable lesson** for [`../learning/lessons.yaml`](../learning/README.md)
    (`id`, `date`, `scope`, `context`, `rule`, `source`) — drafted by the agent, **approved by
    the maintainer** before it lands. Never self-approve a lesson; never skip drafting one when

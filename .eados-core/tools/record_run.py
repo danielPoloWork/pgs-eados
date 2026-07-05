@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""record_run — mechanized run records for the learning loop (#172, generate.md Step 9).
+
+learning/runs/ stayed empty because the write side asked the agent to hand-author YAML from
+end-of-run recollection — the highest-friction interface for a chore. This tool replaces it
+with one command: the `overrides:` list is derived MECHANICALLY from the manifest's
+`interview:` provenance block (#169) against the built-in defaults in
+orchestrator/project.yaml.template, and the failure/rubric/lesson channels arrive as flags.
+
+    python .eados-core/tools/record_run.py <manifest> [--outcome ok|failed]
+        [--failure GATE=MESSAGE ...] [--lesson L-NNNN ...] [--rubric DIM=SCORE ...]
+        [--date YYYY-MM-DD] [--dry-run]
+
+Derivation rule: for every top-level key whose provenance is NOT `defaulted` (asked/imported =
+the maintainer was involved), each scalar leaf whose template default is non-empty and whose
+manifest value differs becomes `{key, default, chosen}`. An empty template value means "no
+built-in default exists" and never produces an entry; a `defaulted` section by definition kept
+its defaults. A red bootstrap CI is recorded as `--failure ci-bootstrap="<summary>"`.
+
+Pure core (build_run_record / derive_overrides / emit_record_yaml) + a thin CLI shell, per the
+pr_review.py pattern. autotune.py consumes the records unchanged (it reads `overrides` and
+ignores the other channels). Records are facts: an existing record file is never overwritten.
+"""
+
+import argparse
+import datetime
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)                      # .eados-core/
+sys.path.insert(0, HERE)
+import render  # noqa: E402  — load_yaml re-export + the manifest template lives beside it
+
+TEMPLATE_PATH = os.path.join(ROOT, "orchestrator", "project.yaml.template")
+LESSONS_PATH = os.path.join(ROOT, "learning", "lessons.yaml")
+RUNS_DIR = os.path.join(ROOT, "learning", "runs")
+
+OUTCOMES = ("ok", "failed")
+# eval/rubric.md's ten dimensions, scored 0-2 (0 absent, 1 partial, 2 solid).
+RUBRIC_DIMENSIONS = (
+    "spec_measurability", "spec_ci_traceability", "architecture_rationale",
+    "profile_fidelity", "pattern_fit", "test_strategy", "docs_coherence",
+    "governance_fit", "capability_hygiene", "security_posture",
+)
+_LESSON_ID = re.compile(r"L-\d{4}\Z")
+
+
+# ---------------------------------------------------------------------------
+# Pure core — no I/O, fixture-testable.
+# ---------------------------------------------------------------------------
+def flatten_scalars(mapping, prefix=""):
+    """Dotted-key -> scalar for the str/int/bool leaves of a nested mapping. Lists and None
+    are skipped: they have no meaningful single 'default vs chosen' diff for the tuner."""
+    out = {}
+    for key, val in (mapping if isinstance(mapping, dict) else {}).items():
+        if not isinstance(key, str):
+            continue
+        dotted = f"{prefix}{key}"
+        if isinstance(val, dict):
+            out.update(flatten_scalars(val, dotted + "."))
+        elif isinstance(val, (str, int, bool)):
+            out[dotted] = val
+    return out
+
+
+def derive_overrides(manifest, template):
+    """The mechanical `overrides:` list — see the module docstring's derivation rule."""
+    prov = {}
+    iv = manifest.get("interview") if isinstance(manifest, dict) else None
+    if isinstance(iv, dict) and isinstance(iv.get("provenance"), dict):
+        prov = iv["provenance"]
+    m_flat = flatten_scalars(manifest)
+    t_flat = flatten_scalars(template)
+    overrides = []
+    for key in sorted(t_flat):
+        top = key.split(".", 1)[0]
+        if prov.get(top) in (None, "defaulted"):
+            continue                       # unknown or explicitly defaulted: nothing chosen
+        default = t_flat[key]
+        if default == "" or default is None:
+            continue                       # no built-in default exists for this field
+        if key not in m_flat:
+            continue
+        chosen = m_flat[key]
+        if str(chosen).strip() == "" or str(chosen) == str(default):
+            continue
+        overrides.append({"key": key, "default": default, "chosen": chosen})
+    return overrides
+
+
+def _single_line(text):
+    return " ".join(str(text).split()) or "(no message)"
+
+
+def build_run_record(manifest, template, known_lessons, today, outcome="ok",
+                     failures=(), lessons=(), rubric=()):
+    """(record, problems): the record dict ready for emission, and every validation problem
+    found (empty == valid). `failures` are 'GATE=MESSAGE' strings, `lessons` lesson ids,
+    `rubric` 'DIM=SCORE' strings — exactly the CLI's repeatable flags."""
+    problems = []
+    ident = manifest.get("identity") if isinstance(manifest, dict) else None
+    ident = ident if isinstance(ident, dict) else {}
+    lang = manifest.get("language") if isinstance(manifest, dict) else None
+    lang = lang if isinstance(lang, dict) else {}
+
+    slug = str(ident.get("project_slug") or "").strip()
+    if not slug:
+        problems.append("the manifest has no identity.project_slug — the record filename "
+                        "and slug need it")
+    iv = manifest.get("interview") if isinstance(manifest, dict) else None
+    if not (isinstance(iv, dict) and isinstance(iv.get("provenance"), dict) and iv["provenance"]):
+        problems.append("the manifest has no interview: provenance block (#169) — the recorder "
+                        "derives overrides from it; record provenance during the interview")
+    if outcome not in OUTCOMES:
+        problems.append(f"outcome must be one of {'|'.join(OUTCOMES)}, got {outcome!r}")
+
+    parsed_failures = []
+    for item in failures:
+        gate, sep, message = str(item).partition("=")
+        gate = gate.strip()
+        if not sep or not gate:
+            problems.append(f"--failure needs GATE=MESSAGE, got {item!r}")
+            continue
+        parsed_failures.append({"gate": gate, "message": _single_line(message)})
+    if parsed_failures and outcome != "failed":
+        problems.append("a recorded gate failure means the run failed — pass --outcome failed")
+
+    applied = []
+    for lid in lessons:
+        lid = str(lid).strip()
+        if not _LESSON_ID.match(lid):
+            problems.append(f"--lesson must look like L-NNNN, got {lid!r}")
+        elif lid not in known_lessons:
+            problems.append(f"--lesson {lid} is not in learning/lessons.yaml — a run can only "
+                            "apply a lesson that exists")
+        else:
+            applied.append(lid)
+
+    scores = {}
+    for item in rubric:
+        dim, sep, score = str(item).partition("=")
+        dim = dim.strip()
+        if not sep or dim not in RUBRIC_DIMENSIONS:
+            problems.append(f"--rubric needs DIM=SCORE with DIM one of the eval/rubric.md "
+                            f"dimensions, got {item!r}")
+            continue
+        if score.strip() not in ("0", "1", "2"):
+            problems.append(f"--rubric {dim} score must be 0, 1, or 2, got {score.strip()!r}")
+            continue
+        scores[dim] = int(score)
+
+    record = {
+        "slug": slug,
+        "date": today,
+        "lang": str(lang.get("lang") or "").strip(),
+        "kind": str(ident.get("project_kind") or "").strip(),
+        "outcome": outcome,
+        "overrides": derive_overrides(manifest, template),
+        "lessons_applied": applied,
+        "failures": parsed_failures,
+        "rubric": scores,
+    }
+    return record, problems
+
+
+def _scalar(value):
+    """Loader-safe YAML scalar: booleans/ints bare, strings double-quoted and single-line
+    (the #166 loader rejects wrapped quoted scalars — a record must always parse)."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    escaped = _single_line(value).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def emit_record_yaml(record):
+    """Block-style YAML the hand-rolled loader reads back identically (round-trip tested)."""
+    out = ["# Run record — appended by tools/record_run.py (generate.md Step 9); a fact about",
+           "# a past run, never edited after the fact.",
+           f"slug: {_scalar(record['slug'])}",
+           f"date: {_scalar(record['date'])}",
+           f"lang: {_scalar(record['lang'])}",
+           f"kind: {_scalar(record['kind'])}",
+           f"outcome: {_scalar(record['outcome'])}"]
+    if record["overrides"]:
+        out.append("overrides:")
+        for ov in record["overrides"]:
+            out.append(f"  - key: {_scalar(ov['key'])}")
+            out.append(f"    default: {_scalar(ov['default'])}")
+            out.append(f"    chosen: {_scalar(ov['chosen'])}")
+    else:
+        out.append("overrides: []")
+    ids = ", ".join(_scalar(lid) for lid in record["lessons_applied"])
+    out.append(f"lessons_applied: [{ids}]")
+    if record["failures"]:
+        out.append("failures:")
+        for f in record["failures"]:
+            out.append(f"  - gate: {_scalar(f['gate'])}")
+            out.append(f"    message: {_scalar(f['message'])}")
+    else:
+        out.append("failures: []")
+    if record["rubric"]:
+        out.append("rubric:")
+        for dim in RUBRIC_DIMENSIONS:
+            if dim in record["rubric"]:
+                out.append(f"  {dim}: {record['rubric'][dim]}")
+    else:
+        out.append("rubric: {}")
+    return "\n".join(out) + "\n"
+
+
+def known_lesson_ids(lessons_text):
+    """The ids in lessons.yaml, taken textually from the '- id:' entry heads — the ledger's
+    root is a YAML sequence, which the minimal loader does not read (same approach as
+    eados_lint's check_lessons)."""
+    return set(re.findall(r"(?m)^-\s+id:\s*(L-\d{4})\s*$", lessons_text))
+
+
+# ---------------------------------------------------------------------------
+# Thin CLI shell.
+# ---------------------------------------------------------------------------
+def _read(path):
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def main(argv=None):
+    # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser(
+        description="Append a mechanized run record to learning/runs/ (generate.md Step 9).")
+    ap.add_argument("manifest", help="path to the confirmed project.yaml")
+    ap.add_argument("--outcome", choices=OUTCOMES, default="ok",
+                    help="how the run ended (default ok)")
+    ap.add_argument("--failure", action="append", default=[], metavar="GATE=MESSAGE",
+                    help="a failed gate (repeatable), e.g. --failure ci-bootstrap=\"matrix red "
+                         "on windows\" — requires --outcome failed")
+    ap.add_argument("--lesson", action="append", default=[], metavar="L-NNNN",
+                    help="a lesson id applied at Step 0.a (repeatable; must exist in "
+                         "learning/lessons.yaml)")
+    ap.add_argument("--rubric", action="append", default=[], metavar="DIM=SCORE",
+                    help="an eval/rubric.md dimension score 0-2 (repeatable), e.g. "
+                         "--rubric spec_measurability=2")
+    ap.add_argument("--date", help="record date YYYY-MM-DD (default: today)")
+    ap.add_argument("--dry-run", action="store_true", help="print the record; write nothing")
+    args = ap.parse_args(argv)
+
+    today = args.date or datetime.date.today().isoformat()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", today):
+        print(f"record-run: --date must be YYYY-MM-DD, got {today!r}", file=sys.stderr)
+        return 2
+    try:
+        manifest = render.load_yaml(_read(args.manifest))
+        template = render.load_yaml(_read(TEMPLATE_PATH))
+        lessons_text = _read(LESSONS_PATH)
+    except (OSError, ValueError) as exc:
+        print(f"record-run: cannot read inputs: {exc}", file=sys.stderr)
+        return 2
+
+    record, problems = build_run_record(
+        manifest, template, known_lesson_ids(lessons_text), today,
+        outcome=args.outcome, failures=args.failure, lessons=args.lesson, rubric=args.rubric)
+    if problems:
+        print("record-run: FAIL — the record would not be honest\n")
+        for p in problems:
+            print(f"  {p}")
+        print(f"\n{len(problems)} problem(s).")
+        return 1
+
+    text = emit_record_yaml(record)
+    if args.dry_run:
+        sys.stdout.write(text)
+        return 0
+    dest = os.path.join(RUNS_DIR, f"{today}-{record['slug']}.yaml")
+    if os.path.exists(dest):
+        print(f"record-run: FAIL — {os.path.relpath(dest, os.path.dirname(ROOT))} already "
+              "exists; records are facts and are never overwritten (use --date to "
+              "disambiguate a second same-day run)", file=sys.stderr)
+        return 1
+    with open(dest, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+    print(f"record-run: OK — {os.path.relpath(dest, os.path.dirname(ROOT))} "
+          f"({len(record['overrides'])} override(s), {len(record['lessons_applied'])} "
+          f"lesson(s) applied, outcome {record['outcome']}).")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
