@@ -68,8 +68,9 @@ Operating principles, applied to every project:
 
 When asked to **stand up a new project** (the EADOS use case):
 
-0. **Recall** — read [`../learning/lessons.yaml`](../learning/README.md) and apply every
-   lesson whose `scope` matches (global, the chosen language, or the project kind). Load the
+0. **Recall** — run the playbook's Step 0.a
+   ([`generate.md`](../orchestrator/generate.md)) **now, before the interview**, so
+   interview-scoped lessons apply too. Load the
    [customization overlay](../config/README.md).
 1. **Interview** — run [`../orchestrator/interview.md`](../orchestrator/interview.md) in the
    maintainer's language. Ask only what you cannot safely default; echo assumed defaults.
@@ -80,8 +81,9 @@ When asked to **stand up a new project** (the EADOS use case):
 4. **Render** — execute [`../orchestrator/generate.md`](../orchestrator/generate.md).
 5. **Verify & hand off** — run the generated consistency lint, init git, draft the
    bootstrap PR; control passes to the new repo's `AGENTS.md`.
-6. **Record** — append a [run record](../learning/runs/README.md) (defaults vs. overrides),
-   and draft any generalizable [lesson](../learning/README.md) for human approval.
+6. **Record** — run the playbook's Step 9: append the
+   [run record](../learning/runs/README.md) and draft any generalizable
+   [lesson](../learning/README.md) for human approval. The run is not finished until Step 9 is.
 
 When asked to **work inside an existing governed project**, you instead read that project's
 `AGENTS.md` and operate under it — the same persona, its specific rules.

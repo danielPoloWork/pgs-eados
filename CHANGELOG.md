@@ -48,6 +48,20 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Changed
 
+- **The generation playbook itself now recalls and records — the learning loop is wired where
+  the compliant agent actually walks (#171, M13).** `orchestrator/generate.md` — the ordered
+  playbook whose header says *"do not improvise the order"* — gains **Step 0.a Recall** (read
+  `learning/lessons.yaml`, apply every lesson whose `scope` matches `global`/`lang:*`/`kind:*`,
+  carry the applied ids through the run) and **Step 9 Record** (append the run record —
+  asked-vs-defaulted from the `interview:` provenance block, lessons applied, gate outcomes —
+  and draft any generalizable lesson for maintainer approval; a run is not finished until it is
+  recorded). The output report gains `lessons_applied:` and `run_record:` lines.
+  `agent/enterprise-architect.md`'s operating loop now *points at* the playbook steps instead of
+  restating them (single source of truth) while keeping Recall before the interview. Before
+  this, Recall/Record lived only in the persona and the playbook never mentioned them — an
+  agent following the playbook to the letter never touched memory (`learning/runs/` empty,
+  2 lessons across ~160 merged PRs).
+
 - **The test suite is discovered, never enumerated (#168, M13).** New
   `tools/tests/run_all.py` globs `test_*.py`, runs each in its own interpreter, echoes a failing
   script's output, and exits non-zero on any failure (`--exclude NAME`, repeatable, for scripts
