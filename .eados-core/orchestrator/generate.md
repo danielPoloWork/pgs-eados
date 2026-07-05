@@ -20,6 +20,13 @@ on the previous one. Prerequisite: a `project.yaml` the maintainer has confirmed
 
 ## Step 0 — Preconditions
 
+- **0.a — Recall (#171).** Read [`../learning/lessons.yaml`](../learning/README.md) and apply
+  every lesson whose `scope` matches this run — `global`, `lang:<language.lang>`, or
+  `kind:<identity.project_kind>`. Carry the applied lesson **ids** through the run: they appear
+  in the output report (`lessons_applied:`) and in the Step 9 run record. A lesson is a
+  correction someone already paid for; a run that skips Recall re-buys the bug. (The persona's
+  operating loop runs this step *before the interview* — apply interview-scoped lessons there
+  too, not only at render time.)
 - **Environment preflight.** Re-run the toolchain check `/eados init` already ran, now that the
   scaffold/bootstrap steps below assume `git` (Step 8) and an authenticated `gh` (draft PR, milestone
   seeding):
@@ -195,11 +202,27 @@ Reproduce the reference project's agent-vs-human boundary exactly:
 4. Hand off: from here, the generated repo's own `AGENTS.md` governs all further work. EADOS
    steps back.
 
+## Step 9 — Record
+
+Close the learning loop — a run is not finished until it is recorded (#171):
+
+1. **Append the run record** under [`../learning/runs/`](../learning/runs/README.md): what was
+   asked vs defaulted (the manifest's `interview:` provenance block), the lesson ids applied at
+   Step 0.a, the gate outcomes, and any failure met on the way. A recorder tool mechanizes this
+   later in the milestone; until it lands, write the record by hand in the shape the runs
+   README documents.
+2. **Draft any generalizable lesson** for [`../learning/lessons.yaml`](../learning/README.md)
+   (`id`, `date`, `scope`, `context`, `rule`, `source`) — drafted by the agent, **approved by
+   the maintainer** before it lands. Never self-approve a lesson; never skip drafting one when
+   a step needed a correction (that correction is exactly what the next run should inherit).
+
 ## Output report
 
 Conclude with a short report to the maintainer:
 
 - output path, language(s), resolved toolchain, capability flags;
+- `lessons_applied:` — the lesson ids applied at Step 0.a, or `none matched`;
+- `run_record:` — the path of the Step 9 run record;
 - the file tree created (counts per area);
 - consistency-lint result;
 - the exact next action (open the drafted PR / run the printed git commands);
