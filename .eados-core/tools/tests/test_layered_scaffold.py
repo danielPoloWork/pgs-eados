@@ -43,6 +43,11 @@ governance:
   capabilities:
     layered: true
 spec:
+  objective: A layered demo web service.
+  functional_reqs: [serve one endpoint]
+  verification: unit tests in CI
+  milestones:
+    - { number: 2, title: Harden, goal: Production-ready, items: ["2.1 add auth"] }
   layers: [controller, service, repository, dto, mapper, "../evil"]
 """
 

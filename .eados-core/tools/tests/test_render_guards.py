@@ -22,11 +22,19 @@ import render  # noqa: E402  (the module under test)
 RENDER_PY = os.path.join(TOOLS, "render.py")
 
 # A minimal manifest with every required field present and valid — the positive control.
+# The spec block is the minimum the #170 substance floor accepts: an objective, one
+# functional requirement, a verification strategy, and one forward milestone.
 VALID = """
 identity: { project_name: Acme, project_slug: acme, project_kind: library }
 ownership: { owner: o, license_id: MIT, default_branch: main }
 language: { lang: go, group_path: it/d4np }
 governance: { start_version: "0.0.0" }
+spec:
+  objective: A demo library.
+  functional_reqs: [do one thing]
+  verification: unit tests
+  milestones:
+    - { number: 2, title: Harden, goal: Stable API, items: ["2.1 freeze the API"] }
 """
 
 
@@ -74,6 +82,25 @@ def main():
     check("missing group_path rejected (no it/d4np fallback)",
           has(VALID.replace(", group_path: it/d4np", ""),
               "required field for {{GROUP_PATH}}"), failures)
+
+    # --- #170: the spec-substance floor — a hollow spec must FAIL with actionable messages
+    #     (the deterministic path used to render "OK" on an empty spec); the positive control
+    #     at the top proves the minimal honest spec passes ---
+    check("empty spec.objective rejected",
+          has(VALID.replace("objective: A demo library.", 'objective: ""'),
+              "stated objective"), failures)
+    check("empty spec.functional_reqs rejected",
+          has(VALID.replace("functional_reqs: [do one thing]", "functional_reqs: []"),
+              "at least one functional requirement"), failures)
+    check("empty spec.verification rejected",
+          has(VALID.replace("verification: unit tests", 'verification: ""'),
+              "verification strategy"), failures)
+    check("empty spec.milestones rejected",
+          has(VALID.replace('milestones:\n    - { number: 2, title: Harden, goal: Stable API, '
+                            'items: ["2.1 freeze the API"] }', "milestones: []"),
+              "forward milestone"), failures)
+    check("a manifest without a spec section trips the whole floor",
+          sum(p.startswith("spec.") for p in _problems(VALID.split("spec:")[0])) == 4, failures)
 
     # --- #169: the interview provenance block — honest state passes; a wrong value, a
     #     dangling key, or a shapeless block is rejected; absence stays legal (the positive
