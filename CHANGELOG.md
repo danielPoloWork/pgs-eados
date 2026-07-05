@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **Review-time lesson capture — PR `Lesson:` field + `lesson_sweep.py` + ledger backfill (#174,
+  M13).** The lessons ledger held two entries across ~160 merged PRs because the capture point was
+  wrong: end-of-run recollection instead of review time. The factory **PR template** (and the
+  generated-repo `PULL_REQUEST_TEMPLATE.md.tmpl` for parity) now carries an optional one-line
+  `Lesson:` field; because squash-merge makes the PR body the permanent `main` commit
+  (`os/git/git.yaml` `commit.squash_body`), **a merged lesson is owner-approved by construction**.
+  New `tools/lesson_sweep.py` sweeps merged PR bodies for that field and **prints** draft
+  `learning/lessons.yaml` entries for the owner to approve — it never writes the ledger (lessons
+  stay human-approved), and, like `derive_links.py`, its parser is pure/tested while the `gh` fetch
+  degrades cleanly offline (exit 2). **One-time backfill:** the #153 silent-truncation discovery
+  and the ADR-0009 §3 "re-discovered design decision" episode are promoted to **L-0003 / L-0004**.
+
 - **`lesson_audit.py` — the learning-loop watchdog (#173, M13).** A report-only tool
   (`tools/lesson_audit.py [--threshold N]`), same posture as `autotune.py`: it reads the
   accumulated run records (#172) and reports three learning-loop signals without touching disk.

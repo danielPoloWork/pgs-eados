@@ -26,3 +26,13 @@ decisions need an ADR under [`.eados-core/docs/adr/`](../.eados-core/docs/adr/).
 - [ ] Translations refreshed + `.eados-core/docs/i18n/translation-status.md` bumped (if an English source with translations changed)
 - [ ] `CHANGELOG.md` `[Unreleased]` updated
 - [ ] PR metadata set — assignee + one type label
+
+## Lesson
+
+<!-- Optional, one line. A generalizable rule the next run should inherit — captured here at
+review time, not from end-of-run recollection. Squash-merge makes this PR body the permanent
+`main` commit (`os/git/git.yaml` `commit.squash_body`), so a merged lesson is owner-approved by
+construction; `tools/lesson_sweep.py` harvests these into draft `learning/lessons.yaml` entries.
+Write "none" if there is nothing durable to carry forward. -->
+
+Lesson: none
