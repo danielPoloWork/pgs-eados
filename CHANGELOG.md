@@ -11,6 +11,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **`lesson_audit.py` — the learning-loop watchdog (#173, M13).** A report-only tool
+  (`tools/lesson_audit.py [--threshold N]`), same posture as `autotune.py`: it reads the
+  accumulated run records (#172) and reports three learning-loop signals without touching disk.
+  **Regression detection** — a run whose `failures` share keywords with a lesson it was in scope
+  for means the factory violated its own recorded knowledge, which per the escalation path
+  (*incident → lesson → gate → meta-gate*) is the trigger to promote that advisory lesson to a
+  mechanical gate. **Dead-lesson report** — a lesson never present in any `lessons_applied`
+  across at least `--threshold` runs it was *applicable* to (scope-matched, so a kind-scoped
+  lesson is not called dead merely because no run of that kind exists) is flagged for retirement.
+  **Rubric trending** — a `eval/rubric.md` dimension scoring ≤ 1 in the majority of the runs that
+  scored it proposes drafting a lesson, mechanizing rubric §4. Dependency-free (reuses
+  `render.load_yaml` and `record_run.RUBRIC_DIMENSIONS`; parses the sequence-rooted ledger
+  textually like `eados_lint`'s `check_lessons`); fixture-tested end-to-end and pinned against
+  the real ledger.
+
 - **`record_run.py` — mechanized run records with a failure channel and rubric scores (#172,
   M13).** One command (`tools/record_run.py <manifest> [--outcome ok|failed]
   [--failure GATE=MESSAGE] [--lesson L-NNNN] [--rubric DIM=SCORE]`) replaces the hand-authored
