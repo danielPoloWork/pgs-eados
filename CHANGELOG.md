@@ -11,6 +11,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Added
 
+- **`record_run.py` — mechanized run records with a failure channel and rubric scores (#172,
+  M13).** One command (`tools/record_run.py <manifest> [--outcome ok|failed]
+  [--failure GATE=MESSAGE] [--lesson L-NNNN] [--rubric DIM=SCORE]`) replaces the hand-authored
+  YAML that kept `learning/runs/` empty: the `overrides:` list derives **mechanically** from the
+  manifest's `interview:` provenance block (#169) against the built-in defaults in
+  `project.yaml.template` — a non-`defaulted` section's scalar leaf that differs from a
+  non-empty template default becomes `{key, default, chosen}`; nothing is reconstructed from
+  recollection. The run-record schema gains `outcome`, `lessons_applied` (ids must exist in the
+  ledger), `failures` (**a red bootstrap CI lands durably as
+  `--outcome failed --failure ci-bootstrap="…"`** instead of evaporating — audit finding U3),
+  and `rubric` (the ten `eval/rubric.md` dimensions, 0–2). Records are facts: existing files are
+  never overwritten; emission is loader-safe and round-trip-tested; `autotune.py` consumes the
+  extended records unchanged. `generate.md` Step 9 now references the exact command; pure core +
+  thin CLI per the `pr_review.py` pattern, fixture-tested end-to-end against `reference.yaml`
+  (which yields its one genuine override: `governance.capabilities.bench` false→true).
+
 - **The deterministic path has a spec-substance floor (#170, M13).** `validate_manifest` now
   rejects a hollow spec with actionable messages: an empty `spec.objective` or
   `spec.verification`, zero `spec.functional_reqs`, or zero `spec.milestones` each fail the
