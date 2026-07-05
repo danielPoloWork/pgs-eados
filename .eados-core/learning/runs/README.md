@@ -17,6 +17,14 @@ recollection. The records feed the auto-tuner
 generates — a **red bootstrap CI** on a fresh repo — lands durably:
 `--failure ci-bootstrap="<one-line summary>"` (with `--outcome failed`).
 
+The same records feed the learning-loop watchdog
+([`../../tools/lesson_audit.py`](../../tools/lesson_audit.py), #173), which is report-only like
+the auto-tuner but reads the *other* channels: a `failures` entry that repeats ground an
+existing lesson already covers is flagged as a **regression** (the trigger to promote that
+advisory lesson to a mechanical gate), a lesson never present in any `lessons_applied` is
+flagged as **dead weight**, and a `rubric` dimension scoring low in the majority of runs is
+proposed as a **new lesson**.
+
 ## Record schema
 
 ```yaml
