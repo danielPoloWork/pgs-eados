@@ -422,6 +422,10 @@ def main():
 
     with open(args.manifest, encoding="utf-8") as handle:
         raw = handle.read()
+    if raw.startswith(chr(0xFEFF)):
+        raw = raw[1:]   # Windows editors' UTF-8 BOM — load_yaml strips it too, but the raw
+        #                 text also feeds _duplicate_top_level_keys, whose first-key regex
+        #                 would silently skip a BOM-glued line
     manifest = load_yaml(raw)
     scalars, flags, sections = build_context(manifest)
 

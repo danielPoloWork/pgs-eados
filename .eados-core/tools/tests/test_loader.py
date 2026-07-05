@@ -47,6 +47,10 @@ CASES = [
     ("block-style map items",      "matrix:\n  - os: ubuntu-24.04\n    toolchain: gcc\n"),
     ("hash inside quotes",         'hint: "#include <memory_pool.h>"'),
     ("leading '---' tolerated",    "---\nname: acme\n"),
+    # A leading UTF-8 BOM (Windows Notepad / PowerShell 5.1 Out-File) is stripped, exactly
+    # like PyYAML — before the fix it glued itself to the first key and broke validation.
+    ("UTF-8 BOM stripped (utf-8-sig semantics)", chr(0xFEFF) + "name: acme\n"),
+    ("UTF-8 BOM before a leading '---'",         chr(0xFEFF) + "---\nname: acme\n"),
     # --- #166 false-positive guards: lines the truncation rejection must NOT fire on ---
     ("apostrophe in a plain scalar",   "desc: the maintainer's own namespace"),
     ("quoted item in a block seq",     'scopes:\n  - "api"\n  - plain\n'),
@@ -100,6 +104,15 @@ def main():
     # #166: the extraction keeps every caller working — render.load_yaml IS yamlmini.load_yaml.
     if render.load_yaml is not load_yaml:
         failures.append("render.load_yaml is not the yamlmini.load_yaml re-export")
+    # BOM fix, loader-only (also differentially pinned in CASES when PyYAML is present): the
+    # first key must come out clean, and exactly ONE BOM is stripped — a second is content
+    # and stays, matching utf-8-sig.
+    got = load_yaml(chr(0xFEFF) + "identity: 1")
+    if got != {"identity": 1}:
+        failures.append(f"UTF-8 BOM not stripped from the first key: got {got!r}")
+    got = load_yaml(chr(0xFEFF) + chr(0xFEFF) + "identity: 1")
+    if "identity" in got:
+        failures.append(f"a double BOM must not be swallowed (one is content): got {got!r}")
     for label, text, expected in DEVIATIONS:
         got = load_yaml(text)
         if got != expected:
