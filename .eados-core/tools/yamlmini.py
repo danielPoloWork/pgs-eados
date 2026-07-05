@@ -15,6 +15,9 @@ Deliberate deviations from YAML 1.1, kept because they are safer for a manifest:
   * yes/no/on/off are NOT booleans (avoids the "Norway problem"); only true/false are.
   * unquoted decimals/exponents stay strings (versions like 1.22 are not coerced).
 
+A single leading UTF-8 BOM is stripped (utf-8-sig semantics, PyYAML-compatible) — Windows
+editors and PowerShell 5.1's `Out-File -Encoding utf8` write one, and it is not content.
+
 Anything outside the subset fails LOUDLY (ADR-0006/0008: reject, never guess). That includes
 the two #153 silent-truncation constructs — a quoted scalar that does not close on its line,
 and a flow collection left open at end-of-line — which used to truncate everything after them.
@@ -250,6 +253,13 @@ def _reject_unsupported(text):
 
 
 def load_yaml(text):
+    # A leading U+FEFF — the UTF-8 BOM as decoded text, written by Windows Notepad and
+    # PowerShell 5.1's `Out-File -Encoding utf8` — is a byte-order artifact, not content.
+    # Strip exactly one, matching utf-8-sig / PyYAML (differentially pinned in test_loader).
+    # Left in place it glued itself to the first key (U+FEFF + 'identity') and produced a
+    # confusing unknown-top-level-section error plus phantom missing-field reports.
+    if text.startswith(chr(0xFEFF)):
+        text = text[1:]
     _reject_unsupported(text)   # loud failure outside the subset, not silent guessing
     lines = text.split("\n")
     n = len(lines)
