@@ -84,6 +84,13 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
 
 ### Fixed
 
+- **A leading UTF-8 BOM no longer breaks manifest parsing.** `yamlmini.load_yaml` strips exactly
+  one leading U+FEFF (utf-8-sig semantics, PyYAML-verified) — a manifest saved by Windows Notepad
+  or PowerShell 5.1's `Out-File -Encoding utf8` used to glue the BOM to the first top-level key
+  and fail validation with a confusing `unknown top-level section '﻿identity'` plus phantom
+  missing-field errors. `render.py` also strips it from the raw text feeding the duplicate-key
+  scan. Two differential CASES (PyYAML must agree byte-for-byte) and two loader-only invariants
+  (clean first key; a *double* BOM is content and stays) in `test_loader.py`.
 - **Domain overlays are actually applied (#165, M13).** `workflow.yaml`'s `domain_overlays`
   (web → `accessibility-review` + `web-vitals-budget`; game → `asset-pipeline-review` +
   `hardware-budget`; mobile → `store-compliance`) were read by no engine — a game/web/mobile
