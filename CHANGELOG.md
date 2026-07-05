@@ -5,9 +5,11 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ## [Unreleased]
+
+## [2.6.0] - 2026-07-05
 
 ### Added
 
@@ -161,10 +163,6 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.5.0**.
   scalars, quoted list items, unbalanced quotes/brackets inside block scalars); the
   `questionnaire.yaml` #153 comments now point at the mechanical gate (ADR-0006/0008 posture:
   reject, never guess).
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
