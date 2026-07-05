@@ -42,6 +42,8 @@ jobs:
           pwsh -NoProfile -Command 'Get-ChildItem setup -Filter *.ps1 | ForEach-Object { $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$null,[ref]$e); if($e){ Write-Error ("parse errors in "+$_.Name); $e | ForEach-Object { Write-Error $_.Message }; exit 1 } }; Write-Host "ps1 parse: clean"'
       - name: Auto-tuner (advisory)
         run: python .eados-core/tools/autotune.py
+      - name: Lesson audit (advisory — regressions / dead lessons / rubric trends; #173)
+        run: python .eados-core/tools/lesson_audit.py
 
   render-smoke:
     name: render / reference manifest
