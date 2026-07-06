@@ -288,6 +288,22 @@ def validate_manifest(m, scalars):
                     problems.append(
                         f"interview.provenance names '{key}' which is not a top-level key "
                         "of this manifest")
+    # #199: delivery-state consistency. `delivery_state.checkpoints` must be a legal, contiguous
+    # transition chain ending at the current phase, and a human-gated move must carry a
+    # `confirmed_by:` — so `phase: scaffold` can no longer be asserted without the intervening
+    # init->design->plan->scaffold checkpoints (the honor-system phase-skip). Optional (a legacy
+    # manifest with no delivery_state passes). The chain logic + workflow live in phase_runner;
+    # importing it here (lazily, to avoid a module-level import cycle — phase_runner imports render)
+    # keeps ONE workflow engine. A missing/unreadable workflow.yaml degrades to "unchecked" rather
+    # than blocking manifest validation on a factory-file problem.
+    if isinstance(m.get("delivery_state"), dict):
+        try:
+            import phase_runner   # noqa: E402 — lazy: breaks the render<->phase_runner import cycle
+            workflow = phase_runner.apply_overlay(phase_runner.load_workflow(),
+                                                  phase_runner.manifest_domain(m))
+            problems += phase_runner.checkpoint_chain_problems(m, workflow)
+        except (OSError, ValueError):
+            pass
     return problems
 
 

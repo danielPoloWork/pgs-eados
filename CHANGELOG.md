@@ -9,6 +9,27 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Phase-state transitions are no longer honor-system — a `delivery-state-consistent` check closes
+  the phase-skip gap (#199).** The phase runner reports legal transitions but never advances state;
+  the agent writes `delivery_state.phase` and the checkpoint. Nothing verified, after the fact, that
+  the recorded chain justified the phase — so a hallucinating or shortcut-taking agent could set
+  `phase: scaffold` without the intervening `init -> design -> plan -> scaffold` checkpoints, and no
+  gate noticed. A new pure `phase_runner.checkpoint_chain_problems(manifest, workflow)` now validates
+  that `delivery_state.checkpoints` is a **legal, contiguous transition chain** through the
+  overlay-applied `workflow.yaml`, **ending at the current `phase`**, with a **`confirmed_by:`** on
+  every human-gated move and (when present) all `gate_results` marked `OK`/`manual`. It is enforced
+  by `validate_manifest` (the `manifest-valid` gate / `render.py --check`), so a phase-skip is now a
+  hard, actionable failure; a legacy manifest with no `delivery_state` stays exempt. The checkpoint
+  the runner emits is enriched to carry the evidence — `at:` (the transition date) and, for a
+  human-gated move, `confirmed_by:` (a `<owner>` placeholder the human fills) — reconciling the
+  `project.yaml.template` schema and the `walkthrough.md` transcripts with what the runner writes.
+  `tools/tests/test_phase_runner.py` and `test_render_guards.py` cover the enriched checkpoint and
+  both the legal-chain and illegal-skip/broken-chain/missing-`confirmed_by` cases. (Wiring the
+  checkpoint's `gate_results` from a **live** evaluation of the deterministic gates is tracked with
+  the audit-trail work in the #203 epic; the chain check already validates them when present.)
+
 ### Fixed
 
 - **`yamlmini` rejects folded `>` block scalars loudly instead of silently dropping their body

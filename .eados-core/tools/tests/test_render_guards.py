@@ -131,6 +131,20 @@ def main():
           has(VALID.replace("language: { lang: go, group_path: it/d4np }", "language: nope"),
               "must be a mapping"), failures)
 
+    # --- #199: delivery-state consistency reaches validate_manifest — a phase-skip and a
+    #     human-gated move without confirmed_by are rejected; a legal chain passes; no
+    #     delivery_state stays exempt (the VALID control above carries none) ---
+    check("a phase-skip (scaffold, no checkpoints) is rejected",
+          has(VALID + "\ndelivery_state: { phase: scaffold, checkpoints: [] }\n",
+              "no checkpoints"), failures)
+    check("a legal checkpoint chain ending at the current phase passes",
+          _problems(VALID + "\ndelivery_state:\n  phase: plan\n  checkpoints:\n"
+                    "    - { from: init, to: design, confirmed_by: owner }\n"
+                    "    - { from: design, to: plan, confirmed_by: owner }\n") == [], failures)
+    check("a human-gated move recorded without confirmed_by is rejected",
+          has(VALID + "\ndelivery_state:\n  phase: design\n  checkpoints:\n"
+              "    - { from: init, to: design }\n", "confirmed_by"), failures)
+
     # --- _unsafe_path_value unit cases ---
     #     #196: `.git` is refused by EXACT segment at any depth (VCS-metadata write vector), while
     #     `.gitignore` and `foo.git` — which merely contain the substring — stay legal.

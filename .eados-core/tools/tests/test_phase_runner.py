@@ -96,6 +96,49 @@ def main():
     check("checkpoint records from/to", cp["from"] == "init" and cp["to"] == "design", failures)
     check("checkpoint carries the entry gates", cp["gates"] == ["manifest-valid"], failures)
 
+    # --- #199: the checkpoint now carries evidence — a date, and a confirmed_by on a human-gated
+    #     move (a <owner> placeholder the human fills). A non-human-gated move carries none. ---
+    cp_h = pr.emit_checkpoint("init", legal, at="2026-07-06")
+    check("enriched checkpoint records the transition date", cp_h.get("at") == "2026-07-06", failures)
+    check("a human-gated checkpoint carries a confirmed_by placeholder",
+          cp_h.get("confirmed_by") == "<owner>", failures)
+    auto = pr.emit_checkpoint("scaffold", pr.propose_transition(wf, "scaffold", "audit"))
+    check("a non-human-gated checkpoint carries no confirmed_by", "confirmed_by" not in auto, failures)
+
+    # --- #199: checkpoint_chain_problems — a legal contiguous chain ending at the current phase is
+    #     clean; a phase-skip, illegal edge, broken chain, missing confirmed_by, a failing
+    #     gate_result, and phase != chain-end are each rejected (the honor-system gap is closed) ---
+    def ds(phase, cps):
+        return {"delivery_state": {"phase": phase, "checkpoints": cps}}
+    legal_chain = [{"from": "init", "to": "design", "confirmed_by": "owner"},
+                   {"from": "design", "to": "plan", "confirmed_by": "owner"}]
+    check("a legal contiguous chain ending at the current phase is clean",
+          pr.checkpoint_chain_problems(ds("plan", legal_chain), wf) == [], failures)
+    check("a legacy manifest with no delivery_state is exempt",
+          pr.checkpoint_chain_problems({"identity": {}}, wf) == [], failures)
+    check("an init phase with no checkpoints is fine",
+          pr.checkpoint_chain_problems(ds("init", []), wf) == [], failures)
+    check("phase: scaffold with no checkpoints is a rejected phase-skip",
+          any("no checkpoints" in p for p in pr.checkpoint_chain_problems(ds("scaffold", []), wf)),
+          failures)
+    check("an illegal edge (init -> scaffold) is rejected",
+          any("not a legal transition" in p for p in pr.checkpoint_chain_problems(
+              ds("scaffold", [{"from": "init", "to": "scaffold", "confirmed_by": "o"}]), wf)), failures)
+    check("a non-contiguous chain is rejected",
+          any("not contiguous" in p for p in pr.checkpoint_chain_problems(
+              ds("scaffold", [{"from": "init", "to": "design", "confirmed_by": "o"},
+                              {"from": "plan", "to": "scaffold", "confirmed_by": "o"}]), wf)), failures)
+    check("a human-gated move without confirmed_by is rejected",
+          any("confirmed_by" in p for p in pr.checkpoint_chain_problems(
+              ds("design", [{"from": "init", "to": "design"}]), wf)), failures)
+    check("a phase that is not the chain's end is rejected",
+          any("ends at" in p for p in pr.checkpoint_chain_problems(ds("scaffold", legal_chain), wf)),
+          failures)
+    check("a recorded failing gate_result is rejected",
+          any("may not be taken" in p for p in pr.checkpoint_chain_problems(
+              ds("design", [{"from": "init", "to": "design", "confirmed_by": "o",
+                             "gate_results": {"manifest-valid": "FAIL"}}]), wf)), failures)
+
     if failures:
         print("test-phase-runner: FAIL\n")
         for f in failures:
