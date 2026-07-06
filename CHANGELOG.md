@@ -25,6 +25,24 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
   confirms PyYAML parses them, proving the rejection is a deliberate subset boundary and not a
   misparse), and the module docstring's "reject, never guess" claim for `>` is now truthful.
 
+### Security
+
+- **The renderer refuses to clobber pre-existing files — additive by default, `--force` to
+  regenerate (#195).** `render.write_file` opened every destination in truncating mode, so an
+  `--in-place`/`--out` render silently overwrote a pre-existing `README.md`, `LICENSE`,
+  `.gitignore`, `AGENTS.md`, `.github/workflows/*`, etc. — destructive, non-`git`-reversible data
+  loss in exactly the "existing repo" scenario the guided installer advertises as safe, and the
+  opposite of the "never overwriting" contract the `refactor` sandbox already enforced and the
+  README "Security posture" already claimed the renderer honoured. The renderer now **plans every
+  write and pre-scans for collisions across the whole template walk**, then — unless `--force` is
+  passed — lists every colliding path and aborts **before writing a single byte** (all-or-nothing;
+  a failed render never leaves a repo half-clobbered). `write_file` now **delegates to
+  `sandbox.safe_write`**, so containment, the `.git`-at-any-depth refusal, and the no-clobber guard
+  are a *single* implementation shared with the `refactor` phase and the two write paths cannot
+  drift again (ADR-0007 addendum, 2026-07-06). A new `--force`/`--overwrite` flag is the sole opt-in
+  for the greenfield/regeneration case, and `tools/tests/test_render_guards.py` covers the refusal,
+  the byte-for-byte survival of the pre-existing file, and the `--force` path end-to-end.
+
 ## [2.6.0] - 2026-07-05
 
 ### Added

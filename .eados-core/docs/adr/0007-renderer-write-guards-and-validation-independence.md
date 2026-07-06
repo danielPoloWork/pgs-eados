@@ -50,3 +50,28 @@ exercises the one hand-tuned reference manifest:
   spec YAML (double-/single-quote unescaping, `|-`/`|+` chomping). That touches the documented
   loader contract and warrants its own decision — likely adopting PyYAML-when-present in
   `load_yaml`, which would also retire the hand-rolled reader on the manifest path.
+
+## Addendum (2026-07-06) — clobber guard and one write path (#195)
+
+Decision item 1 confined writes to the output root but stopped at *containment*: `write_file`
+opened every destination in truncating mode, so an `--in-place`/`--out` render silently
+overwrote a pre-existing `README.md`, `LICENSE`, `.gitignore`, `AGENTS.md`, `.github/workflows/*`,
+etc. That contradicted the **additive, never-overwriting** contract the `refactor` sandbox
+([`tools/sandbox.py`](../../tools/sandbox.py)) already enforces (`safe_write(..., overwrite=False)`)
+and the README "Security posture" already advertised (it lists *clobber* among what the renderer
+refuses). The two write paths had diverged and held unequal guarantees.
+
+- **Fail-closed on clobber, all-or-nothing.** The renderer now *plans* every write, pre-scans
+  every destination for collisions across the whole template walk (main tree + seeded
+  `.gitkeep`s), and — if any destination already exists and `--force` was not passed — lists every
+  colliding path and aborts **before writing a single byte**, so a failed render never leaves a
+  target repo half-written or half-overwritten.
+- **`--force` is the sole opt-in** for the greenfield/regeneration case where overwriting is
+  intended, mirroring `sandbox.safe_write(..., overwrite=True)`.
+- **One write path.** `write_file` now delegates to `sandbox.safe_write`, so containment *and* the
+  no-clobber guard live in a single implementation shared with the `refactor` phase and the two
+  cannot drift again. The `.git`-at-any-depth refusal rides along from the sandbox; making that
+  failure land at manifest-validation (`--check`) time rather than at write time is tracked as #196.
+
+This makes the README "Security posture" claim — "the renderer and the `refactor` sandbox refuse …
+clobber" — true, and closes the divergence between the renderer and the sandbox.

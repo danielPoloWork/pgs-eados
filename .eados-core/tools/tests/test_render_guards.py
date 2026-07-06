@@ -18,6 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 import render  # noqa: E402  (the module under test)
+import sandbox  # noqa: E402  (write_file now delegates here — one containment/clobber path)
 
 RENDER_PY = os.path.join(TOOLS, "render.py")
 
@@ -143,7 +144,9 @@ def main():
     check("nested duplicate is not a top-level duplicate",
           render._duplicate_top_level_keys("a:\n  x: 1\n  x: 2\nb: 3\n") == [], failures)
 
-    # --- write_file containment: a normal rel writes, an escaping rel raises ---
+    # --- write_file containment + no-clobber: a normal rel writes, an escaping rel raises, and a
+    #     second write over an existing file is refused unless overwrite=True (#195: write_file now
+    #     delegates to sandbox.safe_write, so render and refactor share ONE containment/clobber path)
     with tempfile.TemporaryDirectory() as out:
         render.write_file(out, "docs/ok.md", "hi")
         check("normal write lands inside out_dir",
@@ -151,8 +154,21 @@ def main():
         try:
             render.write_file(out, os.path.join("..", "..", "escape.md"), "x")
             check("escaping write must raise", False, failures)
-        except ValueError:
+        except sandbox.SandboxError:
             pass
+        # additive by default: clobbering docs/ok.md without opt-in is refused, and the original
+        # content survives; --force-equivalent overwrite=True is the only way through
+        try:
+            render.write_file(out, "docs/ok.md", "CLOBBERED")
+            check("clobber without overwrite must raise", False, failures)
+        except sandbox.SandboxError:
+            pass
+        with open(os.path.join(out, "docs", "ok.md"), encoding="utf-8") as fh:
+            check("refused clobber left the original file intact", fh.read() == "hi", failures)
+        render.write_file(out, "docs/ok.md", "CLOBBERED", overwrite=True)
+        with open(os.path.join(out, "docs", "ok.md"), encoding="utf-8") as fh:
+            check("overwrite=True regenerates over the existing file", fh.read() == "CLOBBERED",
+                  failures)
 
     # --- end-to-end: render.py on a traversal manifest exits 1 and writes nothing outside ---
     with tempfile.TemporaryDirectory() as work:
@@ -243,6 +259,36 @@ def main():
         check("--check failure labelled Check:", "Check: FAIL" in broken.stdout, failures)
         check("--check wrote nothing",
               sorted(os.listdir(work)) == ["bad.yaml", "ok.yaml"], failures)
+
+    # --- #195: an --out render into a directory that already holds a file fails ALL-OR-NOTHING,
+    #     names the collision, leaves the pre-existing file byte-for-byte intact, and writes nothing
+    #     else; --force is the sole opt-in to regenerate over existing files ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "ok.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID)
+        out = os.path.join(work, "out")
+        os.makedirs(out)
+        sentinel = "PRE-EXISTING README — must not be clobbered\n"
+        with open(os.path.join(out, "README.md"), "w", encoding="utf-8") as fh:
+            fh.write(sentinel)
+        clobber = subprocess.run([sys.executable, RENDER_PY, manifest, "--out", out],
+                                 capture_output=True, text=True)
+        check("clobbering render -> non-zero exit", clobber.returncode == 1, failures)
+        check("clobbering render -> refuses and names the collision",
+              "refusing to overwrite" in clobber.stdout and "README.md" in clobber.stdout, failures)
+        with open(os.path.join(out, "README.md"), encoding="utf-8") as fh:
+            check("pre-existing README.md is byte-for-byte unchanged after the refused render",
+                  fh.read() == sentinel, failures)
+        check("refused render wrote nothing else (only the pre-existing file remains)",
+              os.listdir(out) == ["README.md"], failures)
+        forced = subprocess.run([sys.executable, RENDER_PY, manifest, "--out", out, "--force"],
+                                capture_output=True, text=True)
+        check("--force render -> exit 0", forced.returncode == 0, failures)
+        with open(os.path.join(out, "README.md"), encoding="utf-8") as fh:
+            check("--force overwrote the pre-existing README.md", fh.read() != sentinel, failures)
+        check("--force render produced the rest of the repo (LICENSE)",
+              os.path.isfile(os.path.join(out, "LICENSE")), failures)
 
     if failures:
         print("test-render-guards: FAIL\n")
