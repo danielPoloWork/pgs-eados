@@ -72,7 +72,7 @@ supports:
   threading_sanitizer: false   # single-threaded event loop; worker-thread stress if used
   bench: true
   abi_stability: false
-notes: >
+notes: |
   Publishable as a dual ESM/CJS package; tsconfig in strict mode is non-negotiable (it is
   the type-soundness gate). version.ts is generated from / asserted equal to
   package.json "version" — the consistency lint checks that lockstep.

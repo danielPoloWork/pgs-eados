@@ -94,7 +94,7 @@ supports:
   threading_sanitizer: true
   bench: true
   abi_stability: true
-notes: >
+notes: |
   C11 by default; offer an ANSI-C/C99 pedantic compat job for libraries with broad reach. The
   library scope stays dependency-free; test deps (Unity/Criterion) are gated under CMake options.
   Sanitizer presets (asan/ubsan/tsan) are POSIX-only — omit them on the Windows matrix cell.

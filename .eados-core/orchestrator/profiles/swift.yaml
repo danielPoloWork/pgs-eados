@@ -65,6 +65,6 @@ supports:
   threading_sanitizer: true
   bench: true
   abi_stability: false                     # library evolution exists; SemVer protects the source API
-notes: >
+notes: |
   Swift 6 via SwiftPM (macOS + Linux). ASan/TSan/UBSan through `swift build --sanitize`. For
   Apple-app targets (iOS/macOS UI) add an Xcode build cell. Dependabot ecosystem: swift.

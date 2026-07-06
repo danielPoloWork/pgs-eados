@@ -66,6 +66,6 @@ supports:
   threading_sanitizer: false
   bench: true
   abi_stability: false                     # C-API stability matters when embedding (note it in the spec)
-notes: >
+notes: |
   Lua 5.4 with a LuaJIT cell for performance-sensitive consumers. busted/luacheck/stylua are the
   de-facto trio. When embedded in a C/C++ host, verify the host with the C/C++ profile's tools.

@@ -66,6 +66,6 @@ supports:
   threading_sanitizer: false
   bench: true
   abi_stability: false
-notes: >
+notes: |
   Plain ESM on Node LTS. For anything non-trivial prefer the typescript profile (type safety);
   JSDoc + `tsc --checkJs` gives partial typing here. Dependabot ecosystem: npm.

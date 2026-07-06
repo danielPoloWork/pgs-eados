@@ -59,6 +59,6 @@ supports:
   threading_sanitizer: false
   bench: false
   abi_stability: false
-notes: >
+notes: |
   VB.NET on modern .NET shares the C# toolchain (MSBuild, NuGet, Roslyn). Choose it for legacy
   or LOB maintenance; greenfield work usually picks C# — the language-fit advisory will say so.

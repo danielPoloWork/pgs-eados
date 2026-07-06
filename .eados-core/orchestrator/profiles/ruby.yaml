@@ -60,6 +60,6 @@ supports:
   threading_sanitizer: false
   bench: true
   abi_stability: false
-notes: >
+notes: |
   Ruby 3.3; RuboCop serves as both formatter and linter. Sorbet adds optional static typing.
   Dependabot ecosystem: bundler.

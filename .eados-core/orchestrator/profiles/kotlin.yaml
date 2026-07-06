@@ -77,6 +77,6 @@ supports:
   threading_sanitizer: true
   bench: true
   abi_stability: true                      # public ABI guarded by binary-compatibility-validator
-notes: >
+notes: |
   Kotlin 2.0 on the JVM (Android/Multiplatform adapt the matrix). ktlint = format, detekt =
   lint, Kover = coverage, Dokka = docs. Dependabot ecosystem: gradle.

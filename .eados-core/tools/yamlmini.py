@@ -20,9 +20,11 @@ editors and PowerShell 5.1's `Out-File -Encoding utf8` write one, and it is not 
 
 Anything outside the subset fails LOUDLY (ADR-0006/0008: reject, never guess). That includes
 the two #153 silent-truncation constructs — a quoted scalar that does not close on its line,
-and a flow collection left open at end-of-line — which used to truncate everything after them.
-Out of scope (rejected or best-effort, never byte-identical): `|+` keep-chomping, folded `>`
-scalars, anchors, tags, and multi-document streams.
+and a flow collection left open at end-of-line — which used to truncate everything after them,
+plus folded `>` block scalars (`>`/`>-`/`>+`), which used to drop their body and keep the bare
+`">"` as the value (#194) — use a literal block scalar (|), which is byte-exact here.
+Out of scope (rejected or best-effort, never byte-identical): `|+` keep-chomping, anchors,
+tags, and multi-document streams.
 """
 
 import re
@@ -206,8 +208,9 @@ def _reject_unsupported(text):
     indentation is invalid YAML. #166 adds the two #153 silent-truncation constructs: a quoted
     scalar that opens but does not close on its line (the loader does not fold multi-line
     quoted scalars) and a flow collection ([ / {) left open at end-of-line (the loader does not
-    read wrapped flow collections) — both used to truncate everything after them. Block-scalar
-    bodies (| / >) are literal content and exempt from the line checks.
+    read wrapped flow collections) — both used to truncate everything after them. Literal
+    block-scalar bodies (|) are exempt from the line checks; folded `>` scalars are rejected
+    outright (#194) — parse_map cannot fold them, so it would keep the bare ">" and drop the body.
     """
     seen_content = False
     lines = text.split("\n")
@@ -230,7 +233,18 @@ def _reject_unsupported(text):
             continue
         seen_content = True
         value = _value_of(_strip_comment(s))
-        if value.rstrip() in ("|", "|-", "|+", ">", ">-", ">+"):
+        marker = value.rstrip()
+        if marker in (">", ">-", ">+"):
+            # Folded `>` scalars are legal YAML but out of the subset: parse_map has no `>`
+            # branch, so the body below would be skipped here and the bare ">" kept as the
+            # value — the #153 silent-truncation class, live in this repo's own profiles (#194).
+            # Reject loudly; a literal block scalar (|) is byte-exact and needs no folding.
+            raise ValueError(
+                f"line {num}: folded block scalars ('>', '>-', '>+') are not supported — the "
+                "loader does not fold them and used to silently drop the body (#194); use a "
+                "literal block scalar (|) instead"
+            )
+        if marker in ("|", "|-", "|+"):
             # A block-scalar body is literal content — skip it (blank or deeper-indented lines).
             base = len(raw) - len(raw.lstrip(" "))
             while i < n and (not lines[i].strip()

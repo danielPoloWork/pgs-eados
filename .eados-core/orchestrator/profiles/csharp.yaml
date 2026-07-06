@@ -60,6 +60,6 @@ supports:
   threading_sanitizer: false
   bench: true                              # BenchmarkDotNet
   abi_stability: false                     # assemblies; SemVer protects the public API
-notes: >
+notes: |
   Targets the current .NET LTS. Nullable reference types + Roslyn analyzers stand in for
   sanitizers; BenchmarkDotNet provides reproducible benchmarks. Dependabot ecosystem: nuget.

@@ -68,6 +68,6 @@ supports:
   threading_sanitizer: true
   bench: true
   abi_stability: false                     # JVM; SemVer protects the source API
-notes: >
+notes: |
   Scala 3 LTS on the JVM. Dependabot has no sbt ecosystem — wire Scala Steward for dependency
   updates instead (package_ecosystem left blank). sbt-jmh for benchmarks.
