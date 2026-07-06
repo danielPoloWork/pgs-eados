@@ -31,6 +31,15 @@ def load_workflow(path=WORKFLOW):
         return render.load_yaml(handle.read())
 
 
+def _read_text(path):
+    """File contents, or None when the path is absent — for the optional --rfc / --roadmap inputs
+    the live gate evaluation (#213) reads; a missing input leaves that gate unevaluated, not fatal."""
+    if path and os.path.isfile(path):
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    return None
+
+
 def state_ids(workflow):
     return [s.get("id") for s in (workflow.get("states") or []) if isinstance(s, dict)]
 
@@ -199,7 +208,15 @@ def checkpoint_chain_problems(manifest, workflow):
     return problems
 
 
-def report_propose(manifest_path, to_phase, out=sys.stdout):
+def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=None):
+    """Report and validate the transition frm -> to_phase, and emit its checkpoint. When an
+    `evaluate` callable is supplied (`(gate_ids, manifest, ctx) -> {gate: mark}`, injected so the
+    engine stays testable and free of an eados import cycle), the transition's deterministic gates
+    are evaluated LIVE and their marks recorded in the checkpoint's `gate_results` (#213) — the
+    audit trail becomes the runner's own observation, not a copy of workflow.yaml. A gate that is
+    not OK/manual means the move is not ready to record (the same rule checkpoint_chain_problems
+    enforces at manifest-valid time); the exit code stays 0 for a LEGAL move (legality, not gate
+    satisfaction — `eados.py <phase> --strict` is the fail-closed gate check)."""
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
@@ -215,18 +232,32 @@ def report_propose(manifest_path, to_phase, out=sys.stdout):
         print(f"  ILLEGAL: not a declared transition from '{frm}' (legal: {legal or 'none'})",
               file=out)
         return 1
-    gates = ", ".join(t.get("entry_gates") or []) or "—"
+    entry_gates = t.get("entry_gates") or []
+    gates = ", ".join(entry_gates) or "—"
     print(f"  LEGAL — gates to satisfy: {gates}; "
           f"human-gated: {'yes' if t.get('human_gate') else 'no'}", file=out)
-    cp = emit_checkpoint(frm, t)
+    gate_results = evaluate(entry_gates, manifest, ctx or {}) if evaluate else None
+    if gate_results:
+        print("  gate results (live): "
+              + ("; ".join(f"{g}={m}" for g, m in gate_results.items()) or "—"), file=out)
+    cp = emit_checkpoint(frm, t, gate_results=gate_results)
     print("  emit — append to delivery_state.checkpoints, then set delivery_state.phase:", file=out)
     confirmed = f", confirmed_by: {cp['confirmed_by']}" if "confirmed_by" in cp else ""
+    results = ""
+    if "gate_results" in cp:
+        results = ", gate_results: { " + ", ".join(f"{g}: {m}" for g, m in cp["gate_results"].items()) + " }"
     print(f"    - {{ from: {cp['from']}, to: {cp['to']}, gates: {cp['gates']}, "
-          f"at: {cp['at']}{confirmed} }}", file=out)
+          f"at: {cp['at']}{confirmed}{results} }}", file=out)
     print(f"    phase: {to_phase}", file=out)
     if "confirmed_by" in cp:
         print("    (human-gated — replace <owner> in confirmed_by with who approved the move)",
               file=out)
+    if gate_results:
+        unmet = sorted(f"{g}={m}" for g, m in gate_results.items() if m not in ("OK", "manual"))
+        if unmet:
+            print(f"  NOT READY — resolve before recording this transition: {', '.join(unmet)} "
+                  "(checkpoint_chain_problems rejects a checkpoint whose gate_results are not "
+                  "all OK/manual)", file=out)
     return 0
 
 
@@ -240,10 +271,21 @@ def main(argv=None):
     ap.add_argument("manifest", help="path to a project manifest (project.yaml)")
     ap.add_argument("--propose", metavar="TO",
                     help="validate a proposed transition to phase TO and emit its checkpoint")
+    ap.add_argument("--rfc", help="an RFC file to evaluate the rfc-approved gate live (design -> plan)")
+    ap.add_argument("--roadmap", help="ROADMAP.md to evaluate roadmap-covers-rfcs live "
+                                      "(default: <manifest-dir>/ROADMAP.md)")
     args = ap.parse_args(argv)
     try:
         if args.propose:
-            return report_propose(args.manifest, args.propose)
+            # Lazy import: eados owns GATE_EVALUATORS (the single source of the deterministic marks);
+            # importing it here — not at module top — breaks the render<->phase_runner<->eados cycle.
+            import eados  # noqa: E402
+            root = os.path.dirname(os.path.abspath(args.manifest))
+            roadmap_path = args.roadmap or os.path.join(root, "ROADMAP.md")
+            ctx = {"roadmap_text": _read_text(roadmap_path),
+                   "rfc_text": _read_text(args.rfc) if args.rfc else None}
+            return report_propose(args.manifest, args.propose,
+                                  evaluate=eados.evaluate_gates, ctx=ctx)
         return report(args.manifest)
     except (OSError, ValueError) as exc:
         print(f"phase-runner: cannot read manifest {args.manifest!r}: {exc}", file=sys.stderr)

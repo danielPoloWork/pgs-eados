@@ -11,6 +11,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **A transition's checkpoint now records live `gate_results` — the phase-tagged audit trail is the
+  runner's own observation (#213, epic #203).** #199 enriched the checkpoint with `at:` and
+  `confirmed_by:` and made `checkpoint_chain_problems` validate `gate_results` *when present*, but
+  the live population of those results was deferred to the #203 audit-trail child — this closes it.
+  `phase_runner.report_propose` now evaluates the proposed transition's deterministic entry gates
+  **live** and records `{gate -> mark}` in the emitted checkpoint's `gate_results`, so the recorded
+  evidence is what the runner actually observed, not a copy of the declared `entry_gates` from
+  `workflow.yaml`. The evaluation reuses `eados.evaluate_gates` (new) over the existing
+  `GATE_EVALUATORS` — one source of truth for the deterministic marks, shared with `run_phase` — and
+  is threaded via an **injected** evaluator so the engine stays testable and free of a
+  `render ↔ phase_runner ↔ eados` import cycle (the `phase_runner` CLI imports `eados` lazily and
+  gained `--rfc` / `--roadmap` to feed the gate inputs). A gate that is not `OK`/`manual` prints a
+  **NOT READY** line — the move is not ready to record, the same rule `checkpoint_chain_problems`
+  enforces at `manifest-valid` time — while the exit code stays `0` for a *legal* move (legality,
+  not gate satisfaction; `eados.py <phase> --strict` remains the fail-closed gate check). Together
+  with #199's `from`/`to`/`at`/`confirmed_by`, the enriched checkpoint is the phase-tagged action
+  record for **every** transition (`design`/`plan`/`audit`/`refactor`), not just `scaffold` at
+  Step 9. Covered by `test_phase_runner.py`, `test_eados.py`, and `test_phase_smoke.py`; the
+  `walkthrough.md` transcript shows the live `gate_results`.
+
 - **The `agent-registry` self-lint is now bidirectional — a dead index link is caught, not just a
   missing persona (#202).** `check_agent_registry` failed a persona file missing from
   `agent/README.md`, but never the reverse: a registry line linking a persona that was **deleted or

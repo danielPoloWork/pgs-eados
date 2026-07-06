@@ -5,8 +5,10 @@ workflow spec is internally consistent. Dependency-free (runnable in the self-li
     python .eados-core/tools/tests/test_phase_runner.py
 """
 
+import io
 import os
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
@@ -105,6 +107,14 @@ def main():
     auto = pr.emit_checkpoint("scaffold", pr.propose_transition(wf, "scaffold", "audit"))
     check("a non-human-gated checkpoint carries no confirmed_by", "confirmed_by" not in auto, failures)
 
+    # --- #213: emit_checkpoint records LIVE gate_results when the caller evaluated them, and omits
+    #     the key when it did not (so an un-evaluated checkpoint stays unchanged) ---
+    cp_gr = pr.emit_checkpoint("init", legal, gate_results={"manifest-valid": "OK"})
+    check("emit_checkpoint records gate_results when provided",
+          cp_gr.get("gate_results") == {"manifest-valid": "OK"}, failures)
+    check("emit_checkpoint omits gate_results when none are provided", "gate_results" not in cp,
+          failures)
+
     # --- #199: checkpoint_chain_problems — a legal contiguous chain ending at the current phase is
     #     clean; a phase-skip, illegal edge, broken chain, missing confirmed_by, a failing
     #     gate_result, and phase != chain-end are each rejected (the honor-system gap is closed) ---
@@ -138,6 +148,35 @@ def main():
           any("may not be taken" in p for p in pr.checkpoint_chain_problems(
               ds("design", [{"from": "init", "to": "design", "confirmed_by": "o",
                              "gate_results": {"manifest-valid": "FAIL"}}]), wf)), failures)
+
+    # --- #213: report_propose evaluates the transition's gates LIVE via an INJECTED evaluator
+    #     (so the engine needs no eados import) and records the marks in the emitted checkpoint's
+    #     gate_results; a not-OK/manual mark warns NOT READY; no evaluator = no gate_results ---
+    with tempfile.TemporaryDirectory() as d:
+        mpath = os.path.join(d, "project.yaml")
+        with open(mpath, "w", encoding="utf-8") as fh:
+            fh.write("delivery_state:\n  phase: init\n  checkpoints: []\n"
+                     "  refs: { rfcs: [], milestones: [] }\n")
+        out = io.StringIO()
+        rc = pr.report_propose(mpath, "design", out=out,
+                               evaluate=lambda gates, m, ctx: {g: "OK" for g in gates})
+        text = out.getvalue()
+        check("report_propose exits 0 for a legal move", rc == 0, failures)
+        check("the emitted checkpoint records the live gate_results",
+              "gate_results: { manifest-valid: OK }" in text, failures)
+        check("an all-OK move prints no NOT READY", "NOT READY" not in text, failures)
+
+        out2 = io.StringIO()
+        pr.report_propose(mpath, "design", out=out2,
+                          evaluate=lambda gates, m, ctx: {g: "needs-input" for g in gates})
+        check("a not-OK/manual gate marks the move NOT READY",
+              "NOT READY" in out2.getvalue() and "manifest-valid=needs-input" in out2.getvalue(),
+              failures)
+
+        out3 = io.StringIO()
+        pr.report_propose(mpath, "design", out=out3)   # no evaluator injected
+        check("without an evaluator the checkpoint carries no gate_results (unchanged behavior)",
+              "gate_results" not in out3.getvalue(), failures)
 
     if failures:
         print("test-phase-runner: FAIL\n")
