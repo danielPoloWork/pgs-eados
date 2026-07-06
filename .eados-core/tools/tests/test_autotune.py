@@ -98,6 +98,18 @@ def main():
         check("the non-mapping record is named as skipped",
               "not a YAML mapping" in err3.getvalue(), failures)
 
+    # --- #215: the confidence floor scales with the corpus — a 2-record majority that IS proposed at
+    #     a small corpus is NOT proposed once 20% of the runs exceeds it (broader adoption required) ---
+    with tempfile.TemporaryDirectory() as tmp:
+        autotune.RUNS = tmp
+        _write_record(tmp, "a1.yaml", [("toolchain.linter", "ruff", "flake8")])
+        _write_record(tmp, "a2.yaml", [("toolchain.linter", "ruff", "flake8")])
+        for i in range(9):   # 9 unrelated records -> 11 analyzed -> floor ceil(11/5) = 3
+            _write_record(tmp, f"o{i}.yaml", [(f"misc.k{i}", f"v{i}", "d")])
+        out = _run(2)
+        check("a 2-record majority is below the scaled floor at 11 runs (not proposed)",
+              "toolchain.linter" not in out and "confidence floor 3" in out, failures)
+
     if failures:
         print("test-autotune: FAIL\n")
         for f in failures:

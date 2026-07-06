@@ -11,6 +11,25 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **Learning-loop coverage: refactor-phase incidents, a corpus-scaled autotune floor, and
+  override-value redaction (#215, epic #203).** Three coverage/durability gaps in the generation-
+  centric learning loop are closed. **(1) Phase-tagged records / a refactor failure channel.**
+  `record_run.py` gains `--phase` (default `scaffold`) and writes a `phase:` field, so a `refactor`
+  or `audit` incident — the riskiest surface, since it modifies real user code — records through the
+  same `--failure` channel (`--phase refactor --outcome failed --failure GATE=MSG`) and
+  `lesson_audit`'s regression detection now covers real-user-code work, not just scaffold at Step 9.
+  The `run-records` gate validates `phase` against the workflow phases when present; a record with no
+  `phase` is treated as `scaffold` (backward-compatible). **(2) A confidence floor that scales with
+  the corpus.** `autotune` now requires a proposal to clear `max(--threshold, ceil(20% of the
+  analyzed runs))`, not a flat `--threshold` of 2 — so two early runs can no longer steer a built-in
+  default forever; as the ledger grows, changing a default requires broader, more durable adoption
+  (the floor is documented and printed). **(3) Override-value redaction.** An override whose *key*
+  names a `host`/`url`/`registry`/`endpoint`/`token`/… is written to the committed ledger with its
+  `chosen:` value as `<redacted>` (`record_run.redact_overrides`) — the fact of the override still
+  feeds the tuner, but an internal hostname or registry URL never lands in version control. Covered
+  by `test_record_run.py`, `test_run_records.py`, and `test_autotune.py`; `learning/runs/README.md`
+  documents all three.
+
 - **Optimistic concurrency for the manifest — parallel sessions can no longer silently lose an
   update (#214, epic #203).** `project.yaml` is the single mutable source of truth, but nothing
   detected concurrent mutation: two agent sessions (or an agent plus a human editor) interleaving

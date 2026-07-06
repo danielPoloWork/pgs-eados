@@ -7,9 +7,13 @@ Dependency-free (reuses render.py's YAML loader). Run:
 
 It reads every record under learning/runs/*.yaml and, for each manifest key, looks at how
 often the maintainer overrode the built-in/profile default and to what value. When a single
-value replaces the default in at least `--threshold` records (default 2) and is the majority
-choice, it proposes changing that default — a draft suggestion a human turns into a profile /
-config / questionnaire PR. It NEVER edits anything itself; it only reports.
+value replaces the default in at least the CONFIDENCE FLOOR records and is the majority choice,
+it proposes changing that default — a draft suggestion a human turns into a profile / config /
+questionnaire PR. It NEVER edits anything itself; it only reports.
+
+The confidence floor is `max(--threshold, ceil(20% of the analyzed runs))` (#215): `--threshold`
+(default 2) governs a small corpus, but as the ledger grows a default change requires broader,
+more durable adoption — so two early runs can no longer steer a built-in default forever.
 
 This is "auto-tuning" done safely: the data is version-controlled, the proposal is reviewable,
 and a human applies it.
@@ -18,6 +22,7 @@ and a human applies it.
 import argparse
 import collections
 import glob
+import math
 import os
 import sys
 
@@ -82,22 +87,29 @@ def main():
             defaults[key].add(default_val)
             totals[key] += 1
 
+    # #215: the confidence floor SCALES with the corpus. A proposal needs a strict majority AND at
+    # least `floor` records agreeing — max(--threshold, 20% of the analyzed runs). So a two-record
+    # flip is only accepted while the corpus is small; as it grows, changing a built-in default
+    # requires broader, more durable adoption instead of two early runs steering it.
+    floor = max(args.threshold, math.ceil(analyzed / 5)) if analyzed else args.threshold
     proposals = []
     for key, counter in chosen.items():
         # Most-chosen value, ties broken deterministically by value (Counter.most_common
         # leaves equal-count order implementation-defined, which would make output flaky).
         value = max(counter.items(), key=lambda kv: (kv[1], kv[0]))[0]
         n = counter[value]
-        if n >= args.threshold and n * 2 > totals[key]:
+        if n >= floor and n * 2 > totals[key]:
             old = " / ".join(sorted(d for d in defaults[key] if d)) or "(built-in)"
             proposals.append((n, analyzed, key, old, value))
 
     if not proposals:
         print(f"autotune: {analyzed} run(s) analyzed — no default is overridden often "
-              f"enough (threshold {args.threshold}) to propose a change.")
+              f"enough (confidence floor {floor} = max(threshold {args.threshold}, 20% of runs)) "
+              "to propose a change.")
         return 0
 
-    print(f"autotune: {analyzed} run(s) analyzed — proposed default changes:\n")
+    print(f"autotune: {analyzed} run(s) analyzed — proposed default changes "
+          f"(confidence floor {floor}):\n")
     for n, total, key, old, value in sorted(proposals, reverse=True):
         print(f"  • {key}: overridden to '{value}' in {n}/{total} runs "
               f"(current default: {old}). Consider updating the profile/config/questionnaire.")

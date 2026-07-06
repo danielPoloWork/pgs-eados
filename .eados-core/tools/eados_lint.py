@@ -795,6 +795,11 @@ def run_record_problems(records):
         outcome = rec.get("outcome")
         if outcome is not None and outcome not in record_run.OUTCOMES:
             bad(rel, f"outcome {outcome!r} not one of {'|'.join(record_run.OUTCOMES)}")
+        # #215: `phase` is an optional phase tag (records default to scaffold); when present it must
+        # name a real delivery phase, so a mistyped phase can't slip into the ledger.
+        phase = rec.get("phase")
+        if phase is not None and phase not in record_run.PHASES:
+            bad(rel, f"phase {phase!r} not one of {'|'.join(record_run.PHASES)}")
 
         overrides = rec.get("overrides", [])
         if not isinstance(overrides, list):
