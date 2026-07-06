@@ -19,7 +19,9 @@ its defaults. A red bootstrap CI is recorded as `--failure ci-bootstrap="<summar
 
 Pure core (build_run_record / derive_overrides / emit_record_yaml) + a thin CLI shell, per the
 pr_review.py pattern. autotune.py consumes the records unchanged (it reads `overrides` and
-ignores the other channels). Records are facts: an existing record file is never overwritten.
+ignores the other channels). Records are facts: an existing record file is never overwritten — a
+second run on the same real date (the common failed→fixed re-run) gets a `-2`/`-3` filename suffix
+while its `date:` field stays the true run date, so disambiguation never falsifies a fact (#197).
 """
 
 import argparse
@@ -227,6 +229,32 @@ def _read(path):
         return handle.read()
 
 
+def _rel(path):
+    """Repo-relative display path, tolerant of a RUNS_DIR on a different drive than the factory
+    (Windows `relpath` raises across mounts) — a display string must never crash the tool after the
+    record is already written."""
+    try:
+        return os.path.relpath(path, os.path.dirname(ROOT))
+    except ValueError:
+        return path
+
+
+def resolve_dest(runs_dir, date, slug):
+    """The path this run's record lands at, WITHOUT ever overwriting an existing fact. The natural
+    name is `<date>-<slug>.yaml`; when a same-day record for this slug already exists (a failed
+    bootstrap then its fixed re-run — the exact failure→success pairing the tuner and lesson_audit
+    mine), append the lowest free sequence suffix `-2`, `-3`, … The `date:` field inside the record
+    is derived separately from `today` and stays the true run date, so the filename can disambiguate
+    without falsifying the fact (#197). Touches the filesystem for existence only."""
+    base = os.path.join(runs_dir, f"{date}-{slug}.yaml")
+    if not os.path.exists(base):
+        return base
+    seq = 2
+    while os.path.exists(os.path.join(runs_dir, f"{date}-{slug}-{seq}.yaml")):
+        seq += 1
+    return os.path.join(runs_dir, f"{date}-{slug}-{seq}.yaml")
+
+
 def main(argv=None):
     # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
     for _stream in (sys.stdout, sys.stderr):
@@ -276,15 +304,12 @@ def main(argv=None):
     if args.dry_run:
         sys.stdout.write(text)
         return 0
-    dest = os.path.join(RUNS_DIR, f"{today}-{record['slug']}.yaml")
-    if os.path.exists(dest):
-        print(f"record-run: FAIL — {os.path.relpath(dest, os.path.dirname(ROOT))} already "
-              "exists; records are facts and are never overwritten (use --date to "
-              "disambiguate a second same-day run)", file=sys.stderr)
-        return 1
+    # Records are facts and are never overwritten; a same-day re-run gets a -2/-3 suffix while its
+    # date stays true (#197), so the common failed→fixed pairing can be recorded honestly.
+    dest = resolve_dest(RUNS_DIR, today, record["slug"])
     with open(dest, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
-    print(f"record-run: OK — {os.path.relpath(dest, os.path.dirname(ROOT))} "
+    print(f"record-run: OK — {_rel(dest)} "
           f"({len(record['overrides'])} override(s), {len(record['lessons_applied'])} "
           f"lesson(s) applied, outcome {record['outcome']}).")
     return 0

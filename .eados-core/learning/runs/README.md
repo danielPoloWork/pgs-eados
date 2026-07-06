@@ -1,8 +1,10 @@
 # Run records
 
-One YAML file per generation run, named `<YYYY-MM-DD>-<project-slug>.yaml`. After a run
-(generate.md **Step 9**), the architect appends a record with **one command** — no
-hand-authored YAML (#172):
+One YAML file per generation run, named `<YYYY-MM-DD>-<project-slug>.yaml`. A second run for the
+same slug on the same real date (a failed bootstrap then its fixed re-run) is disambiguated with a
+sequence suffix — `<YYYY-MM-DD>-<project-slug>-2.yaml`, `-3`, … — while the `date:` field inside
+stays the true run date (#197). After a run (generate.md **Step 9**), the architect appends a
+record with **one command** — no hand-authored YAML (#172):
 
 ```bash
 python .eados-core/tools/record_run.py <manifest> [--outcome ok|failed] \
@@ -46,8 +48,9 @@ failures: []           # on a failed run: [{gate: ci-bootstrap, message: "..."}]
 rubric: {}             # eval/rubric.md dimensions scored 0-2, e.g. spec_measurability: 2
 ```
 
-Records are facts about past runs — never edited after the fact (`record_run.py` refuses to
-overwrite an existing file). They contain no secrets (the manifest's identity/spec is fine;
+Records are facts about past runs — never edited after the fact (`record_run.py` never overwrites
+an existing record; a same-day re-run lands under a `-2`/`-3` suffix with a truthful `date:`, #197).
+They contain no secrets (the manifest's identity/spec is fine;
 tokens/webhooks never live in a manifest). The auto-tuner reads `overrides` and ignores the
 other channels; it is a no-op until enough records accumulate.
 

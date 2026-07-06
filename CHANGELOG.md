@@ -25,6 +25,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
   confirms PyYAML parses them, proving the rejection is a deliberate subset boundary and not a
   misparse), and the module docstring's "reject, never guess" claim for `>` is now truthful.
 
+- **A second same-day run record no longer requires falsifying its date (#197).** `record_run.py`
+  refused to overwrite an existing `<date>-<slug>.yaml` — correct, records are facts — but its only
+  suggested remedy was `--date`, which sets *both* the filename date and the record's `date:` field,
+  so the maintainer had to write down a date the run did not happen on to record a second same-day
+  run. That second run is the common case: a failed bootstrap (`--outcome failed`) then its fixed
+  re-run hours later — exactly the failure→success pairing the auto-tuner (#172) and `lesson_audit`
+  (#173) mine. The recorder now disambiguates the **filename** with a sequence suffix
+  (`<date>-<slug>-2.yaml`, `-3`, … via the new pure `resolve_dest`) while the `date:` field stays
+  the true run date, and the misleading "use `--date` to disambiguate" hint is gone. The
+  `run-records` self-lint gate (#175) validates record *content*, not filenames, so the suffixed
+  form needs no gate change; `learning/runs/README.md` documents it. `record_run.py`'s success
+  message is also now cross-drive-safe (a display path must never crash the tool after the record is
+  written). `tools/tests/test_run_records.py` covers the `-2`/`-3` progression and an end-to-end
+  same-day pair asserting two distinct files and a truthful second `date:`.
+
 ### Security
 
 - **The renderer refuses to clobber pre-existing files — additive by default, `--force` to

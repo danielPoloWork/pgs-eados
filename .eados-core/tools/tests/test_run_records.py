@@ -10,8 +10,11 @@ the key acceptance — that a record emitted by `record_run.py`'s own emitter va
     python .eados-core/tools/tests/test_run_records.py
 """
 
+import contextlib
+import io
 import os
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
@@ -110,6 +113,50 @@ def main():
     emitted = render.load_yaml(rr.emit_record_yaml(rec))
     check("a record_run-emitted record validates clean against the gate (schema parity)",
           lint.run_record_problems([("learning/runs/emitted.yaml", emitted)]) == [], failures)
+
+    # --- #197: a same-day re-run is disambiguated by a filename suffix, never a falsified date ---
+    #     resolve_dest is the pure filename authority: base name first, then the lowest free -N.
+    with tempfile.TemporaryDirectory() as d:
+        p1 = rr.resolve_dest(d, "2026-07-05", "acme")
+        check("first same-day record takes the base name",
+              os.path.basename(p1) == "2026-07-05-acme.yaml", failures)
+        open(p1, "w").close()
+        p2 = rr.resolve_dest(d, "2026-07-05", "acme")
+        check("second same-day record gets the -2 suffix",
+              os.path.basename(p2) == "2026-07-05-acme-2.yaml", failures)
+        open(p2, "w").close()
+        p3 = rr.resolve_dest(d, "2026-07-05", "acme")
+        check("third same-day record gets the -3 suffix",
+              os.path.basename(p3) == "2026-07-05-acme-3.yaml", failures)
+        check("a different real date is never suffixed by a prior day's records",
+              os.path.basename(rr.resolve_dest(d, "2026-07-06", "acme")) == "2026-07-06-acme.yaml",
+              failures)
+
+    # end-to-end: two same-day record_run invocations for the same slug both succeed, land in
+    # DISTINCT files, and the second's date: is the true run date — never bumped to disambiguate.
+    with tempfile.TemporaryDirectory() as d:
+        manifest = os.path.join(d, "project.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write("identity: { project_slug: acme, project_kind: library }\n"
+                     "language: { lang: python }\n"
+                     "interview: { provenance: { identity: asked } }\n")
+        saved_runs = rr.RUNS_DIR
+        rr.RUNS_DIR = d
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc1 = rr.main([manifest, "--date", "2026-07-05"])
+                rc2 = rr.main([manifest, "--date", "2026-07-05"])
+        finally:
+            rr.RUNS_DIR = saved_runs
+        check("both same-day runs exit 0", rc1 == 0 and rc2 == 0, failures)
+        first = os.path.join(d, "2026-07-05-acme.yaml")
+        second = os.path.join(d, "2026-07-05-acme-2.yaml")
+        check("the two same-day runs wrote two distinct files",
+              os.path.isfile(first) and os.path.isfile(second), failures)
+        if os.path.isfile(second):
+            rec2 = render.load_yaml(open(second, encoding="utf-8").read())
+            check("the second record's date: is the true run date, not a falsified one",
+                  rec2.get("date") == "2026-07-05", failures)
 
     # --- gate-coverage: runs/** is now COVERED, not allow-listed, and not stale ---
     cov = dict(lint.GATE_COVERAGE)
