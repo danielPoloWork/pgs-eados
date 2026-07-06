@@ -67,6 +67,13 @@ def main():
     check("manifest_domain defaults to software", pr.manifest_domain({}) == "software", failures)
     check("manifest_domain reads the top-level scalar",
           pr.manifest_domain({"domain": "game"}) == "game", failures)
+
+    # --- #214: the optimistic-concurrency counter reads 0 when absent/malformed, else its value ---
+    check("manifest_rev defaults to 0 (legacy/unlocked)", pr.manifest_rev({}) == 0, failures)
+    check("manifest_rev reads the counter", pr.manifest_rev({"manifest_rev": 5}) == 5, failures)
+    check("manifest_rev treats a negative/non-int value as 0",
+          pr.manifest_rev({"manifest_rev": -1}) == 0 and pr.manifest_rev({"manifest_rev": "x"}) == 0,
+          failures)
     merged = pr.apply_overlay(wf, "game")
     check("game overlay appends asset-pipeline-review as a human-owner state",
           any(isinstance(s, dict) and s.get("id") == "asset-pipeline-review"
@@ -177,6 +184,31 @@ def main():
         pr.report_propose(mpath, "design", out=out3)   # no evaluator injected
         check("without an evaluator the checkpoint carries no gate_results (unchanged behavior)",
               "gate_results" not in out3.getvalue(), failures)
+
+    # --- #214: report_propose surfaces the read rev, bumps it in the emit, and --expect-rev refuses
+    #     a stale write (another session moved the manifest since it was read) ---
+    with tempfile.TemporaryDirectory() as d:
+        mpath = os.path.join(d, "project.yaml")
+        with open(mpath, "w", encoding="utf-8") as fh:
+            fh.write("manifest_rev: 2\ndelivery_state:\n  phase: init\n  checkpoints: []\n"
+                     "  refs: { rfcs: [], milestones: [] }\n")
+        out = io.StringIO()
+        rc = pr.report_propose(mpath, "design", out=out, expect_rev=2)
+        text = out.getvalue()
+        check("a matching --expect-rev proceeds (exit 0)", rc == 0, failures)
+        check("report_propose surfaces the read rev", "read at manifest_rev 2" in text, failures)
+        check("the emit bumps manifest_rev to rev+1", "manifest_rev: 3" in text, failures)
+        out2 = io.StringIO()
+        rc2 = pr.report_propose(mpath, "design", out=out2, expect_rev=1)
+        check("a stale --expect-rev is refused (CONFLICT, exit 1)",
+              rc2 == 1 and "CONFLICT" in out2.getvalue(), failures)
+        legacy = os.path.join(d, "legacy.yaml")
+        with open(legacy, "w", encoding="utf-8") as fh:
+            fh.write("delivery_state:\n  phase: init\n  checkpoints: []\n"
+                     "  refs: { rfcs: [], milestones: [] }\n")
+        out3b = io.StringIO()
+        check("a legacy manifest (no manifest_rev) reads as rev 0 and matches --expect-rev 0",
+              pr.report_propose(legacy, "design", out=out3b, expect_rev=0) == 0, failures)
 
     if failures:
         print("test-phase-runner: FAIL\n")
