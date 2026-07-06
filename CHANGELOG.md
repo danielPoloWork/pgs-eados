@@ -11,6 +11,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **The `agent-registry` self-lint is now bidirectional — a dead index link is caught, not just a
+  missing persona (#202).** `check_agent_registry` failed a persona file missing from
+  `agent/README.md`, but never the reverse: a registry line linking a persona that was **deleted or
+  renamed** stayed green (it only iterated files that exist on disk), unlike its sibling hygiene
+  checks (`workflow-safety`, `gate-coverage`, `authority-personas`) which are all symmetric. The
+  check now also fails when a persona-relative `.md` link in the index points at a file that does
+  not exist under `agent/`. Links that **escape** `agent/` — `../config/README.md`,
+  `../learning/README.md`, `http(s)://…`, absolute paths, and the index's own `README.md` — are
+  correctly excluded from the on-disk probe. The both-directions contract is factored into a pure,
+  injectable `agent_registry_problems(index_text, persona_rels)` helper (mirroring
+  `workflow_safety_problems` / `gate_coverage_problems`), and a new `tools/tests/test_agent_registry.py`
+  covers both directions plus the escaping-link exclusion.
+
 - **Interview provenance is enforced *complete*, not just well-shaped — a partial block no longer
   silently starves the learning loop (#201).** The learning loop derives its entire input (every run
   record's `overrides:`) mechanically from the manifest's `interview:` provenance block, and
