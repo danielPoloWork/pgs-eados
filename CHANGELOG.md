@@ -43,6 +43,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
   for the greenfield/regeneration case, and `tools/tests/test_render_guards.py` covers the refusal,
   the byte-for-byte survival of the pre-existing file, and the `--force` path end-to-end.
 
+- **A `.git` path segment in a manifest is rejected at validation time, not just at write time
+  (#196).** `render._unsafe_path_value` accepted `.git` as an ordinary segment, so a manifest with
+  `language.group_path: ".git/hooks"` passed `validate_manifest` and only tripped `write_file`'s
+  guard at write time — and before #195 nothing stopped it, letting a manifest steer a seeded
+  `.gitkeep` into VCS metadata (`.git/hooks/` is an execution vector on the next commit). It now
+  fails `--check` up front: `_unsafe_path_value` refuses a `.git` segment at any depth by **exact
+  match**, matching `sandbox.resolve`, so `.gitignore` files and `foo.git/` directories stay legal
+  and the actionable message names `.git`. `tools/tests/test_render_guards.py` covers `.git`,
+  `.git/hooks`, `a/.git/b`, and `src/.git` at the unit level (with `.gitignore`/`foo.git` proven
+  still-legal) and end-to-end (`--check` and `--out` both exit non-zero; nothing lands under a
+  `.git/`). Renderer and refactor sandbox now share the containment path *and* apply an equivalent
+  `.git` guard at both validation and write time (ADR-0007).
+
 ## [2.6.0] - 2026-07-05
 
 ### Added
