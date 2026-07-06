@@ -145,10 +145,21 @@ def rubric_trends(records, threshold):
 def _load_records(runs_dir):
     records = []
     for path in sorted(glob.glob(os.path.join(runs_dir, "*.yaml"))):
-        with open(path, encoding="utf-8") as handle:
-            rec = load_yaml(handle.read())
+        # Report-only: one record outside the loader's subset must not abort the audit with a
+        # traceback (these run on bundles / fresh checkouts where the run-records gate may never
+        # have run). Skip the file, name it, and keep going (#198).
+        try:
+            with open(path, encoding="utf-8") as handle:
+                rec = load_yaml(handle.read())
+        except (OSError, ValueError) as exc:
+            print(f"lesson-audit: skipping {os.path.basename(path)}: {exc} "
+                  "(run eados_lint run-records to see why)", file=sys.stderr)
+            continue
         if isinstance(rec, dict):
             records.append(rec)
+        else:
+            print(f"lesson-audit: skipping {os.path.basename(path)}: not a YAML mapping "
+                  "(run eados_lint run-records)", file=sys.stderr)
     return records
 
 
