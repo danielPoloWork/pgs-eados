@@ -178,6 +178,17 @@ def main():
         expect(failures, "eados design --strict: a skipped (no refs) gate still passes", rc, out, 0,
                "[skipped] rfc-approved")
 
+        # === #213: --propose evaluates the transition's gates LIVE and records them in the checkpoint
+        # design -> plan gates rfc-approved: with an approved RFC it is recorded OK; without --rfc it
+        # is `needs-input` and the move is flagged NOT READY (the checkpoint chain would reject it).
+        rc, out = run_tool("phase_runner.py", manifest("design"), "--propose", "plan",
+                           "--rfc", rfc_ok)
+        expect(failures, "propose evaluates rfc-approved live and records it OK", rc, out, 0,
+               "gate results (live)", "gate_results: { rfc-approved: OK }")
+        rc, out = run_tool("phase_runner.py", manifest("design"), "--propose", "plan")
+        expect(failures, "propose without --rfc records needs-input and warns NOT READY", rc, out, 0,
+               "gate_results: { rfc-approved: needs-input }", "NOT READY")
+
         # === plan phase — the roadmap-covers-rfcs gate ============================================
         rc, out = run_tool("traceability.py", roadmap, "RFC-0001")
         expect(failures, "plan: roadmap-covers-rfcs passes when the RFC is covered", rc, out, 0,

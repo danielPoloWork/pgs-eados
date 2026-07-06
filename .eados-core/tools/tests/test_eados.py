@@ -154,6 +154,14 @@ def main():
     check("an invalid manifest FAILs manifest-valid", has(lines, "[FAIL] manifest-valid") and not ok,
           failures)
 
+    # --- #213: evaluate_gates is the shared marks-only resolver behind run_phase AND the checkpoint's
+    #     live gate_results — an in-process gate is evaluated, an external one is `manual` ---
+    marks = eados.evaluate_gates(["manifest-valid", "consistency-lint"], manifest_at("init"), {})
+    check("evaluate_gates evaluates an in-process gate (manifest-valid OK on a valid manifest)",
+          marks.get("manifest-valid") == "OK", failures)
+    check("evaluate_gates marks an external gate as manual (run by the procedure / CI)",
+          marks.get("consistency-lint") == "manual", failures)
+
     # --- an undeclared phase errors ---
     lines, ok = eados.run_phase("bogus", manifest_at("init"), wf)
     check("an undeclared phase is rejected", has(lines, "not a declared workflow state") and not ok,

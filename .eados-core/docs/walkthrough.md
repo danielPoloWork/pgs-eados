@@ -107,17 +107,24 @@ rfc-check: OK — docs/rfc/0001-sample.md satisfies the rfc-approved gate.
 ```
 
 Propose the transition. The runner validates it and **emits the checkpoint to write** — it does not
-write state:
+write state. With `--rfc` / `--roadmap` it evaluates the transition's deterministic gates **live**
+and records the marks in the checkpoint's `gate_results` (#213), so the checkpoint is the phase's
+own audit record — its own observation, not a copy of `workflow.yaml`:
 
 ```text
-$ python .eados-core/tools/phase_runner.py project.yaml --propose plan
+$ python .eados-core/tools/phase_runner.py project.yaml --propose plan --rfc docs/rfc/0001-sample.md
 proposed transition: design -> plan
   LEGAL — gates to satisfy: rfc-approved; human-gated: yes
+  gate results (live): rfc-approved=OK
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: design, to: plan, gates: ['rfc-approved'], at: 2026-07-06, confirmed_by: <owner> }
+    - { from: design, to: plan, gates: ['rfc-approved'], at: 2026-07-06, confirmed_by: <owner>, gate_results: { rfc-approved: OK } }
     phase: plan
     (human-gated — replace <owner> in confirmed_by with who approved the move)
 ```
+
+A gate that is not `OK`/`manual` (e.g. `rfc-approved=needs-input` when `--rfc` is omitted) prints a
+**NOT READY** line — `checkpoint_chain_problems` rejects a recorded checkpoint whose `gate_results`
+are not all `OK`/`manual`, so a transition can't be logged as taken over a gate that did not pass.
 
 > **Human gate.** You confirm the move by editing the manifest: append that checkpoint under
 > `delivery_state.checkpoints` and set `delivery_state.phase: plan`. Nothing advanced on its own.

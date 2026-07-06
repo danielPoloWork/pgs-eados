@@ -80,6 +80,18 @@ PROCEDURE = {p: f"orchestrator/commands/{p}.md" for p in PHASES}
 PROCEDURE["scaffold"] = "orchestrator/generate.md"
 
 
+def evaluate_gates(gate_ids, manifest, ctx):
+    """{gate id -> mark} for `gate_ids`: the in-process gates (GATE_EVALUATORS) evaluated over the
+    project, the rest marked `manual` (run by the phase procedure / CI / a human). One source of
+    truth for the deterministic marks — run_phase's display and the checkpoint's LIVE gate_results
+    (#213) both resolve a gate through GATE_EVALUATORS, so the two can never diverge."""
+    out = {}
+    for g in gate_ids:
+        evaluator = GATE_EVALUATORS.get(g)
+        out[g] = evaluator(manifest, ctx or {})[0] if evaluator else "manual"
+    return out
+
+
 def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, strict=False):
     """Run `phase`'s deterministic outgoing gates over the project. Returns (lines, ok): `ok` is
     False when a gate the orchestrator can evaluate FAILs (manual/skipped never fail), or — under
