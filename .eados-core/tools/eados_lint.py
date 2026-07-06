@@ -198,25 +198,62 @@ def check_generate_references(fail):
 
 
 # ---------------------------------------------------------------------------
-# 4. Agent registry — every role file is indexed in agent/README.md
+# 4. Agent registry — every role file is indexed in agent/README.md, AND every persona link in
+#    the index resolves to a file that exists (both directions, mirroring workflow-safety /
+#    gate-coverage — a renamed or deleted persona must not leave a dead catalogue entry).
 # ---------------------------------------------------------------------------
+_AGENT_MD_LINK = re.compile(r"\]\(([^)]+\.md)\)")
+
+
+def _persona_relative_links(index_text):
+    """The persona `.md` links in agent/README.md that resolve UNDER agent/ — i.e. NOT http(s)://,
+    NOT absolute, NOT `../`-escaping (the `../config/README.md` / `../learning/README.md` links stay
+    out of the on-disk probe), and not the index's own README.md."""
+    out = set()
+    for target in (m.group(1).strip() for m in _AGENT_MD_LINK.finditer(index_text)):
+        norm = target.replace("\\", "/")
+        if norm.startswith(("http://", "https://", "/")) or norm.startswith("../") or "/../" in norm:
+            continue
+        if norm == "README.md":
+            continue
+        out.add(norm)
+    return out
+
+
+def agent_registry_problems(index_text, persona_rels):
+    """Both directions of the agent-registry contract, pure/injectable (mirrors
+    workflow_safety_problems / gate_coverage_problems):
+      * every persona present under agent/ (relpath, README.md excluded) must be LISTED in the index;
+      * every persona-relative `.md` link in the index must EXIST as a persona file.
+    Returns a list of problems (empty == the index and the files agree both ways)."""
+    problems = []
+    listed = _persona_relative_links(index_text)
+    for rel in sorted(persona_rels):
+        if rel not in listed:
+            problems.append(f"agent persona '{rel}' is not listed in agent/README.md")
+    for rel in sorted(listed):
+        if rel not in persona_rels:
+            problems.append(f"agent/README.md lists '{rel}' which does not exist under agent/")
+    return problems
+
+
 def check_agent_registry(fail):
     name = "agent-registry"
     agent_dir = os.path.join(ROOT, "agent")
     index_path = os.path.join(agent_dir, "README.md")
     if not os.path.isdir(agent_dir) or not os.path.exists(index_path):
         return
-    index = read(index_path)
     # Walk recursively so domain-overlay personas (agent/domains/<domain>/<role>.md) are indexed
     # too, matched by their path RELATIVE to agent/ — not basename, since an overlay shares its
     # basename with the default persona it specializes.
+    persona_rels = set()
     for cur, _dirs, files in os.walk(agent_dir):
         for fn in sorted(files):
             if not fn.endswith(".md") or fn == "README.md":
                 continue
-            rel = os.path.relpath(os.path.join(cur, fn), agent_dir).replace(os.sep, "/")
-            if f"({rel})" not in index:
-                fail(name, f"agent persona '{rel}' is not listed in agent/README.md")
+            persona_rels.add(os.path.relpath(os.path.join(cur, fn), agent_dir).replace(os.sep, "/"))
+    for problem in agent_registry_problems(read(index_path), persona_rels):
+        fail(name, problem)
 
 
 # ---------------------------------------------------------------------------
