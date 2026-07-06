@@ -48,9 +48,24 @@ def main():
     chosen = collections.defaultdict(collections.Counter)
     defaults = collections.defaultdict(set)
     totals = collections.Counter()
+    analyzed = 0                      # records actually parsed (skipped files don't count, #198)
     for path in files:
-        with open(path, encoding="utf-8") as handle:
-            rec = load_yaml(handle.read())
+        # Report-only tools degrade PER FILE: one record outside the loader's subset (a folded
+        # scalar, an unclosed quote) or a non-mapping root must not abort the whole analysis with a
+        # traceback — these run on bundles / fresh checkouts where the run-records gate may never
+        # have executed. Skip the file, name it, and keep going (#198).
+        try:
+            with open(path, encoding="utf-8") as handle:
+                rec = load_yaml(handle.read())
+        except (OSError, ValueError) as exc:
+            print(f"autotune: skipping {os.path.basename(path)}: {exc} "
+                  "(run eados_lint run-records to see why)", file=sys.stderr)
+            continue
+        if not isinstance(rec, dict):
+            print(f"autotune: skipping {os.path.basename(path)}: not a YAML mapping "
+                  "(run eados_lint run-records)", file=sys.stderr)
+            continue
+        analyzed += 1
         # Collapse duplicate overrides of the same key WITHIN one record (last wins): a key
         # listed twice must not inflate its chosen-count past totals[key] (a false majority).
         per_record = {}
@@ -75,14 +90,14 @@ def main():
         n = counter[value]
         if n >= args.threshold and n * 2 > totals[key]:
             old = " / ".join(sorted(d for d in defaults[key] if d)) or "(built-in)"
-            proposals.append((n, len(files), key, old, value))
+            proposals.append((n, analyzed, key, old, value))
 
     if not proposals:
-        print(f"autotune: {len(files)} run(s) analyzed — no default is overridden often "
+        print(f"autotune: {analyzed} run(s) analyzed — no default is overridden often "
               f"enough (threshold {args.threshold}) to propose a change.")
         return 0
 
-    print(f"autotune: {len(files)} run(s) analyzed — proposed default changes:\n")
+    print(f"autotune: {analyzed} run(s) analyzed — proposed default changes:\n")
     for n, total, key, old, value in sorted(proposals, reverse=True):
         print(f"  • {key}: overridden to '{value}' in {n}/{total} runs "
               f"(current default: {old}). Consider updating the profile/config/questionnaire.")

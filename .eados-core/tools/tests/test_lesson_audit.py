@@ -161,6 +161,28 @@ def main():
         check("no records is a clean exit-0 no-op",
               code == 0 and "no run records yet" in out.getvalue(), failures)
 
+    # --- #198: a malformed record must not abort the audit — the valid record is still analyzed,
+    #     the bad file is named on stderr, and the tool exits 0 (report-only degrades per file) ---
+    with tempfile.TemporaryDirectory() as tmp:
+        with open(os.path.join(tmp, "2026-07-06-ok.yaml"), "w",
+                  encoding="utf-8", newline="\n") as fh:
+            fh.write(_record(slug="ok"))
+        with open(os.path.join(tmp, "bad.yaml"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("note: >\n  folded body the loader rejects\n")
+        runs_before, argv = la.RUNS, sys.argv
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            la.RUNS, sys.argv = tmp, ["lesson_audit.py"]
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                code = la.main()
+        finally:
+            la.RUNS, sys.argv = runs_before, argv
+        check("a malformed record does not abort lesson_audit (exit 0)", code == 0, failures)
+        check("the valid record is still analyzed despite the bad file",
+              "1 run record(s)" in out.getvalue(), failures)
+        check("the malformed record is named on stderr, not a traceback",
+              "skipping bad.yaml" in err.getvalue(), failures)
+
     if failures:
         print("test-lesson-audit: FAIL\n")
         for f in failures:

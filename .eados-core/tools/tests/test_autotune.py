@@ -63,6 +63,41 @@ def main():
         check("genuine cross-record majority is proposed",
               "toolchain.linter" in out and "ruff" in out, failures)
 
+        # --- #198: one malformed record (a folded scalar the loader rejects) must not abort the
+        #     analysis — the valid records still propose, the bad file is named on stderr, exit 0 ---
+        with open(os.path.join(tmp, "bad.yaml"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("note: >\n  folded body the loader rejects\n")
+        out2, err2, saved = io.StringIO(), io.StringIO(), sys.argv
+        sys.argv = ["autotune.py", "--threshold", "2"]
+        try:
+            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+                rc = autotune.main()
+        finally:
+            sys.argv = saved
+        check("a malformed record does not abort autotune (exit 0)", rc == 0, failures)
+        check("valid records still produce a proposal despite the bad file",
+              "toolchain.linter" in out2.getvalue(), failures)
+        check("the malformed record is named on stderr, not a traceback",
+              "skipping bad.yaml" in err2.getvalue(), failures)
+
+    # --- #198: a record whose root parses to a non-mapping is skipped, not an AttributeError ---
+    with tempfile.TemporaryDirectory() as tmp:
+        autotune.RUNS = tmp
+        with open(os.path.join(tmp, "list.yaml"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("x\n")
+        saved_loader, saved = autotune.load_yaml, sys.argv
+        autotune.load_yaml = lambda _text: ["not", "a", "dict"]   # force a non-dict record root
+        out3, err3 = io.StringIO(), io.StringIO()
+        sys.argv = ["autotune.py"]
+        try:
+            with contextlib.redirect_stdout(out3), contextlib.redirect_stderr(err3):
+                rc = autotune.main()
+        finally:
+            autotune.load_yaml, sys.argv = saved_loader, saved
+        check("a non-mapping record is skipped without an AttributeError (exit 0)", rc == 0, failures)
+        check("the non-mapping record is named as skipped",
+              "not a YAML mapping" in err3.getvalue(), failures)
+
     if failures:
         print("test-autotune: FAIL\n")
         for f in failures:

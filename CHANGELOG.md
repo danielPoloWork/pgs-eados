@@ -40,6 +40,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
   written). `tools/tests/test_run_records.py` covers the `-2`/`-3` progression and an end-to-end
   same-day pair asserting two distinct files and a truthful second `date:`.
 
+- **The learning-loop miners skip one malformed run record instead of aborting the whole analysis
+  (#198).** `autotune.py` and `lesson_audit.py` read every `learning/runs/*.yaml` through the
+  minimal loader in a bare loop, so a single record outside its subset (a folded scalar, an unclosed
+  quote) killed the entire run with an uncaught `ValueError` traceback — and `autotune` had no
+  non-mapping-root guard either, so a record parsing to a scalar/list raised `AttributeError`. These
+  are report-only tools that also run on bundles and fresh checkouts where the `run-records` gate may
+  never have executed, so they must degrade **per file**. Both now wrap the per-record
+  `load_yaml` in `try/except (OSError, ValueError)`, skip a non-mapping root, print a
+  `skipping <file>: <error> (run eados_lint run-records)` line to stderr, and keep going at exit 0;
+  the valid records still yield proposals. `autotune`'s "N run(s) analyzed" count now reflects the
+  records actually parsed, not the raw file count. The advisory CI steps (`ci.yml`) therefore print
+  a per-file skip rather than a stack trace. `tools/tests/test_autotune.py` and
+  `tools/tests/test_lesson_audit.py` cover a mixed valid/malformed directory (and the non-mapping
+  root for `autotune`).
+
 ### Security
 
 - **The renderer refuses to clobber pre-existing files — additive by default, `--force` to
