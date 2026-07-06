@@ -176,8 +176,9 @@ KNOWN_SECTIONS = {
 
 # Known top-level SCALARS (not sections). `schema_version` versions the manifest schema for
 # backward-compatible evolution (RFC-0001 §8 / OQ1); `domain` selects the target profile
-# (orchestrator/domains/<domain>.yaml, M1-C). Both are metadata, not sections/placeholders.
-KNOWN_SCALARS = {"schema_version", "domain"}
+# (orchestrator/domains/<domain>.yaml, M1-C); `manifest_rev` is the optimistic-concurrency counter
+# (#214). All are metadata, not sections/placeholders.
+KNOWN_SCALARS = {"schema_version", "domain", "manifest_rev"}
 
 # How an interview answer got its value (#169): posed to the maintainer, assumed from the
 # questionnaire default (and echoed back at confirmation), or carried in from an existing
@@ -188,7 +189,7 @@ _PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 # (system metadata) and the two state/meta sections. EVERY other top-level key present in the
 # manifest must appear in interview.provenance (#201) — a partial block silently starves override
 # derivation (derive_overrides treats an unrecorded key exactly like an explicitly `defaulted` one).
-PROVENANCE_EXEMPT = {"schema_version", "delivery_state", "interview"}
+PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview"}
 
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without
@@ -254,6 +255,11 @@ def validate_manifest(m, scalars):
             f"governance.start_version '{sv}' is not a numeric X.Y.Z version "
             "(did you swap it with version_start?)"
         )
+    # #214: the optimistic-concurrency counter is a non-negative integer when present (absent == 0).
+    rev = m.get("manifest_rev")
+    if rev is not None and not (isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0):
+        problems.append(f"manifest_rev must be a non-negative integer (the optimistic-concurrency "
+                        f"counter, #214), got {rev!r}")
     # #170: the spec-substance floor. The deterministic (no-agent) path had no floor at all — a
     # manifest with an empty spec rendered "Render: OK" and a hollow repository (blank SPEC.md,
     # a roadmap with nothing beyond the bootstrap). A FLOOR, not a taste test: presence only;

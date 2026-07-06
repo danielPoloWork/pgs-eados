@@ -113,12 +113,13 @@ own audit record — its own observation, not a copy of `workflow.yaml`:
 
 ```text
 $ python .eados-core/tools/phase_runner.py project.yaml --propose plan --rfc docs/rfc/0001-sample.md
-proposed transition: design -> plan
+proposed transition: design -> plan  (read at manifest_rev 0)
   LEGAL — gates to satisfy: rfc-approved; human-gated: yes
   gate results (live): rfc-approved=OK
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
     - { from: design, to: plan, gates: ['rfc-approved'], at: 2026-07-06, confirmed_by: <owner>, gate_results: { rfc-approved: OK } }
     phase: plan
+    (top-level) manifest_rev: 1   # bump the optimistic-concurrency counter, and re-run with --expect-rev 0 before writing to catch a concurrent edit (#214)
     (human-gated — replace <owner> in confirmed_by with who approved the move)
 ```
 
@@ -127,7 +128,10 @@ A gate that is not `OK`/`manual` (e.g. `rfc-approved=needs-input` when `--rfc` i
 are not all `OK`/`manual`, so a transition can't be logged as taken over a gate that did not pass.
 
 > **Human gate.** You confirm the move by editing the manifest: append that checkpoint under
-> `delivery_state.checkpoints` and set `delivery_state.phase: plan`. Nothing advanced on its own.
+> `delivery_state.checkpoints`, set `delivery_state.phase: plan`, and bump `manifest_rev` to `1`.
+> Before writing, re-run the propose with `--expect-rev 0` (#214): if another session moved the rev
+> in the meantime it refuses with a `CONFLICT`, so a parallel edit fails loud instead of silently
+> losing one. Nothing advanced on its own.
 
 ---
 

@@ -8,6 +8,11 @@
 # --- EADOS delivery-state layer (M1-B) — OPTIONAL; the renderer ignores it. ---
 # schema_version versions the manifest for backward-compatible evolution (resolves OQ1).
 schema_version: 1
+# manifest_rev is an OPTIMISTIC-CONCURRENCY counter (#214): the phase runner prints the rev it read,
+# and you bump it by 1 every time you write delivery_state back. Before writing, re-run the propose
+# with `--expect-rev <N>` — it refuses if another session moved the rev, so parallel edits fail loud
+# instead of silently losing one. Absent == rev 0 (a legacy manifest is unlocked, still works).
+manifest_rev: 0
 domain: software             # development target: software|web|game|mobile -> orchestrator/domains/<domain>.yaml
 # delivery_state holds STATE + cross-link REFS (ids), never content — Git stays the source of
 # truth for content (RFC-0001 §8). The phase runner (M1-E) reads/writes it; a legacy manifest

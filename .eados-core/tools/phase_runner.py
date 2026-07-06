@@ -63,6 +63,13 @@ def manifest_domain(manifest):
     return dom.strip() if isinstance(dom, str) and dom.strip() else "software"
 
 
+def manifest_rev(manifest):
+    """The manifest's optimistic-concurrency counter (#214); 0 when absent (a legacy manifest is
+    unlocked). A non-int/negative value reads as 0 here — validate_manifest is what rejects it."""
+    rev = manifest.get("manifest_rev") if isinstance(manifest, dict) else None
+    return rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0
+
+
 def apply_overlay(workflow, domain):
     """The workflow adapted to `domain` (#165): `domain_overlays[<domain>]` merged into a deep
     copy. `insert_states` are appended as human-owner states (no automated role exists for them),
@@ -99,7 +106,7 @@ def report(manifest_path, out=sys.stdout):
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
     states = state_ids(workflow)
     phase = current_phase(manifest)
-    print(f"current phase: {phase}", file=out)
+    print(f"current phase: {phase}  (manifest_rev {manifest_rev(manifest)})", file=out)
     if phase not in states:
         print(f"  ERROR: '{phase}' is not a declared workflow state {states}", file=out)
         return 1
@@ -208,7 +215,7 @@ def checkpoint_chain_problems(manifest, workflow):
     return problems
 
 
-def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=None):
+def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=None, expect_rev=None):
     """Report and validate the transition frm -> to_phase, and emit its checkpoint. When an
     `evaluate` callable is supplied (`(gate_ids, manifest, ctx) -> {gate: mark}`, injected so the
     engine stays testable and free of an eados import cycle), the transition's deterministic gates
@@ -216,13 +223,21 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
     audit trail becomes the runner's own observation, not a copy of workflow.yaml. A gate that is
     not OK/manual means the move is not ready to record (the same rule checkpoint_chain_problems
     enforces at manifest-valid time); the exit code stays 0 for a LEGAL move (legality, not gate
-    satisfaction — `eados.py <phase> --strict` is the fail-closed gate check)."""
+    satisfaction — `eados.py <phase> --strict` is the fail-closed gate check). `expect_rev` (#214) is
+    the optimistic-concurrency guard: pass the rev you last read and the move is REFUSED if the file
+    has moved since (another session wrote), so a parallel edit fails loud instead of clobbering."""
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
+    rev = manifest_rev(manifest)
+    if expect_rev is not None and expect_rev != rev:
+        print(f"CONFLICT: manifest_rev is {rev}, but you expected {expect_rev} — another session "
+              "changed the manifest since you read it. Re-read it and redo the transition (#214).",
+              file=out)
+        return 1
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
     states = state_ids(workflow)
     frm = current_phase(manifest)
-    print(f"proposed transition: {frm} -> {to_phase}", file=out)
+    print(f"proposed transition: {frm} -> {to_phase}  (read at manifest_rev {rev})", file=out)
     if to_phase not in states:
         print(f"  ILLEGAL: '{to_phase}' is not a declared workflow state {states}", file=out)
         return 1
@@ -249,6 +264,9 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
     print(f"    - {{ from: {cp['from']}, to: {cp['to']}, gates: {cp['gates']}, "
           f"at: {cp['at']}{confirmed}{results} }}", file=out)
     print(f"    phase: {to_phase}", file=out)
+    print(f"    (top-level) manifest_rev: {rev + 1}   # bump the optimistic-concurrency counter, and "
+          f"re-run with --expect-rev {rev} before writing to catch a concurrent edit (#214)",
+          file=out)
     if "confirmed_by" in cp:
         print("    (human-gated — replace <owner> in confirmed_by with who approved the move)",
               file=out)
@@ -274,6 +292,9 @@ def main(argv=None):
     ap.add_argument("--rfc", help="an RFC file to evaluate the rfc-approved gate live (design -> plan)")
     ap.add_argument("--roadmap", help="ROADMAP.md to evaluate roadmap-covers-rfcs live "
                                       "(default: <manifest-dir>/ROADMAP.md)")
+    ap.add_argument("--expect-rev", type=int, dest="expect_rev", metavar="N",
+                    help="optimistic-concurrency guard (#214): refuse if the manifest's manifest_rev "
+                         "is not N (another session changed it since you read it)")
     args = ap.parse_args(argv)
     try:
         if args.propose:
@@ -284,8 +305,8 @@ def main(argv=None):
             roadmap_path = args.roadmap or os.path.join(root, "ROADMAP.md")
             ctx = {"roadmap_text": _read_text(roadmap_path),
                    "rfc_text": _read_text(args.rfc) if args.rfc else None}
-            return report_propose(args.manifest, args.propose,
-                                  evaluate=eados.evaluate_gates, ctx=ctx)
+            return report_propose(args.manifest, args.propose, evaluate=eados.evaluate_gates,
+                                  ctx=ctx, expect_rev=args.expect_rev)
         return report(args.manifest)
     except (OSError, ValueError) as exc:
         print(f"phase-runner: cannot read manifest {args.manifest!r}: {exc}", file=sys.stderr)

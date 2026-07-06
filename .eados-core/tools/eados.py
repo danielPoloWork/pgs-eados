@@ -183,7 +183,9 @@ def main(argv=None):
         lines, ok = run_phase(args.command, manifest, workflow, roadmap_text, rfc_text,
                               strict=args.strict)
 
-    print(f"EADOS {args.command} - {args.manifest}")
+    # #214: surface the optimistic-concurrency counter the readout validated against, so a caller
+    # can pass it to `phase_runner --propose --expect-rev N` before writing.
+    print(f"EADOS {args.command} - {args.manifest}  (manifest_rev {phase_runner.manifest_rev(manifest)})")
     for line in lines:
         print(f"  {line}")
     return 0 if ok else 1

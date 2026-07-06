@@ -136,6 +136,13 @@ def main():
     check("non-numeric start_version rejected",
           has(VALID.replace('start_version: "0.0.0"', 'start_version: "pre-1.0"'),
               "not a numeric"), failures)
+    # #214: the optimistic-concurrency counter is a non-negative integer when present; absence is
+    # legal (the VALID control carries none) — a legacy manifest stays unlocked.
+    check("a valid manifest_rev passes", _problems(VALID + "\nmanifest_rev: 4\n") == [], failures)
+    check("a negative manifest_rev is rejected",
+          has(VALID + "\nmanifest_rev: -1\n", "non-negative integer"), failures)
+    check("a non-integer manifest_rev is rejected",
+          has(VALID + '\nmanifest_rev: "x"\n', "non-negative integer"), failures)
     # A known section given as a scalar must be reported, not crash build_context.
     check("section of wrong type rejected (no crash)",
           has(VALID.replace("language: { lang: go, group_path: it/d4np }", "language: nope"),

@@ -11,6 +11,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **Optimistic concurrency for the manifest — parallel sessions can no longer silently lose an
+  update (#214, epic #203).** `project.yaml` is the single mutable source of truth, but nothing
+  detected concurrent mutation: two agent sessions (or an agent plus a human editor) interleaving
+  read-modify-write cycles would silently lose the earlier write. A new top-level **`manifest_rev`**
+  counter (added to `project.yaml.template`, `KNOWN_SCALARS`, and `PROVENANCE_EXEMPT`; validated as a
+  non-negative integer; **absent == 0**, so a legacy manifest stays unlocked and works unchanged) is
+  the optimistic lock. `phase_runner`'s report/propose and `eados.py` now **surface the `manifest_rev`
+  they read**, and `phase_runner --propose` emits a template that bumps it to `rev+1`. A new
+  **`--expect-rev N`** guard on `phase_runner --propose` refuses with a `CONFLICT` (exit 1) when the
+  file's `manifest_rev` has moved since the caller read it — so before writing a checkpoint back you
+  re-run the propose with the rev you last saw, and a concurrent edit fails **loud** instead of
+  clobbering. Covered by `test_phase_runner.py` (the `manifest_rev` accessor + the match/mismatch/
+  legacy `--expect-rev` paths) and `test_render_guards.py` (the shape check); the `walkthrough.md`
+  transcript shows the rev surfacing and the `--expect-rev` guard.
+
 - **A transition's checkpoint now records live `gate_results` — the phase-tagged audit trail is the
   runner's own observation (#213, epic #203).** #199 enriched the checkpoint with `at:` and
   `confirmed_by:` and made `checkpoint_chain_problems` validate `gate_results` *when present*, but
