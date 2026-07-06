@@ -114,8 +114,9 @@ $ python .eados-core/tools/phase_runner.py project.yaml --propose plan
 proposed transition: design -> plan
   LEGAL — gates to satisfy: rfc-approved; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: design, to: plan, gates: ['rfc-approved'] }
+    - { from: design, to: plan, gates: ['rfc-approved'], at: 2026-07-06, confirmed_by: <owner> }
     phase: plan
+    (human-gated — replace <owner> in confirmed_by with who approved the move)
 ```
 
 > **Human gate.** You confirm the move by editing the manifest: append that checkpoint under
@@ -140,7 +141,7 @@ $ python .eados-core/tools/phase_runner.py project.yaml --propose scaffold
 proposed transition: plan -> scaffold
   LEGAL — gates to satisfy: roadmap-covers-rfcs; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: plan, to: scaffold, gates: ['roadmap-covers-rfcs'] }
+    - { from: plan, to: scaffold, gates: ['roadmap-covers-rfcs'], at: 2026-07-06, confirmed_by: <owner> }
     phase: scaffold
 ```
 
@@ -188,7 +189,7 @@ $ python .eados-core/tools/phase_runner.py project.yaml --propose refactor
 proposed transition: audit -> refactor
   LEGAL — gates to satisfy: risk-register-present; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: audit, to: refactor, gates: ['risk-register-present'] }
+    - { from: audit, to: refactor, gates: ['risk-register-present'], at: 2026-07-06, confirmed_by: <owner> }
     phase: refactor
 ```
 

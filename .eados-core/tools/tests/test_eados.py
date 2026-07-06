@@ -33,15 +33,49 @@ SPEC_FLOOR = {
     "milestones": [{"number": 2, "title": "Harden", "goal": "Stable API",
                     "items": ["2.1 freeze the API"]}],
 }
-MANIFEST_YAML = (
-    "identity:\n  project_name: Demo\n  project_slug: demo\n  project_kind: library\n"
-    "ownership:\n  owner: me\n  license_id: MIT\n  default_branch: main\n"
-    "language:\n  lang: cpp\n  group_path: it/x\n"
-    "spec:\n  objective: A demo library.\n  functional_reqs: [do one thing]\n"
-    "  verification: unit tests\n"
-    "  milestones:\n    - { number: 2, title: Harden, goal: Stable API, items: [\"2.1 freeze the API\"] }\n"
-    "delivery_state:\n  phase: plan\n  refs:\n    rfcs:\n      - RFC-0001\n    milestones:\n      - \"1\"\n"
-)
+
+# The canonical pipeline hops (from, to, human_gated) — used to synthesize the legal checkpoint
+# chain #199 now requires: a manifest at a non-init phase must record how it got there.
+_PIPELINE = [("init", "design", True), ("design", "plan", True), ("plan", "scaffold", True),
+             ("scaffold", "audit", False), ("audit", "refactor", True)]
+_ORDER = ["init", "design", "plan", "scaffold", "audit", "refactor"]
+
+
+def _chain_to(phase):
+    """A legal, contiguous checkpoint chain from init up to `phase` (empty at init), with a
+    `confirmed_by` on every human-gated hop — the evidence delivery-state-consistency (#199) wants."""
+    chain = []
+    for frm, to, human in _PIPELINE:
+        if _ORDER.index(to) > _ORDER.index(phase):
+            break
+        cp = {"from": frm, "to": to, "at": "2026-07-01"}
+        if human:
+            cp["confirmed_by"] = "owner"
+        chain.append(cp)
+    return chain
+
+
+def manifest_yaml(phase, domain=None):
+    """A raw manifest string at `phase` carrying the legal checkpoint chain (#199)."""
+    lines = [
+        "identity:", "  project_name: Demo", "  project_slug: demo", "  project_kind: library",
+        "ownership:", "  owner: me", "  license_id: MIT", "  default_branch: main",
+        "language:", "  lang: cpp", "  group_path: it/x",
+        "spec:", "  objective: A demo library.", "  functional_reqs: [do one thing]",
+        "  verification: unit tests", "  milestones:",
+        '    - { number: 2, title: Harden, goal: Stable API, items: ["2.1 freeze the API"] }',
+        "delivery_state:", f"  phase: {phase}",
+    ]
+    chain = _chain_to(phase)
+    if chain:
+        lines.append("  checkpoints:")
+        for cp in chain:
+            conf = f", confirmed_by: {cp['confirmed_by']}" if "confirmed_by" in cp else ""
+            lines.append(f'    - {{ from: {cp["from"]}, to: {cp["to"]}, at: "{cp["at"]}"{conf} }}')
+    lines += ["  refs:", "    rfcs:", "      - RFC-0001", "    milestones:", '      - "1"']
+    if domain:
+        lines.append(f"domain: {domain}")
+    return "\n".join(lines) + "\n"
 
 
 def manifest_at(phase, rfcs=("RFC-0001",)):
@@ -50,7 +84,8 @@ def manifest_at(phase, rfcs=("RFC-0001",)):
         "ownership": {"owner": "me", "license_id": "MIT", "default_branch": "main"},
         "language": {"lang": "cpp", "group_path": "it/x"},
         "spec": dict(SPEC_FLOOR),
-        "delivery_state": {"phase": phase, "refs": {"rfcs": list(rfcs), "milestones": ["1"]}},
+        "delivery_state": {"phase": phase, "checkpoints": _chain_to(phase),
+                           "refs": {"rfcs": list(rfcs), "milestones": ["1"]}},
     }
 
 
@@ -120,7 +155,7 @@ def main():
     env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
     with tempfile.TemporaryDirectory() as d:
         with open(os.path.join(d, "project.yaml"), "w", encoding="utf-8") as h:
-            h.write(MANIFEST_YAML)
+            h.write(manifest_yaml("plan"))
         with open(os.path.join(d, "ROADMAP.md"), "w", encoding="utf-8") as h:
             h.write(ROADMAP)
         eados_py = os.path.join(TOOLS, "eados.py")
@@ -140,7 +175,7 @@ def main():
         # #165: the CLI reads the manifest's domain and applies its overlay end-to-end
         game = os.path.join(d, "game.yaml")
         with open(game, "w", encoding="utf-8") as h:
-            h.write(MANIFEST_YAML.replace("phase: plan", "phase: scaffold") + "domain: game\n")
+            h.write(manifest_yaml("scaffold", domain="game"))
         rc, out = run("scaffold", game)
         check("CLI applies the manifest's domain overlay ([manual] hardware-budget)",
               rc == 0 and "[manual] hardware-budget" in out, failures)

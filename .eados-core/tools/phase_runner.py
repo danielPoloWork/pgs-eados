@@ -14,6 +14,7 @@ Dependency-free: the Python standard library plus the sibling renderer's YAML lo
 """
 
 import copy
+import datetime
 import os
 import sys
 
@@ -113,12 +114,89 @@ def propose_transition(workflow, from_phase, to_phase):
     return None
 
 
-def emit_checkpoint(from_phase, transition):
-    """The delivery_state checkpoint the agent appends after a CONFIRMED transition. The runner
-    returns it; the agent writes it to the manifest and the human confirms human-gated moves —
-    the runner itself never writes state (reports, never advances)."""
-    return {"from": from_phase, "to": transition.get("to"),
-            "gates": transition.get("entry_gates") or []}
+def emit_checkpoint(from_phase, transition, at=None, confirmed_by=None, gate_results=None):
+    """The delivery_state checkpoint the agent appends after a CONFIRMED transition: the transition
+    edge (`from`/`to`), the declared `gates`, the date `at`, and — for a human-gated move —
+    `confirmed_by` (who approved it; a `<owner>` placeholder the human fills in). `gate_results`
+    (gate id -> OK/manual) is recorded only when the caller evaluated the gates; wiring that live
+    evaluation lands with the audit-trail work (#203), and `checkpoint_chain_problems` already
+    validates it when present. The runner returns the checkpoint; the agent writes it and the human
+    confirms human-gated moves — the runner itself never writes state (reports, never advances)."""
+    cp = {"from": from_phase, "to": transition.get("to"),
+          "gates": transition.get("entry_gates") or [],
+          "at": at or datetime.date.today().isoformat()}
+    if transition.get("human_gate"):
+        cp["confirmed_by"] = confirmed_by or "<owner>"
+    if gate_results is not None:
+        cp["gate_results"] = gate_results
+    return cp
+
+
+_CHECKPOINT_OK_MARKS = ("OK", "manual")
+
+
+def checkpoint_chain_problems(manifest, workflow):
+    """Validate `delivery_state.checkpoints` as a legal, contiguous transition chain through the
+    (overlay-applied) `workflow`, ending at the current `phase`. This closes the honor-system gap
+    (#199): a hallucinating or shortcut-taking agent can no longer set `phase: scaffold` without the
+    intervening `init -> design -> plan -> scaffold` checkpoints. Rules:
+
+      * a legacy manifest with no `delivery_state` is exempt (backward-compat, M1-B);
+      * `checkpoints` must be a list; each item a `{from, to}` mapping;
+      * every `{from, to}` must be a declared transition, and each must continue from the previous
+        checkpoint's `to` (the chain is contiguous, rooted at `init`);
+      * a human-gated transition (`human_gate: true`) must carry a `confirmed_by:` — mechanical
+        evidence a human approved it, not the agent's narrative;
+      * a recorded `gate_results` (when present) must be all `OK`/`manual` — a transition taken over
+        a failing gate is illegal;
+      * the last checkpoint's `to` must equal the current `phase`; with no checkpoints the phase
+        must still be `init`.
+
+    Pure — no I/O. Returns a list of problem strings (empty == consistent)."""
+    ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
+    if not isinstance(ds, dict):
+        return []                                # no delivery_state — nothing to enforce (legacy)
+    phase = ds.get("phase", "init")
+    checkpoints = ds.get("checkpoints")
+    if checkpoints is None:
+        checkpoints = []
+    if not isinstance(checkpoints, list):
+        return ["delivery_state.checkpoints must be a list of {from, to} transitions"]
+
+    problems, prev_to = [], "init"
+    for i, cp in enumerate(checkpoints):
+        if not isinstance(cp, dict):
+            problems.append(f"delivery_state.checkpoints[{i}] must be a {{from, to}} mapping")
+            continue
+        frm, to = cp.get("from"), cp.get("to")
+        if frm != prev_to:
+            problems.append(f"delivery_state.checkpoints[{i}] starts at '{frm}' but the previous "
+                            f"state is '{prev_to}' — the checkpoint chain is not contiguous")
+        transition = propose_transition(workflow, frm, to)
+        if transition is None:
+            problems.append(f"delivery_state.checkpoints[{i}] '{frm} -> {to}' is not a legal "
+                            "transition in the workflow")
+        else:
+            if transition.get("human_gate") and not str(cp.get("confirmed_by") or "").strip():
+                problems.append(f"delivery_state.checkpoints[{i}] '{frm} -> {to}' is human-gated "
+                                "and needs a 'confirmed_by:' entry (who approved the move)")
+            results = cp.get("gate_results")
+            if isinstance(results, dict):
+                for gate, mark in results.items():
+                    if str(mark).strip() not in _CHECKPOINT_OK_MARKS:
+                        problems.append(f"delivery_state.checkpoints[{i}] '{frm} -> {to}' records "
+                                        f"gate '{gate}' as {mark!r} — a transition may not be taken "
+                                        f"over a gate that is not {' / '.join(_CHECKPOINT_OK_MARKS)}")
+        if to is not None:
+            prev_to = to
+    if checkpoints:
+        if prev_to != phase:
+            problems.append(f"delivery_state.phase is '{phase}' but the checkpoint chain ends at "
+                            f"'{prev_to}' — the current phase must be the last transition's target")
+    elif phase != "init":
+        problems.append(f"delivery_state.phase is '{phase}' but there are no checkpoints — a "
+                        "non-init phase must record the transitions that reached it (no phase-skip)")
+    return problems
 
 
 def report_propose(manifest_path, to_phase, out=sys.stdout):
@@ -142,8 +220,13 @@ def report_propose(manifest_path, to_phase, out=sys.stdout):
           f"human-gated: {'yes' if t.get('human_gate') else 'no'}", file=out)
     cp = emit_checkpoint(frm, t)
     print("  emit — append to delivery_state.checkpoints, then set delivery_state.phase:", file=out)
-    print(f"    - {{ from: {cp['from']}, to: {cp['to']}, gates: {cp['gates']} }}", file=out)
+    confirmed = f", confirmed_by: {cp['confirmed_by']}" if "confirmed_by" in cp else ""
+    print(f"    - {{ from: {cp['from']}, to: {cp['to']}, gates: {cp['gates']}, "
+          f"at: {cp['at']}{confirmed} }}", file=out)
     print(f"    phase: {to_phase}", file=out)
+    if "confirmed_by" in cp:
+        print("    (human-gated — replace <owner> in confirmed_by with who approved the move)",
+              file=out)
     return 0
 
 
