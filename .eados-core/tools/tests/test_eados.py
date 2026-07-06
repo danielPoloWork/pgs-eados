@@ -123,8 +123,16 @@ def main():
     check("design with an approved RFC passes rfc-approved", has(lines, "[OK] rfc-approved"), failures)
     check("design with a good RFC is ok", ok, failures)
     lines, ok = eados.run_phase("design", manifest_at("design"), wf, None, None)
-    check("design without --rfc skips rfc-approved", has(lines, "[skipped] rfc-approved"), failures)
-    check("a skipped gate does not fail the phase", ok, failures)
+    check("design with recorded RFC refs but no --rfc is needs-input (not skipped)",
+          has(lines, "[needs-input] rfc-approved"), failures)
+    check("needs-input does not fail the phase without --strict", ok, failures)
+    # #200: under --strict a needs-input gate (a checkable input was withheld) fails the phase, but
+    # a genuinely not-applicable skipped gate still passes — the gate can't be satisfied by omission.
+    _l, ok_strict = eados.run_phase("design", manifest_at("design"), wf, None, None, strict=True)
+    check("needs-input FAILs the phase under --strict", not ok_strict, failures)
+    lines, ok = eados.run_phase("design", manifest_at("design", rfcs=()), wf, None, None, strict=True)
+    check("no recorded RFC refs is skipped (not applicable) and passes even under --strict",
+          has(lines, "[skipped] rfc-approved") and ok, failures)
 
     # --- scaffold: its gates need a rendered repo -> [manual], nothing fails ---
     lines, ok = eados.run_phase("scaffold", manifest_at("scaffold"), wf)

@@ -161,6 +161,23 @@ def main():
         rc, out = run_tool("phase_runner.py", manifest("design"), "--propose", "plan")
         expect(failures, "design: design -> plan is LEGAL", rc, out, 0, "LEGAL", "rfc-approved")
 
+        # === #200: eados.py phase gates are fail-closed under --strict ============================
+        # design records RFC refs but we pass no --rfc: rfc-approved is `needs-input` — it passes by
+        # default, but FAILs under --strict (a checkable input was withheld, not "not applicable").
+        rc, out = run_tool("eados.py", "design", manifest("design"))
+        expect(failures, "eados design: needs-input passes without --strict", rc, out, 0,
+               "[needs-input] rfc-approved")
+        rc, out = run_tool("eados.py", "design", manifest("design"), "--strict")
+        expect(failures, "eados design --strict: needs-input FAILs the phase", rc, out, 1,
+               "[needs-input] rfc-approved")
+        # a manifest with NO recorded refs is genuinely not-applicable: `skipped`, and it still
+        # passes even under --strict (only a WITHHELD checkable input fails).
+        no_refs = write("no-refs.yaml", "schema_version: 1\ndelivery_state:\n  phase: design\n"
+                        "  refs:\n    rfcs: []\n    milestones: []\n")
+        rc, out = run_tool("eados.py", "design", no_refs, "--strict")
+        expect(failures, "eados design --strict: a skipped (no refs) gate still passes", rc, out, 0,
+               "[skipped] rfc-approved")
+
         # === plan phase — the roadmap-covers-rfcs gate ============================================
         rc, out = run_tool("traceability.py", roadmap, "RFC-0001")
         expect(failures, "plan: roadmap-covers-rfcs passes when the RFC is covered", rc, out, 0,
