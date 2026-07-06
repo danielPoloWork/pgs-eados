@@ -11,6 +11,24 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **Interview provenance is enforced *complete*, not just well-shaped — a partial block no longer
+  silently starves the learning loop (#201).** The learning loop derives its entire input (every run
+  record's `overrides:`) mechanically from the manifest's `interview:` provenance block, and
+  `derive_overrides` treats an **unrecorded** section exactly like an explicitly `defaulted` one. The
+  #169 guard checked only the *shape* of the entries present, so a lazily-filled block — `identity:
+  asked` but `language`/`governance`/… omitted — passed the gate and quietly suppressed override
+  derivation for the omitted sections, landing a short `overrides:` list that starves `autotune` /
+  `lesson_audit`. `validate_manifest` now additionally requires, when an `interview:` block is
+  present, a provenance entry for **every** answer-bearing top-level section that exists in the
+  manifest (all top-level keys except `schema_version` / `delivery_state` / `interview`) and a
+  non-empty `questionnaire_version` — naming the missing section(s). Block **absence** stays legal
+  (legacy manifests). `record_run.py` gains a `provenance_gaps()` helper and prints a per-section
+  **warning** at record time for any section missing an entry (a warning, not a failure — the gate
+  already rejects a partial block; this catches a manifest recorded without `--check`). The
+  `project.yaml.template` and `interview.md` now document the completeness requirement.
+  `tools/tests/test_render_guards.py` covers the coverage-gap and missing-`questionnaire_version`
+  rejections; `test_record_run.py` covers `provenance_gaps`.
+
 - **Phase gates are fail-closed under `--strict`, and `eados.py` no longer carries a dead
   `--links` affordance (#200).** `eados.py <phase>` returned exit 0 unless a gate it could compute
   `FAIL`ed — but several gates returned `skipped` when their *input was withheld*, so a gate was

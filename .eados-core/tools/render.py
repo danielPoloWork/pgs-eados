@@ -184,6 +184,12 @@ KNOWN_SCALARS = {"schema_version", "domain"}
 # artifact (e.g. a validated PRD/SRS import, Q5.0).
 _PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 
+# Top-level keys that carry no interview answer, so need no provenance entry: the schema version
+# (system metadata) and the two state/meta sections. EVERY other top-level key present in the
+# manifest must appear in interview.provenance (#201) — a partial block silently starves override
+# derivation (derive_overrides treats an unrecorded key exactly like an explicitly `defaulted` one).
+PROVENANCE_EXEMPT = {"schema_version", "delivery_state", "interview"}
+
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without
 # this guard a manifest missing these would render a hollow repo and still print "Render: OK".
@@ -274,6 +280,12 @@ def validate_manifest(m, scalars):
     # Optional (legacy manifests pass), but when present it must be honest.
     iv = m.get("interview")
     if isinstance(iv, dict):
+        # #201: the block is mandated complete (interview.md) — questionnaire_version set and one
+        # provenance entry per answer key. The #169 guard checked only the shape of what was
+        # present, so a PARTIAL block passed and silently suppressed override derivation.
+        if not str(iv.get("questionnaire_version") or "").strip():
+            problems.append("interview.questionnaire_version is missing or empty — set it to "
+                            "questionnaire.yaml's meta.version (#201)")
         prov = iv.get("provenance")
         if not isinstance(prov, dict) or not prov:
             problems.append("interview.provenance must be a non-empty mapping of "
@@ -288,6 +300,15 @@ def validate_manifest(m, scalars):
                     problems.append(
                         f"interview.provenance names '{key}' which is not a top-level key "
                         "of this manifest")
+            # Coverage: an answer-bearing section present in the manifest but MISSING from
+            # provenance is silently treated as `defaulted` and derives no override — the quiet,
+            # compounding failure that starves autotune / lesson_audit. Require an entry for each.
+            missing = sorted(k for k in m if k not in PROVENANCE_EXEMPT and k not in prov)
+            if missing:
+                problems.append(
+                    "interview.provenance is incomplete — no entry for "
+                    f"{', '.join(missing)}; record every answer key (an unrecorded section is "
+                    "silently treated as defaulted and derives no override, #201)")
     # #199: delivery-state consistency. `delivery_state.checkpoints` must be a legal, contiguous
     # transition chain ending at the current phase, and a human-gated move must carry a
     # `confirmed_by:` — so `phase: scaffold` can no longer be asserted without the intervening

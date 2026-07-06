@@ -124,17 +124,25 @@ spec:                         # Filled from Phase 5 of the intake interview. SUB
   milestones: []
 
 # Interview provenance (#169) — filled by the architect DURING the interview, never
-# retrospectively: for each top-level answer key above, how it got its value.
+# retrospectively: for EVERY top-level answer key above, how it got its value.
 #   asked     — the question was posed and the maintainer answered.
 #   defaulted — assumed from the questionnaire default and echoed back at confirmation.
 #   imported  — carried in from an existing artifact (e.g. a validated PRD/SRS, Q5.0 import).
 # State, not a placeholder source: the confirmation step reads the `defaulted` entries; the
-# learning loop consumes the block. validate_manifest rejects a wrong value or a key that is
-# not a top-level key of this manifest. Example:
+# learning loop consumes the block. validate_manifest rejects a wrong value, a key that is not a
+# top-level key of this manifest, AND (#201) a block that is incomplete or missing
+# questionnaire_version — one entry per answer key, or the omitted sections silently derive no
+# override. Example (complete — every answer-bearing section above has an entry):
 #
 # interview:
 #   questionnaire_version: 1        # questionnaire.yaml meta.version at interview time
 #   provenance:
 #     identity: asked
+#     ownership: asked
+#     language: asked
 #     toolchain: defaulted
+#     ci: asked
+#     governance: asked
+#     i18n: defaulted
+#     announce: defaulted
 #     spec: imported

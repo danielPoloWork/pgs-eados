@@ -106,11 +106,14 @@ def main():
     # --- #169: the interview provenance block — honest state passes; a wrong value, a
     #     dangling key, or a shapeless block is rejected; absence stays legal (the positive
     #     control at the top carries no block) ---
+    # A COMPLETE block covers every answer-bearing section VALID carries (identity, ownership,
+    # language, governance, spec) — #201 requires coverage, not just correct shape.
     WITH_PROV = VALID + (
         "\ninterview:\n  questionnaire_version: 1\n  provenance:\n"
         "    identity: asked\n    ownership: defaulted\n    language: asked\n"
+        "    governance: asked\n    spec: asked\n"
     )
-    check("manifest with an interview provenance block passes clean",
+    check("manifest with a complete interview provenance block passes clean",
           _problems(WITH_PROV) == [], failures)
     check("invalid provenance value rejected",
           has(WITH_PROV.replace("ownership: defaulted", "ownership: guessed"),
@@ -121,6 +124,13 @@ def main():
     check("shapeless interview block rejected (no provenance mapping)",
           has(VALID + "\ninterview:\n  questionnaire_version: 1\n",
               "non-empty mapping"), failures)
+    # #201: a PARTIAL block (a present section missing from provenance) and a block without a
+    # questionnaire_version are both rejected — coverage and version are now enforced, not just shape.
+    check("an incomplete provenance block (a present section omitted) is rejected",
+          has(WITH_PROV.replace("    governance: asked\n", ""), "no entry for governance"), failures)
+    check("a present interview block without questionnaire_version is rejected",
+          has(WITH_PROV.replace("  questionnaire_version: 1\n", ""), "questionnaire_version"),
+          failures)
     check("unknown top-level section rejected",
           has(VALID + "\nbogus: { x: 1 }\n", "unknown top-level section"), failures)
     check("non-numeric start_version rejected",

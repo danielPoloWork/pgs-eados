@@ -221,6 +221,22 @@ def known_lesson_ids(lessons_text):
     return set(re.findall(r"(?m)^-\s+id:\s*(L-\d{4})\s*$", lessons_text))
 
 
+def provenance_gaps(manifest):
+    """Answer-bearing top-level sections present in the manifest but MISSING from
+    interview.provenance. Each derives no override (derive_overrides treats an unrecorded key
+    exactly like an explicit `defaulted`), so a partial block silently shortens the record and
+    starves the tuner. Returns [] when no provenance block exists (build_run_record already refuses
+    that) — this warns only about a partial block (#201)."""
+    if not isinstance(manifest, dict):
+        return []
+    iv = manifest.get("interview")
+    prov = iv.get("provenance") if isinstance(iv, dict) else None
+    if not isinstance(prov, dict) or not prov:
+        return []
+    return sorted(k for k in manifest
+                  if k not in render.PROVENANCE_EXEMPT and k not in prov)
+
+
 # ---------------------------------------------------------------------------
 # Thin CLI shell.
 # ---------------------------------------------------------------------------
@@ -299,6 +315,14 @@ def main(argv=None):
             print(f"  {p}")
         print(f"\n{len(problems)} problem(s).")
         return 1
+
+    # #201: a partial provenance block passes the record (it has SOME entries) but silently derives
+    # no override for the sections it omits. Surface each gap at record time — a warning, not a
+    # failure (manifest-valid already rejects a partial block; this catches a manifest recorded
+    # without going through --check).
+    for section in provenance_gaps(manifest):
+        print(f"record-run: WARNING — manifest section '{section}' has no interview.provenance "
+              "entry; its overrides are not derived (treated as defaulted) (#201).", file=sys.stderr)
 
     text = emit_record_yaml(record)
     if args.dry_run:

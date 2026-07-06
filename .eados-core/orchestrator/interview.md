@@ -20,7 +20,8 @@ protocol with the *why* and the follow-up logic.
   (#169) records, for every top-level answer key, whether it was `asked`, `defaulted`, or
   `imported`, plus `questionnaire_version` (questionnaire.yaml `meta.version`). Write each
   entry the moment the phase settles it; a block reconstructed at the end is a guess about
-  your own behavior. `validate_manifest` rejects a wrong value or a dangling key.
+  your own behavior. `validate_manifest` rejects a wrong value, a dangling key, and (#201) an
+  incomplete block — one entry per answer-bearing section present, plus `questionnaire_version`.
 - **Batch related questions.** Prefer a few grouped questions over a long interrogation.
   Phases 1–4 are usually 1–2 rounds; Phase 5 (the spec) is the substantive conversation.
 - **Echo back.** After each phase, restate what you captured in one line so the maintainer
