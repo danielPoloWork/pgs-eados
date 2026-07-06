@@ -201,9 +201,13 @@ _SAFE_SEGMENT = re.compile(r"[A-Za-z0-9._-]+\Z")
 
 
 def _unsafe_path_value(value):
-    """True if `value` cannot be used as one or more safe relative path segments."""
+    """True if `value` cannot be used as one or more safe relative path segments. A `.git` segment
+    at any depth is refused by EXACT match — it steers writes into VCS metadata (`.git/hooks/` is an
+    execution vector on the next commit), the same corruption class sandbox.resolve refuses. The
+    exact match keeps a `.gitignore` file and a `foo.git/` directory legal. Refusing it here makes
+    the failure land at manifest validation (`--check`), before write_file's sandbox backstop."""
     for part in str(value).replace("\\", "/").split("/"):
-        if part in ("", ".", "..") or not _SAFE_SEGMENT.match(part):
+        if part in ("", ".", "..", ".git") or not _SAFE_SEGMENT.match(part):
             return True
     return False
 
@@ -236,7 +240,7 @@ def validate_manifest(m, scalars):
         if val and _unsafe_path_value(val):
             problems.append(
                 f"{field} '{val}' is not a safe path segment "
-                "(no path separators beyond '/', no '.', '..', or absolute paths)"
+                "(no path separators beyond '/', no '.', '..', '.git', or absolute paths)"
             )
     sv = scalars.get("START_VERSION", "")
     if sv and not re.fullmatch(r"\d+\.\d+\.\d+", sv):

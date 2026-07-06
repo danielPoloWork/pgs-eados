@@ -70,8 +70,10 @@ refuses). The two write paths had diverged and held unequal guarantees.
   intended, mirroring `sandbox.safe_write(..., overwrite=True)`.
 - **One write path.** `write_file` now delegates to `sandbox.safe_write`, so containment *and* the
   no-clobber guard live in a single implementation shared with the `refactor` phase and the two
-  cannot drift again. The `.git`-at-any-depth refusal rides along from the sandbox; making that
-  failure land at manifest-validation (`--check`) time rather than at write time is tracked as #196.
+  cannot drift again. The `.git`-at-any-depth refusal rides along from the sandbox; #196 then moved
+  that failure earlier — `_unsafe_path_value` refuses a `.git` segment (exact match) so a
+  `language.group_path: ".git/hooks"` manifest fails `--check` up front, before the write-time
+  backstop. Renderer and sandbox now apply an equivalent `.git` guard at both validation and write.
 
 This makes the README "Security posture" claim — "the renderer and the `refactor` sandbox refuse …
 clobber" — true, and closes the divergence between the renderer and the sandbox.

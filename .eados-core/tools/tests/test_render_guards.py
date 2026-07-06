@@ -132,9 +132,12 @@ def main():
               "must be a mapping"), failures)
 
     # --- _unsafe_path_value unit cases ---
-    for safe in ("acme", "memorypool", "it/d4np", "a.b-c_d"):
+    #     #196: `.git` is refused by EXACT segment at any depth (VCS-metadata write vector), while
+    #     `.gitignore` and `foo.git` — which merely contain the substring — stay legal.
+    for safe in ("acme", "memorypool", "it/d4np", "a.b-c_d", ".gitignore", "foo.git", "git"):
         check(f"_unsafe_path_value safe: {safe}", not render._unsafe_path_value(safe), failures)
-    for bad in ("..", "a/../b", "", "/etc", "C:\\x", "a/..", "foo/./bar"):
+    for bad in ("..", "a/../b", "", "/etc", "C:\\x", "a/..", "foo/./bar",
+                ".git", ".git/hooks", "a/.git/b", "src/.git"):
         check(f"_unsafe_path_value unsafe: {bad!r}", render._unsafe_path_value(bad), failures)
 
     # --- _duplicate_top_level_keys: repeated section detected; nested dup not a false positive ---
@@ -198,6 +201,26 @@ def main():
         check("missing group_path -> non-zero exit", proc.returncode == 1, failures)
         check("missing group_path -> message names GROUP_PATH",
               "{{GROUP_PATH}}" in (proc.stdout + proc.stderr), failures)
+
+    # --- #196: a `.git` segment in a path field is refused at VALIDATION time (--check), before
+    #     write_file's sandbox backstop — so a manifest can never steer a .gitkeep into VCS
+    #     metadata (`.git/hooks/` being the sharp case). Fails on --check and --out; writes nothing
+    #     under a .git/ directory ---
+    with tempfile.TemporaryDirectory() as work:
+        manifest = os.path.join(work, "dotgit.yaml")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            fh.write(VALID.replace("group_path: it/d4np", "group_path: .git/hooks"))
+        chk = subprocess.run([sys.executable, RENDER_PY, manifest, "--check"],
+                             capture_output=True, text=True)
+        check("group_path .git/hooks -> --check exits non-zero", chk.returncode == 1, failures)
+        check("group_path .git/hooks -> actionable 'not a safe path segment' message",
+              "not a safe path segment" in (chk.stdout + chk.stderr), failures)
+        out = os.path.join(work, "out")
+        rnd = subprocess.run([sys.executable, RENDER_PY, manifest, "--out", out],
+                             capture_output=True, text=True)
+        check("group_path .git/hooks -> --out exits non-zero", rnd.returncode == 1, failures)
+        check("group_path .git/hooks -> nothing written under a .git/ directory",
+              not os.path.exists(os.path.join(out, "src", "main", "go", ".git")), failures)
 
     # --- end-to-end: render.py refuses an --out inside the EADOS repo (self-overwrite guard) ---
     with tempfile.TemporaryDirectory() as work:
