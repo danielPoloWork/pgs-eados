@@ -76,6 +76,14 @@ SUBSET_REJECTIONS = [
     ("wrapped flow sequence",           "sets: [GROUP_PATH,\n  GROUP_DOTTED]"),
     ("wrapped flow mapping",            "matrix: { os: linux,\n  arch: x64 }"),
     ("wrapped flow in a list item",     "steps:\n  - [a,\n    b]\n"),
+    # Folded `>` block scalars (#194): parse_map has no `>` branch, so the loader used to skip
+    # the body and keep the bare ">" — the #153 silent-truncation class, live in the repo's own
+    # `notes: >` profiles. A literal `|` is byte-exact; `>` must now reject loudly, and PyYAML
+    # (the differential below) parses every one of these fine, proving it is a subset boundary.
+    ("folded scalar > (clip)",   "objective: >\n  a rate limiter\n  with O(1) admission\n"),
+    ("folded scalar >- (strip)", "note: >-\n  folded\n  then stripped\n"),
+    ("folded scalar >+ (keep)",  "note: >+\n  folded\n  then kept\n"),
+    ("folded scalar in a seq",   "objectives:\n  - >\n    fold this item\n"),
 ]
 
 # Documented deviations where load_yaml deliberately differs from PyYAML — asserted

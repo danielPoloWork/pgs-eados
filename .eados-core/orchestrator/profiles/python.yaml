@@ -71,7 +71,7 @@ supports:
   threading_sanitizer: false   # GIL-bound; use faulthandler + thread stress tests instead
   bench: true
   abi_stability: false
-notes: >
+notes: |
   "Sanitizer-equivalent" for Python is the type+property+coverage trio: mypy --strict
   stands in for compile-time soundness, hypothesis for fuzz/property coverage, and
   coverage.py for the >=80% gate. The library still targets a zero-runtime-dependency

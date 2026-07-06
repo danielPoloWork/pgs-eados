@@ -115,7 +115,7 @@ supports:
   threading_sanitizer: true
   bench: true
   abi_stability: true
-notes: >
+notes: |
   C/C++ is the reference language. The library scope stays zero-dependency; deps (doctest)
   are gated under the test/bench CMake options. Sanitizer presets (asan/ubsan) are
   POSIX-only — omit them for the Windows matrix cells. Add a TSan job only when the project

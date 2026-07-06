@@ -55,7 +55,7 @@ supports:
   threading_sanitizer: false
   bench: false
   abi_stability: false
-notes: >
+notes: |
   Targets GnuCOBOL for portable, CI-able COBOL (mainframe modernization). For IBM Enterprise
   COBOL on z/OS, adapt the matrix/commands to the site's build. There is no standard COBOL
   formatter, doc generator, or package manager — those roles are "none" and handled manually;

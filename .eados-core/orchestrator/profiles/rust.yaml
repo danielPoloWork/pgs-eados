@@ -85,7 +85,7 @@ supports:
   threading_sanitizer: true    # nightly TSan + Miri; ownership covers most races at compile time
   bench: true
   abi_stability: false         # Rust has no stable ABI; SemVer protects the source API
-notes: >
+notes: |
   The crate name is the namespace ({{NAMESPACE}} = group_leaf_project_slug). Miri replaces
   Valgrind for unsafe-block UB; the borrow checker covers most of what ASan would. Keep the
   unsafe surface minimal and document each unsafe block's invariants in an ADR — that is the

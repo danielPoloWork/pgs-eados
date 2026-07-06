@@ -9,6 +9,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`yamlmini` rejects folded `>` block scalars loudly instead of silently dropping their body
+  (#194).** The dependency-free loader documented folded `>`/`>-`/`>+` scalars as out of scope and
+  claimed to reject them, but two code paths conspired to *skip* the body (`_reject_unsupported`)
+  and keep the bare `">"` (`parse_map` fell through to `_scalar`) — the exact #153 silent-truncation
+  class the loader exists to prevent. `_reject_unsupported` now raises a `ValueError` naming the
+  offending line for the whole `>` family, both as a mapping value (`key: >`) and a sequence item
+  (`- >`), before `parse_map` is reached. **This was live in the repo's own profiles:** every
+  `orchestrator/profiles/*.yaml` (and `_template.yaml`) used `notes: >`, so the `notes` body had
+  been silently loading as the one-character string `">"`; all 20 are converted to a literal block
+  scalar (`notes: |`), which `yamlmini` parses byte-exactly and which now agrees with PyYAML. Four
+  folded-scalar cases join `SUBSET_REJECTIONS` in `tools/tests/test_loader.py` (the differential
+  confirms PyYAML parses them, proving the rejection is a deliberate subset boundary and not a
+  misparse), and the module docstring's "reject, never guess" claim for `>` is now truthful.
+
 ## [2.6.0] - 2026-07-05
 
 ### Added

@@ -78,7 +78,7 @@ supports:
   threading_sanitizer: true    # -race is the canonical data-race gate
   bench: true
   abi_stability: false         # source compatibility via Go module semantics
-notes: >
+notes: |
   The module import path doubles as the namespace, so {{NAMESPACE}} = the module path.
   -race is mandatory in CI whenever the threading flag is on — it is Go's TSan. govulncheck
   is the supply-chain gate (maps to the reference's security posture).

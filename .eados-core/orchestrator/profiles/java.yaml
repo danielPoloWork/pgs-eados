@@ -75,7 +75,7 @@ supports:
   threading_sanitizer: true    # JCStress for concurrency correctness
   bench: true
   abi_stability: true          # binary compatibility matters for published artifacts
-notes: >
+notes: |
   Java is the closest fit to the reference's Maven-style tree — src/main/java/<group>/<slug>
   is idiomatic, not an imposition. Binary compatibility is part of the SemVer contract;
   consider japicmp in a release job. JCStress is the TSan analogue for the threading flag.

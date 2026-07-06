@@ -66,6 +66,6 @@ supports:                     # informational; project answers still decide what
   threading_sanitizer: false
   bench: false
   abi_stability: false
-notes: >
+notes: |
   Free text — gotchas, idioms, why each tool was chosen, sanitizer mapping. Mirror cpp.yaml's
   rigor (it is the ground-truth profile), not its tools.

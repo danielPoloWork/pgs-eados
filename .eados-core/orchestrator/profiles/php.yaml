@@ -64,6 +64,6 @@ supports:
   threading_sanitizer: false
   bench: true                              # phpbench
   abi_stability: false
-notes: >
+notes: |
   PSR-4 autoloading + PSR-12 style; PHPStan (max) and Psalm for soundness. Library scope keeps
   runtime deps minimal. Dependabot ecosystem: composer.
