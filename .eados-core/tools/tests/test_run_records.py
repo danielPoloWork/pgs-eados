@@ -60,6 +60,11 @@ def main():
           any("outcome" in p for p in _problems(lambda r: r.update(outcome="maybe"))), failures)
     check("a malformed date is flagged",
           any("YYYY-MM-DD" in p for p in _problems(lambda r: r.update(date="July 5"))), failures)
+    # #215: `phase` is an optional tag — a known phase passes, absence passes (legacy), a bogus one bites.
+    check("a valid phase passes", _problems(lambda r: r.update(phase="refactor")) == [], failures)
+    check("no phase passes (legacy record)", _problems(lambda r: r.pop("phase", None)) == [], failures)
+    check("a bogus phase is flagged",
+          any("phase" in p for p in _problems(lambda r: r.update(phase="bogus"))), failures)
     check("a non-mapping record is flagged",
           lint.run_record_problems([("r.yaml", ["not", "a", "map"])]) != [], failures)
 

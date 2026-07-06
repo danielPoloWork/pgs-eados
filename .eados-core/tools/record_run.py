@@ -7,7 +7,13 @@ with one command: the `overrides:` list is derived MECHANICALLY from the manifes
 `interview:` provenance block (#169) against the built-in defaults in
 orchestrator/project.yaml.template, and the failure/rubric/lesson channels arrive as flags.
 
-    python .eados-core/tools/record_run.py <manifest> [--outcome ok|failed]
+Records default to the scaffold phase (Step 9) but tag any phase via `--phase` — a refactor/audit
+incident, the riskiest surface, records with the same `--failure` channel (#215) so lesson_audit's
+regression detection covers real-user-code work, not just generation. A sensitive override value
+(a key naming a host/url/registry/token/…) is recorded as <redacted>, keeping the ledger safe to
+commit while the tuner still sees the key was overridden (#215).
+
+    python .eados-core/tools/record_run.py <manifest> [--outcome ok|failed] [--phase PHASE]
         [--failure GATE=MESSAGE ...] [--lesson L-NNNN ...] [--rubric DIM=SCORE ...]
         [--date YYYY-MM-DD] [--dry-run]
 
@@ -40,6 +46,10 @@ LESSONS_PATH = os.path.join(ROOT, "learning", "lessons.yaml")
 RUNS_DIR = os.path.join(ROOT, "learning", "runs")
 
 OUTCOMES = ("ok", "failed")
+# The delivery phases a run can be recorded for (mirrors eados.PHASES / workflow.yaml states).
+# `scaffold` is the default (generate.md Step 9); a refactor/audit incident records with --phase so
+# the record is phase-tagged and lesson_audit's regression detection covers real-user-code work (#215).
+PHASES = ("init", "design", "plan", "scaffold", "audit", "refactor")
 # eval/rubric.md's ten dimensions, scored 0-2 (0 absent, 1 partial, 2 solid).
 RUBRIC_DIMENSIONS = (
     "spec_measurability", "spec_ci_traceability", "architecture_rationale",
@@ -47,6 +57,26 @@ RUBRIC_DIMENSIONS = (
     "governance_fit", "capability_hygiene", "security_posture",
 )
 _LESSON_ID = re.compile(r"L-\d{4}\Z")
+
+# Override keys whose CHOSEN value may carry a sensitive string (internal hostnames, registry/repo
+# URLs, endpoints, tokens/webhooks) are recorded as <redacted> in the version-controlled ledger
+# (#215): the FACT of the override still feeds the tuner, but the value does not leak. Substring
+# match, case-insensitive. The (public, template-derived) default and the key are kept.
+_SENSITIVE_KEY_PARTS = ("host", "url", "uri", "endpoint", "registry", "token", "secret",
+                        "password", "credential", "webhook")
+_REDACTED = "<redacted>"
+
+
+def redact_overrides(overrides):
+    """Replace the `chosen` of a sensitive-keyed override with <redacted> before it is written to
+    the committed ledger (#215) — the tuner still sees the key was overridden, not its value."""
+    out = []
+    for ov in overrides:
+        if isinstance(ov, dict) and any(p in str(ov.get("key", "")).lower()
+                                        for p in _SENSITIVE_KEY_PARTS):
+            ov = {**ov, "chosen": _REDACTED}
+        out.append(ov)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -97,11 +127,14 @@ def _single_line(text):
 
 
 def build_run_record(manifest, template, known_lessons, today, outcome="ok",
-                     failures=(), lessons=(), rubric=()):
+                     failures=(), lessons=(), rubric=(), phase="scaffold"):
     """(record, problems): the record dict ready for emission, and every validation problem
     found (empty == valid). `failures` are 'GATE=MESSAGE' strings, `lessons` lesson ids,
-    `rubric` 'DIM=SCORE' strings — exactly the CLI's repeatable flags."""
+    `rubric` 'DIM=SCORE' strings — exactly the CLI's repeatable flags. `phase` is the delivery
+    phase the record is for (#215: scaffold by default; refactor/audit for real-user-code work)."""
     problems = []
+    if phase not in PHASES:
+        problems.append(f"phase must be one of {'|'.join(PHASES)}, got {phase!r}")
     ident = manifest.get("identity") if isinstance(manifest, dict) else None
     ident = ident if isinstance(ident, dict) else {}
     lang = manifest.get("language") if isinstance(manifest, dict) else None
@@ -156,10 +189,11 @@ def build_run_record(manifest, template, known_lessons, today, outcome="ok",
     record = {
         "slug": slug,
         "date": today,
+        "phase": phase,
         "lang": str(lang.get("lang") or "").strip(),
         "kind": str(ident.get("project_kind") or "").strip(),
         "outcome": outcome,
-        "overrides": derive_overrides(manifest, template),
+        "overrides": redact_overrides(derive_overrides(manifest, template)),
         "lessons_applied": applied,
         "failures": parsed_failures,
         "rubric": scores,
@@ -180,10 +214,11 @@ def _scalar(value):
 
 def emit_record_yaml(record):
     """Block-style YAML the hand-rolled loader reads back identically (round-trip tested)."""
-    out = ["# Run record — appended by tools/record_run.py (generate.md Step 9); a fact about",
-           "# a past run, never edited after the fact.",
+    out = ["# Run record — appended by tools/record_run.py; a fact about a past run, never edited",
+           "# after the fact. `phase` is the delivery phase that produced it (#215).",
            f"slug: {_scalar(record['slug'])}",
            f"date: {_scalar(record['date'])}",
+           f"phase: {_scalar(record.get('phase', 'scaffold'))}",
            f"lang: {_scalar(record['lang'])}",
            f"kind: {_scalar(record['kind'])}",
            f"outcome: {_scalar(record['outcome'])}"]
@@ -290,6 +325,9 @@ def main(argv=None):
     ap.add_argument("--rubric", action="append", default=[], metavar="DIM=SCORE",
                     help="an eval/rubric.md dimension score 0-2 (repeatable), e.g. "
                          "--rubric spec_measurability=2")
+    ap.add_argument("--phase", choices=PHASES, default="scaffold",
+                    help="the delivery phase this record is for (default scaffold, generate.md "
+                         "Step 9); use e.g. --phase refactor to log a refactor-phase incident (#215)")
     ap.add_argument("--date", help="record date YYYY-MM-DD (default: today)")
     ap.add_argument("--dry-run", action="store_true", help="print the record; write nothing")
     args = ap.parse_args(argv)
@@ -308,7 +346,8 @@ def main(argv=None):
 
     record, problems = build_run_record(
         manifest, template, known_lesson_ids(lessons_text), today,
-        outcome=args.outcome, failures=args.failure, lessons=args.lesson, rubric=args.rubric)
+        outcome=args.outcome, failures=args.failure, lessons=args.lesson, rubric=args.rubric,
+        phase=args.phase)
     if problems:
         print("record-run: FAIL — the record would not be honest\n")
         for p in problems:

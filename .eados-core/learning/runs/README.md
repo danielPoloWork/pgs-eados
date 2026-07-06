@@ -32,6 +32,7 @@ proposed as a **new lesson**.
 ```yaml
 slug: <project-slug>
 date: YYYY-MM-DD
+phase: scaffold        # which delivery phase produced it (#215); scaffold by default
 lang: <lang>
 kind: <library|service|cli|app>
 outcome: ok            # ok | failed
@@ -48,11 +49,18 @@ failures: []           # on a failed run: [{gate: ci-bootstrap, message: "..."}]
 rubric: {}             # eval/rubric.md dimensions scored 0-2, e.g. spec_measurability: 2
 ```
 
+The **`refactor` phase** — the riskiest surface, since it modifies real user code — records incidents
+through the same channel: `record_run.py <manifest> --phase refactor --outcome failed --failure
+migration-gate="<one-line summary>"`. `lesson_audit`'s regression detection then covers refactor, not
+just generation (#215). A record with no `phase:` is treated as `scaffold` (legacy, backward-compatible).
+
 Records are facts about past runs — never edited after the fact (`record_run.py` never overwrites
 an existing record; a same-day re-run lands under a `-2`/`-3` suffix with a truthful `date:`, #197).
-They contain no secrets (the manifest's identity/spec is fine;
-tokens/webhooks never live in a manifest). The auto-tuner reads `overrides` and ignores the
-other channels; it is a no-op until enough records accumulate.
+They contain no secrets: a manifest should carry none (tokens/webhooks never live in one), and as a
+backstop an override whose **key** names a host / url / registry / endpoint / token is recorded with
+its `chosen:` value as `<redacted>` (#215) — the tuner still sees the key was overridden, the value
+does not leak. The auto-tuner reads `overrides` and ignores the other channels; it is a no-op until
+enough records accumulate (the confidence floor scales with the corpus, #215).
 
 Every record here is **schema-validated by the self-lint** (`eados_lint`'s `run-records` gate,
 #175): the five required keys, the `outcome` vocabulary, override triples, `failures` shape (a
