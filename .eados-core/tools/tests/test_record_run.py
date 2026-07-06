@@ -138,6 +138,18 @@ def main():
           loaded["lessons_applied"] == ["L-0002"] and loaded["rubric"] == {"profile_fidelity": 1},
           failures)
 
+    # --- #201: provenance_gaps names sections present in the manifest but missing from a partial
+    #     provenance block — the recorder warns on them (a partial block derives no override there) ---
+    check("provenance_gaps flags a present section missing from a partial block (language)",
+          rr.provenance_gaps(MANIFEST) == ["language"], failures)
+    complete = {**MANIFEST, "interview": {"questionnaire_version": 1, "provenance": {
+        "domain": "asked", "identity": "asked", "ownership": "asked", "toolchain": "asked",
+        "governance": "asked", "i18n": "defaulted", "language": "asked"}}}
+    check("provenance_gaps is empty when every section is recorded",
+          rr.provenance_gaps(complete) == [], failures)
+    check("provenance_gaps is empty (no warning) when there is no provenance block",
+          rr.provenance_gaps({"identity": {}}) == [], failures)
+
     # --- acceptance: ONE command produces a schema-valid record from reference.yaml ---
     proc = subprocess.run([sys.executable, RECORD_RUN_PY, REFERENCE, "--dry-run",
                            "--date", "2026-07-05", "--lesson", "L-0001",
