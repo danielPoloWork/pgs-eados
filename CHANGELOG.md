@@ -11,6 +11,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.6.0**.
 
 ### Added
 
+- **Phase gates are fail-closed under `--strict`, and `eados.py` no longer carries a dead
+  `--links` affordance (#200).** `eados.py <phase>` returned exit 0 unless a gate it could compute
+  `FAIL`ed — but several gates returned `skipped` when their *input was withheld*, so a gate was
+  **satisfiable by omission** (the cheapest way to pass `roadmap-covers-rfcs` was to record no RFC
+  refs; `rfc-approved` passed whenever the caller forgot `--rfc`). That is the opposite of EADOS's
+  fail-closed posture everywhere else. Gate marks now distinguish **`skipped`** (input genuinely not
+  applicable — nothing to check yet) from **`needs-input`** (a checkable input was withheld), and a
+  new **`--strict`** flag flips `needs-input` to a phase failure. `rfc-approved` returns
+  `needs-input` (not `skipped`) when `delivery_state.refs.rfcs` is non-empty but no `--rfc` is given;
+  `roadmap-covers-rfcs` returns `needs-input` when RFC refs or the roadmap are missing — so a project
+  that *has* something to verify can no longer exit the phase without the check running. The dead
+  `links=`/`ctx["links"]` plumbing is removed from `run_phase` (the `traceability-lint` gate is
+  cross-cutting — `required_for: []` — and is evaluated on the `status`/doctor path, not as a
+  transition gate), so no parameter is threaded without a reader. `tools/tests/test_phase_smoke.py`
+  and `test_eados.py` cover the strict-fail and skipped-pass paths.
+
 - **Phase-state transitions are no longer honor-system — a `delivery-state-consistent` check closes
   the phase-skip gap (#199).** The phase runner reports legal transitions but never advances state;
   the agent writes `delivery_state.phase` and the checkpoint. Nothing verified, after the fact, that

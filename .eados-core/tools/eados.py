@@ -14,7 +14,7 @@ It reports and gates; it never authors an artifact, advances state, or runs a ph
 Exit 0 unless a deterministic gate FAILs (or the phase is undeclared). Dependency-free (stdlib + the
 sibling tools — one source of truth, never a re-implementation).
 
-    python .eados-core/tools/eados.py <phase|status> <manifest> [--rfc P] [--roadmap P] [--links P] [--root D]
+    python .eados-core/tools/eados.py <phase|status> <manifest> [--rfc P] [--roadmap P] [--links P] [--strict] [--root D]
 """
 
 import os
@@ -37,7 +37,11 @@ def _rfcs(manifest):
     return list(refs.get("rfcs") or [])
 
 
-# --- gate evaluators: each returns (mark, detail). mark ∈ {OK, FAIL, skipped}. -----------------
+# --- gate evaluators: each returns (mark, detail). mark ∈ {OK, FAIL, skipped, needs-input}. -----
+#     skipped     = the input is genuinely not applicable (nothing to check yet).
+#     needs-input = a CHECKABLE input is missing — the project HAS something to verify, but the
+#                   caller withheld the file/refs. Under --strict it fails the phase (#200), so a
+#                   gate can no longer be satisfied by omission (EADOS's fail-closed posture).
 def _ev_manifest_valid(manifest, ctx):
     scalars, _f, _s = render.build_context(manifest)
     problems = render.validate_manifest(manifest, scalars)
@@ -46,17 +50,21 @@ def _ev_manifest_valid(manifest, ctx):
 
 def _ev_rfc_approved(manifest, ctx):
     if ctx.get("rfc_text") is None:
-        return ("skipped", "provide --rfc <path> to check the rfc-approved gate")
+        if _rfcs(manifest):
+            return ("needs-input", "delivery_state records RFC refs but no --rfc <path> was given — "
+                    "the rfc-approved check cannot run (withholding the file must not pass the gate)")
+        return ("skipped", "no RFC refs recorded yet; provide --rfc <path> once an RFC exists")
     problems = rfc_check.check_rfc(ctx["rfc_text"], rfc_check.load_protocol())
     return ("FAIL", problems[0]) if problems else ("OK", "")
 
 
 def _ev_roadmap_covers(manifest, ctx):
-    if ctx.get("roadmap_text") is None:
-        return ("skipped", "no ROADMAP.md found")
     rfcs = _rfcs(manifest)
     if not rfcs:
-        return ("skipped", "no RFC refs recorded in delivery_state")
+        return ("needs-input", "no RFC refs recorded in delivery_state — record them so coverage "
+                "can be checked (withholding refs must not silently satisfy the gate)")
+    if ctx.get("roadmap_text") is None:
+        return ("needs-input", "no ROADMAP.md found — coverage of the recorded RFCs cannot be checked")
     uncovered = traceability.uncovered_rfcs(ctx["roadmap_text"], rfcs)
     return ("FAIL", f"uncovered: {', '.join(uncovered)}") if uncovered else ("OK", "")
 
@@ -72,11 +80,12 @@ PROCEDURE = {p: f"orchestrator/commands/{p}.md" for p in PHASES}
 PROCEDURE["scaffold"] = "orchestrator/generate.md"
 
 
-def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, links=None):
+def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, strict=False):
     """Run `phase`'s deterministic outgoing gates over the project. Returns (lines, ok): `ok` is
-    False only when a gate the orchestrator can evaluate FAILs (skipped/manual never fail) or the
-    phase is not a declared state."""
-    ctx = {"roadmap_text": roadmap_text, "rfc_text": rfc_text, "links": links}
+    False when a gate the orchestrator can evaluate FAILs (manual/skipped never fail), or — under
+    `strict` (#200) — when a gate is `needs-input` (a checkable input was withheld), so a gate can
+    no longer be satisfied by omission. The phase not being a declared state is also not-ok."""
+    ctx = {"roadmap_text": roadmap_text, "rfc_text": rfc_text}
     states = phase_runner.state_ids(workflow)
     if phase not in states:
         return [f"'{phase}' is not a declared workflow state {states}"], False
@@ -99,7 +108,7 @@ def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, links
                 continue
             mark, detail = evaluator(manifest, ctx)
             lines.append(f"  [{mark}] {g}" + (f" - {detail}" if detail else ""))
-            if mark == "FAIL":
+            if mark == "FAIL" or (mark == "needs-input" and strict):
                 ok = False
     else:
         lines.append(f"phase '{phase}': terminal — no outgoing gates")
@@ -137,6 +146,9 @@ def main(argv=None):
     ap.add_argument("--roadmap", help="path to ROADMAP.md (default: <root>/ROADMAP.md)")
     ap.add_argument("--links", help="traceability links file (default: <root>/links.yaml if present)")
     ap.add_argument("--rfc", help="an RFC file to check for the rfc-approved gate (design)")
+    ap.add_argument("--strict", action="store_true",
+                    help="fail the phase on a needs-input gate too (a checkable input was withheld) "
+                         "— the fail-closed posture for CI; skipped (not applicable) still passes")
     args = ap.parse_args(argv)
 
     try:
@@ -156,7 +168,8 @@ def main(argv=None):
     if args.command == "status":
         lines, ok = doctor.status_report(manifest, workflow, roadmap_text, links)
     else:
-        lines, ok = run_phase(args.command, manifest, workflow, roadmap_text, rfc_text, links)
+        lines, ok = run_phase(args.command, manifest, workflow, roadmap_text, rfc_text,
+                              strict=args.strict)
 
     print(f"EADOS {args.command} - {args.manifest}")
     for line in lines:
