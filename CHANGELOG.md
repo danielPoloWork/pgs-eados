@@ -25,6 +25,16 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
   machine-readable field. Pure builders (`phase_invariants`, `long_run_reminder`) with thin I/O;
   covered by `test_phase_runner.py`. Dependency-free.
 
+- **Explicit precedence order across the overlapping knowledge layers (#222, M14).** EADOS resolves
+  knowledge from several sources — a human decision, the `os/` specs + gates, the manifest, profile
+  defaults, advisory lessons — that rarely conflict by construction but had no written tie-breaker
+  when they did. A new **Precedence** section in [`orchestrator/os/README.md`](.eados-core/orchestrator/os/README.md)
+  states the canonical total order (human decision > blocking gate/spec > manifest > profile default >
+  advisory lesson) and the overlay rule (domain overlays only *add* gates, never relax them). `AGENTS.md`
+  §3 and [`learning/README.md`](.eados-core/learning/README.md) now point at it (a lesson is documented
+  as the lowest-precedence layer). Documentation only — no behavior change; the order restates rules
+  already enforced by the specs.
+
 ## [2.7.0] - 2026-07-07
 
 ### Added
