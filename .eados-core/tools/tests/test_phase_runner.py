@@ -210,6 +210,66 @@ def main():
         check("a legacy manifest (no manifest_rev) reads as rev 0 and matches --expect-rev 0",
               pr.report_propose(legacy, "design", out=out3b, expect_rev=0) == 0, failures)
 
+    # --- #221: runtime invariants re-grounded at a phase boundary, DERIVED from the specs (never a
+    #     hardcoded rule). The acting role comes from the workflow, the terminal decider + ownership
+    #     from authority, one-PR + who-merges from git; a fake authority terminus flows through. ---
+    authority, gitspec = pr.load_authority(), pr.load_git()
+    check("terminal_decider reads the authority escalation terminus (human-owner)",
+          pr.terminal_decider(authority) == "human-owner", failures)
+    check("phase_role reads the workflow state->role map",
+          pr.phase_role(wf, "design") == "tech-lead"
+          and pr.phase_role(wf, "init") == "enterprise-architect", failures)
+
+    t_hd = pr.propose_transition(wf, "init", "design")            # a human-gated move
+    inv = pr.phase_invariants(wf, authority, gitspec, "design", t_hd)
+    joined = " | ".join(inv)
+    check("preamble names the target phase's owning role (workflow + authority)", "tech-lead" in joined,
+          failures)
+    check("preamble flags a human-gated move as human-gated",
+          any("human-gated" in ln for ln in inv), failures)
+    check("preamble derives the terminal gate from authority (human-owner)", "human-owner" in joined,
+          failures)
+    check("preamble derives one-PR + human-merge from the git spec",
+          any("one PR at a time" in ln and "merges" in ln for ln in inv), failures)
+    check("preamble cites English-on-disk (AGENTS.md §2)", "AGENTS.md" in joined, failures)
+
+    t_auto = pr.propose_transition(wf, "scaffold", "audit")       # a non-human-gated move
+    inv_auto = pr.phase_invariants(wf, authority, gitspec, "audit", t_auto)
+    check("a non-human-gated move is framed automatic, not human-gated",
+          any("automatic" in ln for ln in inv_auto)
+          and not any("is human-gated" in ln for ln in inv_auto), failures)
+
+    fake_auth = {"roles": [], "escalation": [{"level": 1, "decider": "council-of-elders"}]}
+    check("the terminal-gate line is DERIVED (a fake authority terminus flows through, nothing hardcoded)",
+          any("council-of-elders" in ln
+              for ln in pr.phase_invariants(wf, fake_auth, gitspec, "design", t_hd)), failures)
+
+    # --- #221: the long-run reminder fires only past the checkpoint-depth threshold ---
+    check("long_run_reminder is empty below the threshold",
+          pr.long_run_reminder({"delivery_state": {"checkpoints": []}}, authority, gitspec) == [], failures)
+    deep = {"delivery_state": {"checkpoints": [{"from": "init", "to": "design"},
+                                               {"from": "design", "to": "plan"},
+                                               {"from": "plan", "to": "scaffold"}]}}
+    rem = pr.long_run_reminder(deep, authority, gitspec)
+    check("long_run_reminder fires at/above the threshold", len(rem) >= 1, failures)
+    check("the reminder re-states the human terminal gate",
+          any("terminal gate" in ln for ln in rem), failures)
+
+    # --- #221: report() and report_propose() actually emit the re-grounding block ---
+    with tempfile.TemporaryDirectory() as d:
+        mpath = os.path.join(d, "project.yaml")
+        with open(mpath, "w", encoding="utf-8") as fh:
+            fh.write("delivery_state:\n  phase: init\n  checkpoints: []\n"
+                     "  refs: { rfcs: [], milestones: [] }\n")
+        rout = io.StringIO()
+        pr.report(mpath, out=rout)
+        check("report() emits the runtime-invariants block, derived from the specs",
+              "runtime invariants" in rout.getvalue() and "human-owner" in rout.getvalue(), failures)
+        pout = io.StringIO()
+        pr.report_propose(mpath, "design", out=pout)
+        check("report_propose() emits the re-grounding preamble for the proposed move",
+              "runtime invariants" in pout.getvalue() and "tech-lead" in pout.getvalue(), failures)
+
     if failures:
         print("test-phase-runner: FAIL\n")
         for f in failures:
