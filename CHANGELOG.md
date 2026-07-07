@@ -35,6 +35,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
   as the lowest-precedence layer). Documentation only — no behavior change; the order restates rules
   already enforced by the specs.
 
+- **Agent-facing pre-flight self-check before opening a PR (#223, M14).** `self_review.py` is a
+  CI-style gate over a rendered repo and `preflight.py` verifies the toolchain; neither is a cheap
+  checklist the acting agent runs on its *own draft* before the gate. New
+  [`self_check.py`](.eados-core/tools/self_check.py) prints a short, advisory checklist — ownership,
+  one-PR, PR metadata, body cross-links, English-on-disk, precedence — that front-runs the gates so a
+  common miss (a path you don't own, unfilled PR metadata) is caught before the round-trip. Every item
+  is **derived from a spec** (`authority.ownership_map`, `git.commit`, `git.pr.metadata`,
+  `git.pr.required_crosslinks`), so a metadata field added to `git.yaml` appears automatically (proven
+  in `test_self_check.py`); English-on-disk and precedence — the two invariants with no machine-readable
+  field — are cited to `AGENTS.md` §2 and the `os/` README *Precedence* section. `AGENTS.md` §6 points
+  at it. Advisory (the gate stays authoritative); pure builder + thin CLI; dependency-free.
+
 ## [2.7.0] - 2026-07-07
 
 ### Added

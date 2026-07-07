@@ -164,6 +164,10 @@ changes, but only the owner decides what lands on `main`.
 - Conventional Commits for messages. Scopes for this repo: `interview`, `profiles`,
   `templates`, `lint`, `agent`, `docs`, `adr`, `ci`.
 - One logical change per PR; prefer one PR at a time.
+- **Pre-flight self-check.** Before opening a PR, run
+  [`self_check.py`](.eados-core/tools/self_check.py) — a short, spec-derived checklist (ownership,
+  one-PR, PR metadata, cross-links, English-on-disk, precedence) that *front-runs* the gates so a
+  cheap miss is caught before the PR, not after. Advisory: the gate stays authoritative.
 - **PR metadata — set on every PR** (the data contract is `os/git/git.yaml` `pr.metadata`):
   **assignee** = the owner `@danielPoloWork` (never `@me`, which resolves to whichever actor
   runs `gh`), **exactly one type label**, the open **milestone**, and the **Project** where one
