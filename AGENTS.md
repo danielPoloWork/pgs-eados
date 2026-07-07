@@ -72,6 +72,11 @@ roles, artifacts, and NFRs to the target. The README explains the pipeline;
 procedure. **Every phase is opt-in — a maintainer who only wants generation runs `scaffold` and
 sees the classic factory, unchanged.**
 
+When two of these layers disagree, the canonical precedence order decides — highest wins: **human
+decision > blocking gate/spec > manifest > profile default > advisory lesson**, and domain overlays
+only *add* gates, never relax them. The single source of truth is the *Precedence* section of
+[`orchestrator/os/README.md`](.eados-core/orchestrator/os/README.md).
+
 ## 4. Repository Layout
 
 ```text

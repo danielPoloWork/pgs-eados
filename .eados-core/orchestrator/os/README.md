@@ -36,3 +36,33 @@ are *described* here and in the RFC but are **built in M3/M4** — derived from 
   `*_by: human` action is never crossed by an agent (`AGENTS.md` §6).
 - **Versioned.** Every instance carries a top-level `version:` so the schema can evolve with
   backward compatibility (the persistent manifest references a spec version).
+
+## Precedence — which layer wins
+
+EADOS resolves knowledge from several overlapping sources: a human decision, the `os/` specs and
+their gates, the project manifest, language-profile defaults, and advisory lessons. They rarely
+conflict *by construction* — a spec constrains what a manifest may say, a profile only fills gaps a
+manifest left, a lesson only advises — but when two disagree, this is the **canonical total order**,
+highest wins:
+
+1. **A human decision.** Any `human_gate: true` transition or `*_by: human` action; the escalation
+   ladder terminates at `human-owner` ([`authority`](authority/authority.yaml), `AGENTS.md` §6). Never
+   overridden by anything below.
+2. **A blocking gate / spec.** The `os/` specs are the governance contracts; a `blocking: true` gate
+   ([`workflow`](workflow/workflow.yaml)) validates or rejects everything under it. A spec is never
+   relaxed by a lower layer — it is the ceiling the manifest must fit inside.
+3. **The project manifest** (`orchestrator/project.yaml`) — the maintainer's committed answers, the
+   single source of truth for every placeholder, *within* what the specs allow.
+4. **A profile default** (`profiles/<lang>.yaml`) — applied only where the manifest is silent; an
+   explicit manifest value always wins over a profile default.
+5. **An advisory lesson** ([`learning/lessons.yaml`](../../learning/README.md)) — guidance applied
+   when nothing above decides. A lesson never overrides a gate or the human terminal gate; the lint
+   checks its *shape*, not obedience.
+
+**Domain overlays only add, never relax.** `domain_overlays` ([`workflow`](workflow/workflow.yaml))
+may insert states and add gates for a target domain; they never remove or loosen a base gate. The
+base machine is the floor — an overlay raises the bar for its domain, it never lowers it
+(`phase_runner.apply_overlay` only appends). So a domain never becomes *less* governed than the base.
+
+This order is the tie-breaker, not a routing table: it exists to make the rare disagreement
+unambiguous, so no layer silently wins by accident.

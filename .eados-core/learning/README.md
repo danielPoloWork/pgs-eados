@@ -36,4 +36,6 @@ Each entry (validated by `tools/eados_lint.py`'s `lessons` check):
 
 Keep `context` and `rule` to one line each; a lesson that needs a paragraph is really an ADR.
 Lessons are **advisory guidance**, not hard gates — the lint checks their *shape*, not that the
-agent obeyed them (that is the reviewer's job).
+agent obeyed them (that is the reviewer's job). A lesson is the **lowest-precedence** layer: it
+never overrides a gate, a spec, or the human terminal gate (see the *Precedence* section of
+[`orchestrator/os/README.md`](../orchestrator/os/README.md)).
