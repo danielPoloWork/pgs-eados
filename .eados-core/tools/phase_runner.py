@@ -8,6 +8,10 @@ for: a pure function over data. It **never advances state** — it reports what 
 proposes a transition, the gates validate it, and the human confirms every human-gated step
 (`AGENTS.md` §6).
 
+At every boundary it re-grounds the runtime non-negotiables (#221) — the acting role, the terminal
+human gate, one-PR — each line derived from the workflow / authority / git specs, so a long run can
+no longer let them drift out of view. Past a checkpoint-depth threshold it adds a compact reminder.
+
 Dependency-free: the Python standard library plus the sibling renderer's YAML loader.
 
     python .eados-core/tools/phase_runner.py <manifest>     # report the legal next transitions
@@ -24,11 +28,36 @@ sys.path.insert(0, HERE)
 import render  # noqa: E402  — the hand-rolled, dependency-free YAML loader (sibling tool)
 
 WORKFLOW = os.path.join(ROOT, "orchestrator", "os", "workflow", "workflow.yaml")
+AUTHORITY = os.path.join(ROOT, "orchestrator", "os", "authority", "authority.yaml")
+GIT = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+
+# #221: a project this many recorded transitions deep re-grounds the core non-negotiables — a
+# deterministic proxy for a "long run" (there is no session in a one-shot CLI). Data, not magic.
+LONG_RUN_CHECKPOINTS = 3
 
 
 def load_workflow(path=WORKFLOW):
     with open(path, encoding="utf-8") as handle:
         return render.load_yaml(handle.read())
+
+
+def _load_optional(path):
+    """A spec loaded as data, or `{}` when it is absent/unreadable. The re-grounding preamble (#221)
+    reads the authority + git specs; a missing one must degrade the preamble, never crash the primary
+    report (unlike the workflow, which is load-bearing and left unguarded)."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return render.load_yaml(handle.read()) or {}
+    except OSError:
+        return {}
+
+
+def load_authority(path=AUTHORITY):
+    return _load_optional(path)
+
+
+def load_git(path=GIT):
+    return _load_optional(path)
 
 
 def _read_text(path):
@@ -100,10 +129,109 @@ def apply_overlay(workflow, domain):
     return merged
 
 
+# --- #221: re-ground the runtime non-negotiables at a phase boundary. -----------------------------
+# The insight: over a long run the hard invariants drift out of the effective attention window, so
+# re-inject them at each boundary rather than trusting recall (the checkpoint records history; this
+# re-grounds the agent). Every derivable FACT is read from a spec — the acting role and human-gate
+# status from the workflow, the terminal decider + ownership from authority, one-PR + who-merges from
+# git — so the runner holds no hardcoded copy of a rule that could drift from its source of truth.
+# English-on-disk is the one invariant with no machine-readable field; it is cited to AGENTS.md §2,
+# the same way every file in the tree cites its governing section.
+
+def phase_role(workflow, phase):
+    """The role that owns `phase` (workflow states[].role), or None."""
+    for s in (workflow.get("states") or []):
+        if isinstance(s, dict) and s.get("id") == phase:
+            return s.get("role")
+    return None
+
+
+def _role_record(authority, role):
+    for r in (authority.get("roles") or []):
+        if isinstance(r, dict) and r.get("name") == role:
+            return r
+    return {}
+
+
+def terminal_decider(authority):
+    """The decider at the end of the escalation ladder — the human who holds the terminal gate."""
+    ladder = authority.get("escalation") or []
+    last = ladder[-1] if ladder and isinstance(ladder[-1], dict) else {}
+    return last.get("decider")
+
+
+def phase_invariants(workflow, authority, git, phase, transition=None):
+    """The runtime non-negotiables for being AT `phase` — and, when `transition` is given, for TAKING
+    that specific move — each line DERIVED from a spec field, never a hardcoded rule. Pure (no I/O).
+    Returns a list of one-line strings suitable for a re-grounding preamble."""
+    lines = []
+    role = phase_role(workflow, phase)
+    if role:
+        owns = ", ".join(_role_record(authority, role).get("owns") or []) or "—"
+        lines.append(f"acting role for '{phase}': {role} (owns: {owns})")
+    if transition is not None:
+        edge = f"{transition.get('from')} -> {transition.get('to')}"
+        if transition.get("human_gate"):
+            lines.append(f"this move ({edge}) is human-gated: the owner confirms it before it is recorded")
+        else:
+            lines.append(f"this move ({edge}) is automatic (mechanical gates) — direction still lands "
+                         "via a human-opened PR")
+    decider = terminal_decider(authority)
+    if decider:
+        lines.append(f"the escalation ladder terminates at '{decider}' — the human holds the terminal "
+                     "gate; an agent never crosses it")
+    commit, prpol = (git.get("commit") or {}), (git.get("pr") or {})
+    if commit.get("one_pr_at_a_time"):
+        who = prpol.get("merged_by") or prpol.get("opened_by") or "human"
+        squash = "squash-" if prpol.get("merge_method") == "squash" else ""
+        lines.append(f"one PR at a time; the {who} opens and {squash}merges it (never the agent) — and "
+                     "never a push to the default branch")
+    lines.append("on-disk values are English (AGENTS.md §2); the full contract is AGENTS.md")
+    return lines
+
+
+def checkpoint_count(manifest):
+    ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
+    cps = ds.get("checkpoints") if isinstance(ds, dict) else None
+    return len(cps) if isinstance(cps, list) else 0
+
+
+def long_run_reminder(manifest, authority, git, threshold=LONG_RUN_CHECKPOINTS):
+    """A compact re-statement of the two most critical non-negotiables, emitted only once a project is
+    `threshold` recorded transitions deep — a deterministic proxy for a long run, where drift is
+    likelier. Empty below the threshold. Derived from the same specs as phase_invariants. Pure."""
+    if checkpoint_count(manifest) < threshold:
+        return []
+    out = []
+    decider = terminal_decider(authority)
+    if decider:
+        out.append(f"the human ({decider}) still holds the terminal gate — do not cross a human_gate")
+    if (git.get("commit") or {}).get("one_pr_at_a_time"):
+        out.append("still one PR at a time; the human opens and merges")
+    return out
+
+
+def _emit_regrounding(out, workflow, authority, git, manifest, phase, transition=None, indent=""):
+    """Print the re-grounding preamble (#221): the phase invariants, then the long-run reminder when a
+    project is deep enough to warrant it. Thin I/O over the pure builders above."""
+    invariants = phase_invariants(workflow, authority, git, phase, transition)
+    if invariants:
+        print(f"{indent}runtime invariants (re-grounded at this boundary):", file=out)
+        for line in invariants:
+            print(f"{indent}  - {line}", file=out)
+    reminder = long_run_reminder(manifest, authority, git)
+    if reminder:
+        print(f"{indent}long-run reminder — several transitions deep, the non-negotiables still hold:",
+              file=out)
+        for line in reminder:
+            print(f"{indent}  - {line}", file=out)
+
+
 def report(manifest_path, out=sys.stdout):
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
+    authority, git = load_authority(), load_git()
     states = state_ids(workflow)
     phase = current_phase(manifest)
     print(f"current phase: {phase}  (manifest_rev {manifest_rev(manifest)})", file=out)
@@ -113,12 +241,14 @@ def report(manifest_path, out=sys.stdout):
     transitions = legal_transitions(workflow, phase)
     if not transitions:
         print("  (terminal phase — no outgoing transitions)", file=out)
-        return 0
-    print("legal next transitions:", file=out)
-    for t in transitions:
-        gates = ", ".join(t.get("entry_gates") or []) or "—"
-        human = "  [human-gated — the owner confirms]" if t.get("human_gate") else ""
-        print(f"  -> {t.get('to')}   (gates: {gates}){human}", file=out)
+    else:
+        print("legal next transitions:", file=out)
+        for t in transitions:
+            gates = ", ".join(t.get("entry_gates") or []) or "—"
+            human = "  [human-gated — the owner confirms]" if t.get("human_gate") else ""
+            print(f"  -> {t.get('to')}   (gates: {gates}){human}", file=out)
+    # #221: re-ground the invariants for the current phase at this boundary (transition-agnostic).
+    _emit_regrounding(out, workflow, authority, git, manifest, phase)
     return 0
 
 
@@ -235,6 +365,7 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
               file=out)
         return 1
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
+    authority, git = load_authority(), load_git()
     states = state_ids(workflow)
     frm = current_phase(manifest)
     print(f"proposed transition: {frm} -> {to_phase}  (read at manifest_rev {rev})", file=out)
@@ -251,6 +382,8 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
     gates = ", ".join(entry_gates) or "—"
     print(f"  LEGAL — gates to satisfy: {gates}; "
           f"human-gated: {'yes' if t.get('human_gate') else 'no'}", file=out)
+    # #221: re-ground the non-negotiables for THIS specific move before it is evaluated/recorded.
+    _emit_regrounding(out, workflow, authority, git, manifest, to_phase, transition=t, indent="  ")
     gate_results = evaluate(entry_gates, manifest, ctx or {}) if evaluate else None
     if gate_results:
         print("  gate results (live): "

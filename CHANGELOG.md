@@ -9,6 +9,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Phase-boundary re-grounding of the runtime invariants (#221, M14).** The audit trail (#203)
+  records *what happened*; it does not re-anchor the *agent*, so over a long run the hard
+  non-negotiables — the acting role, the human terminal gate, one-PR — can drift out of the effective
+  attention window. `phase_runner` now emits a short **re-grounding preamble** at every boundary
+  (`report` for the current phase, `report --propose` for a specific move), plus a compact **long-run
+  reminder** once a project is `LONG_RUN_CHECKPOINTS` (3) recorded transitions deep — a deterministic
+  proxy for a long run, since a one-shot CLI has no session. Every derivable fact is read from a spec —
+  the acting role and human-gate status from `workflow.yaml`, the terminal decider + ownership from
+  `authority.yaml`, one-PR + who-merges from `git.yaml` — so the runner holds no hardcoded copy of a
+  rule that could diverge from its source of truth (a fake authority terminus flows straight through,
+  proven in the tests); English-on-disk is cited to `AGENTS.md` §2, the one invariant with no
+  machine-readable field. Pure builders (`phase_invariants`, `long_run_reminder`) with thin I/O;
+  covered by `test_phase_runner.py`. Dependency-free.
+
 ## [2.7.0] - 2026-07-07
 
 ### Added
