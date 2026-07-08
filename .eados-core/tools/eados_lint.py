@@ -881,6 +881,7 @@ GATE_COVERAGE = [
     (".eados-core/config/defaults.yaml",                  "data-file-validity"),
     (".eados-core/agent/*.md",                            "agent-registry"),
     (".eados-core/learning/lessons.yaml",                 "lessons + data-file-validity"),
+    (".eados-core/learning/scope-examples.yaml",          "examples + data-file-validity"),
     (".eados-core/learning/runs/**",                      "run-records (schema) + data-file-validity"),
     (".eados-core/tools/*.py",                            "byte-compile + unit tests (CI)"),
     (".eados-core/tools/tests/*.py",                      "byte-compile + unit tests (CI)"),
@@ -1138,6 +1139,78 @@ def check_gate_executability(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 19. Worked-example decision surfaces (#224) — the judgment-laden "which way?" calls that used to
+#     live only as prose (ask-vs-default in the interview, adopt/decline/escalate on a contribution,
+#     apply-vs-skip a lesson's scope) are now few-shot policy AS DATA: an `examples:` block with a
+#     verdict vocabulary and labelled cases. This validates their SHAPE only (never that the agent
+#     obeyed them — that stays the reviewer's job, exactly like the lessons ledger): every case has
+#     input+verdict+why, verdicts are drawn from the block's declared set, and the block covers >= 2
+#     verdicts with >= 2 cases each (a genuine decision surface — >= 2 "positive" + >= 2 "negative").
+# ---------------------------------------------------------------------------
+EXAMPLE_FILES = (
+    "orchestrator/os/contribution/contribution.yaml",   # adopt / decline / escalate
+    "orchestrator/questionnaire.yaml",                  # ask / default
+    "learning/scope-examples.yaml",                     # apply / skip (companion to the lessons ledger)
+)
+EXAMPLE_CASE_REQUIRED = ("input", "verdict", "why")
+
+
+def examples_problems(name, data):
+    """Pure shape check of one `examples:` block (a mapping with `verdicts` + `cases`). Returns a
+    list of problem strings (empty == a well-formed decision surface). No I/O — unit-testable."""
+    problems = []
+    ex = data.get("examples") if isinstance(data, dict) else None
+    if ex is None:
+        return [f"{name}: no `examples:` block — issue #224 requires a worked-example decision surface"]
+    if not isinstance(ex, dict):
+        return [f"{name}: `examples:` must be a mapping with `verdicts` and `cases`"]
+    verdicts = ex.get("verdicts")
+    if not isinstance(verdicts, list) or len(verdicts) < 2:
+        problems.append(f"{name}: `examples.verdicts` must list >= 2 allowed verdicts")
+        verdicts = verdicts if isinstance(verdicts, list) else []
+    vset = {str(v).strip() for v in verdicts}
+    cases = ex.get("cases")
+    if not isinstance(cases, list) or not cases:
+        problems.append(f"{name}: `examples.cases` must be a non-empty list")
+        cases = []
+    counts = {}
+    for i, case in enumerate(cases):
+        if not isinstance(case, dict):
+            problems.append(f"{name}: `examples.cases[{i}]` must be a mapping")
+            continue
+        for key in EXAMPLE_CASE_REQUIRED:
+            if not str(case.get(key, "")).strip():
+                problems.append(f"{name}: `examples.cases[{i}]` missing/empty '{key}'")
+        verdict = str(case.get("verdict", "")).strip()
+        if verdict and vset and verdict not in vset:
+            problems.append(f"{name}: `examples.cases[{i}]` verdict '{verdict}' not in "
+                            f"verdicts {sorted(vset)}")
+        elif verdict:
+            counts[verdict] = counts.get(verdict, 0) + 1
+    covered = [v for v, n in counts.items() if n >= 2]
+    if len(covered) < 2:
+        problems.append(f"{name}: `examples` must cover >= 2 verdicts with >= 2 cases each "
+                        f"(>= 2 positive + >= 2 negative); have {counts or '{}'}")
+    return problems
+
+
+def check_examples(fail):
+    name = "examples"
+    for rel in EXAMPLE_FILES:
+        path = os.path.join(ROOT, *rel.split("/"))
+        if not os.path.exists(path):
+            fail(name, f"{rel}: expected an `examples:` decision surface (#224) but the file is missing")
+            continue
+        try:
+            data = render.load_yaml(read(path))
+        except (ValueError, OSError) as exc:
+            fail(name, f"{rel}: cannot parse for the examples check ({exc!r})")
+            continue
+        for problem in examples_problems(rel, data):
+            fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1157,6 +1230,7 @@ CHECKS = [
     check_gate_coverage,
     check_workflow_safety,
     check_gate_executability,
+    check_examples,
 ]
 
 

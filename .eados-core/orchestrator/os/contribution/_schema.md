@@ -68,3 +68,26 @@ courtesy:         # always-thank + no-auto-accept + never-merge-non-owner-commit
   the contributor (co-author + a rationale comment on their PR + thanks; the human closes), so
   provenance stays 100% in-house. **Every** non-owner disposition thanks the contributor
   (`courtesy.always_thank`).
+
+## Optional: `examples:` — the adopt/decline/escalate call as data (#224)
+
+An **optional** top-level `examples:` block turns the disposition call from prose judgment into a
+few-shot policy surface. It is *not* a required key (`os-spec-completeness` does not demand it); when
+present, `eados_lint`'s `examples` check validates its **shape** — never that the reviewer obeyed it,
+exactly like the lessons ledger.
+
+```yaml
+examples:
+  verdicts: [re-implement-in-house, close-with-thanks, needs-maintainer]  # >= 2; here, the disposition ids
+  cases:
+    - input:   # one line — the situation
+      verdict: # one of `verdicts`
+      why:     # one line
+```
+
+Shape rules: `verdicts` lists ≥ 2 allowed verdicts (for this spec, they are the `dispositions` ids —
+so the examples stay congruent with the vocabulary they illustrate); every case carries a non-empty
+`input` + `verdict` + `why`; and the block covers **≥ 2 verdicts with ≥ 2 cases each** (a genuine
+decision surface — ≥ 2 adopt + ≥ 2 decline, not a single worked path). The same block convention is
+used by the interview (`questionnaire.yaml`, ask/default) and the learning loop
+(`learning/scope-examples.yaml`, apply/skip).

@@ -215,3 +215,26 @@ phases:
           - "Lay down a layered package skeleton (controller/service/repository/dto/mapper/…)?"
           - "Which layer packages, driven by the architecture style?"
         sets: [LAYERED, LAYERS]                                     # capabilities.layered + spec.layers
+
+# #224: worked examples — the ask-vs-default call (the architect's core discipline: "ask only
+# questions whose answer it cannot safely default") as a few-shot policy surface the lint
+# shape-checks. `ask` = pose the question; `default` = assume the documented default and echo it
+# back for confirmation.
+examples:
+  verdicts: [ask, default]
+  cases:
+    - input: "Q0.2 artifact kind, for a brief that already says 'a small Python CLI'"
+      verdict: default
+      why: "the kind is stated — assume cli and echo it back, do not re-ask"
+    - input: "Q0.4 development target, when the brief gives no hint of a platform"
+      verdict: ask
+      why: "the domain axis has no safe default here; a wrong guess mis-scaffolds the whole repo"
+    - input: "license, when every other repo by this maintainer is MIT"
+      verdict: default
+      why: "a strong signal exists — assume MIT and confirm, rather than interrogate"
+    - input: "a follow-up gated on i18n, on a run where i18n was not enabled"
+      verdict: default
+      why: "the ask_when condition is false — take the default (skip it), never ask blindly"
+    - input: "the primary programming language, for a greenfield brief with no stack named"
+      verdict: ask
+      why: "language drives the entire profile — never guess it silently"
