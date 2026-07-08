@@ -878,6 +878,7 @@ GATE_COVERAGE = [
     (".eados-core/orchestrator/project.yaml.template",    "manifest-template"),
     (".eados-core/orchestrator/examples/*.yaml",          "render-smoke (the reference manifest)"),
     (".eados-core/orchestrator/questionnaire.yaml",       "data-file-validity"),
+    (".eados-core/orchestrator/triage.yaml",              "examples + data-file-validity"),
     (".eados-core/config/defaults.yaml",                  "data-file-validity"),
     (".eados-core/agent/*.md",                            "agent-registry"),
     (".eados-core/learning/lessons.yaml",                 "lessons + data-file-validity"),
@@ -1152,6 +1153,7 @@ EXAMPLE_FILES = (
     "orchestrator/os/contribution/contribution.yaml",   # adopt / decline / escalate
     "orchestrator/questionnaire.yaml",                  # ask / default
     "learning/scope-examples.yaml",                     # apply / skip (companion to the lessons ledger)
+    "orchestrator/triage.yaml",                         # answer / focused-change / five-step-loop (Step-0)
 )
 EXAMPLE_CASE_REQUIRED = ("input", "verdict", "why")
 

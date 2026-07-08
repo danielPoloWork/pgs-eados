@@ -6,6 +6,23 @@ its phase's procedure and reports the **legal next move** via the deterministic
 `delivery_state.phase` and [`workflow.yaml`](../os/workflow/workflow.yaml). The agent **proposes**
 a transition; the human **confirms** every human-gated one (`AGENTS.md` §6).
 
+## Step-0 — triage (before you pick a command)
+
+Not every request is a generation run. Before any phase machinery, classify the request and route it
+to the **minimal** path — the ordered, **stop-at-first-match** procedure in
+[`../triage.yaml`](../triage.yaml) (data, not a hardcoded branch):
+
+1. **question / status read** → answer directly (or `/eados status`); never enter the pipeline.
+2. **bounded maintenance edit** to the factory (a tool, a spec, a doc, a profile) → one focused
+   change → a drafted PR. It stays fully governed — the changed paths must resolve to a glob the role
+   owns (`authority`), one PR at a time, and the human opens + merges (`AGENTS.md` §6) — it simply
+   does **not** spin up interview → profile → manifest → render.
+3. **generate or evolve a governed repository** → the full five-step loop (`/eados scaffold`).
+
+`triage.yaml` carries worked `examples:` of each call, shape-checked by `eados_lint`'s `examples`
+gate (#224). The point is to avoid firing the whole pipeline at a one-line doc fix while keeping a
+maintenance edit under the same ownership + human-gate rules as everything else.
+
 | Command | Phase | Status | Procedure |
 |---------|-------|--------|-----------|
 | `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
