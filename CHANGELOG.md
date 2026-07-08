@@ -22,7 +22,9 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
   `input`/`verdict`/`why` cases. A new `examples` check in `eados_lint` validates **shape only** (every
   case complete, verdicts drawn from the declared set, ≥ 2 verdicts covered with ≥ 2 cases each — a real
   decision surface, not a single path) — never that the agent obeyed it, exactly like the lessons
-  ledger. Covered by `test_examples.py`; documented in the contribution `_schema.md` and `learning/README.md`.
+  ledger. Covered by `test_examples.py`; documented in the contribution `_schema.md` and
+  `learning/README.md`; the new `scope-examples.yaml` class is registered under the `gate-coverage`
+  meta-gate.
 
 - **Phase-boundary re-grounding of the runtime invariants (#221, M14).** The audit trail (#203)
   records *what happened*; it does not re-anchor the *agent*, so over a long run the hard

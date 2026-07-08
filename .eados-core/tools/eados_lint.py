@@ -881,6 +881,7 @@ GATE_COVERAGE = [
     (".eados-core/config/defaults.yaml",                  "data-file-validity"),
     (".eados-core/agent/*.md",                            "agent-registry"),
     (".eados-core/learning/lessons.yaml",                 "lessons + data-file-validity"),
+    (".eados-core/learning/scope-examples.yaml",          "examples + data-file-validity"),
     (".eados-core/learning/runs/**",                      "run-records (schema) + data-file-validity"),
     (".eados-core/tools/*.py",                            "byte-compile + unit tests (CI)"),
     (".eados-core/tools/tests/*.py",                      "byte-compile + unit tests (CI)"),
