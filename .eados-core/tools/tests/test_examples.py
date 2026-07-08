@@ -73,6 +73,12 @@ def main():
     check("contribution example verdicts are all real disposition ids",
           set(contrib["examples"]["verdicts"]) <= disp_ids, failures)
 
+    # --- triage verdicts == its own steps[].route names (cross-consistency) ---
+    triage = render.load_yaml(lint.read(os.path.join(lint.ROOT, "orchestrator", "triage.yaml")))
+    check("triage example verdicts match the steps[].route names",
+          set(triage["examples"]["verdicts"]) == {s.get("route") for s in triage.get("steps", [])},
+          failures)
+
     # --- the check is wired into the lint registry ---------------------------
     check("check_examples is registered in eados_lint.CHECKS",
           lint.check_examples in lint.CHECKS, failures)

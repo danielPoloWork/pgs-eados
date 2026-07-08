@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
 
 ### Added
 
+- **Step-0 triage — a front door for `/eados` (#225, M14).** Not every request is a generation run,
+  but the five-step loop and the phase machine assumed one. A new
+  [`orchestrator/triage.yaml`](.eados-core/orchestrator/triage.yaml) adds an ordered,
+  **stop-at-first-match** classification the host reads at the top of `/eados`: a **question / status
+  read** is answered directly (no pipeline); a **bounded maintenance edit** to the factory is one
+  focused PR (still governed by ownership + one-PR + the human merge gate, but without
+  interview→profile→manifest→render); only a **governed generation run** enters the five-step loop. It
+  is agent-followed data, not a hardcoded branch. Its `examples:` block (verdicts = the `steps[].route`
+  names) is shape-checked by the `examples` gate (#224) and registered under `gate-coverage`; the
+  `/eados` command surface ([`commands/README.md`](.eados-core/orchestrator/commands/README.md))
+  documents it. Covered by `test_examples.py`. **Completes M14.**
+
 - **Worked-example decision surfaces — judgment-laden calls as few-shot policy data (#224, M14).**
   Three "which way?" calls that lived only as prose are now `examples:` blocks the lint shape-checks:
   the interview's **ask-vs-default** ([`questionnaire.yaml`](.eados-core/orchestrator/questionnaire.yaml)),
