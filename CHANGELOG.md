@@ -5,9 +5,11 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ## [Unreleased]
+
+## [2.8.0] - 2026-07-08
 
 ### Added
 
