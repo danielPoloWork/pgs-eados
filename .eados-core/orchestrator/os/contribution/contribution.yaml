@@ -72,3 +72,24 @@ courtesy:
                                         # why, and the human (not the agent) disposes
   merge_nonowner_commits: false   # we never merge a non-owner's commits; provenance stays 100% in-house
   adopt_via: re-implement-in-house   # the ONLY way a non-owner change enters the tree (co-author credit)
+
+# #224: worked examples — the adopt / decline / escalate call as a few-shot policy surface, as data
+# the lint shape-checks (never a prose list that rots). `verdicts` are the `dispositions` ids above.
+examples:
+  verdicts: [re-implement-in-house, close-with-thanks, needs-maintainer]
+  cases:
+    - input: "an external fork sends a clean, wanted bugfix touching src/ (not an owned path)"
+      verdict: re-implement-in-house
+      why: "a non-owner's commits are never merged; adopt the idea in-house with co-author credit"
+    - input: "a collaborator proposes a small, correct doc fix we agree with"
+      verdict: re-implement-in-house
+      why: "still a non-owner commit — re-author it ourselves, credit them, thank then close"
+    - input: "an external PR duplicates a change already on main"
+      verdict: close-with-thanks
+      why: "redundant — thank the contributor and close with a rationale comment"
+    - input: "an external PR pushes a direction we are deliberately not pursuing"
+      verdict: close-with-thanks
+      why: "out of scope — decline with reasoning, always thanking the contributor"
+    - input: "an external fork touches an owned path (.github, AGENTS.md) or adds a secret"
+      verdict: needs-maintainer
+      why: "owned-path / security — never auto-disposed; route to the human decider"

@@ -9,6 +9,7 @@ change is a reviewable diff — auditable self-improvement, never an opaque blac
 | Path | Role |
 |---|---|
 | [`lessons.yaml`](lessons.yaml) | The lessons ledger — generalizable rules learned from past runs and corrections. |
+| [`scope-examples.yaml`](scope-examples.yaml) | Worked examples (#224) for the **apply-vs-skip** call — WHEN a lesson's `scope` matches the run. Shape-checked by `eados_lint` (`examples`); a companion to the ledger, which stays a pure list. |
 | [`runs/`](runs/README.md) | One record per generation run (the final manifest + outcome), the input the auto-tuner mines. |
 
 ## The loop

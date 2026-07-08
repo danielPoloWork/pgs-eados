@@ -11,6 +11,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.7.0**.
 
 ### Added
 
+- **Worked-example decision surfaces — judgment-laden calls as few-shot policy data (#224, M14).**
+  Three "which way?" calls that lived only as prose are now `examples:` blocks the lint shape-checks:
+  the interview's **ask-vs-default** ([`questionnaire.yaml`](.eados-core/orchestrator/questionnaire.yaml)),
+  the contribution **adopt/decline/escalate**
+  ([`contribution.yaml`](.eados-core/orchestrator/os/contribution/contribution.yaml), verdicts = the
+  disposition ids), and the learning loop's **apply-vs-skip** — the last in a new companion
+  [`learning/scope-examples.yaml`](.eados-core/learning/scope-examples.yaml) (the lessons ledger stays
+  a pure list its tools iterate). Each block declares a `verdicts` vocabulary and labelled
+  `input`/`verdict`/`why` cases. A new `examples` check in `eados_lint` validates **shape only** (every
+  case complete, verdicts drawn from the declared set, ≥ 2 verdicts covered with ≥ 2 cases each — a real
+  decision surface, not a single path) — never that the agent obeyed it, exactly like the lessons
+  ledger. Covered by `test_examples.py`; documented in the contribution `_schema.md` and `learning/README.md`.
+
 - **Phase-boundary re-grounding of the runtime invariants (#221, M14).** The audit trail (#203)
   records *what happened*; it does not re-anchor the *agent*, so over a long run the hard
   non-negotiables — the acting role, the human terminal gate, one-PR — can drift out of the effective
