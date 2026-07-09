@@ -9,6 +9,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Model & effort routing policy — advisory-first, tiers-not-names (#252, M16 16.1, ADR-0017).**
+  A new eighth OS spec [`orchestrator/os/routing/`](.eados-core/orchestrator/os/routing/_schema.md)
+  turns "which model, how much effort?" from a manual per-issue judgment into policy-as-data: work
+  signals (tracker labels + the `sets-pattern` / `decision-heavy` flags) escalate monotonically
+  from a cheapest floor to a **capability tier** (`fast`/`standard`/`frontier-reasoning`) and an
+  OS-neutral **effort** (`low`–`max`, host aliases like "ultracode" → `max`). Concrete model names
+  live *only* in the dated `catalog:` (today: Sonnet 5 / Opus 4.8 / Fable 5 for Claude Code), so
+  model churn is a catalog edit — never a policy or code change. The tier call ships as a #224
+  worked-example decision surface (registered under the `examples` gate); the spec is
+  auto-discovered by `os-spec-completeness` and covered by the existing `os/**` gate-coverage
+  entry. Advisory-first per RFC-0001: the human keeps final model authority; the evaluator and its
+  surfaces land with 16.2–16.4 (#253–#255).
+
 ## [2.8.0] - 2026-07-08
 
 ### Added

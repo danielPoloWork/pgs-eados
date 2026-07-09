@@ -1155,6 +1155,7 @@ EXAMPLE_FILES = (
     "orchestrator/questionnaire.yaml",                  # ask / default
     "learning/scope-examples.yaml",                     # apply / skip (companion to the lessons ledger)
     "orchestrator/triage.yaml",                         # answer / focused-change / five-step-loop (Step-0)
+    "orchestrator/os/routing/routing.yaml",             # fast / standard / frontier-reasoning (tier calls)
 )
 EXAMPLE_CASE_REQUIRED = ("input", "verdict", "why")
 

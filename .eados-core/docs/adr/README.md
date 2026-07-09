@@ -25,3 +25,4 @@ is sequential and never reused. Template: the generated
 | [0014](0014-inbound-contribution-trust-model.md) | Inbound-contribution trust model (verify the change, never merge non-owner commits, adopt via co-author) | Accepted |
 | [0015](0015-web-domain-and-enterprise-posture.md) | Web domain (shipped) + enterprise as an orthogonal posture flag, not a domain | Accepted |
 | [0016](0016-authoring-language-model.md) | Authoring-language model: confirmed doc/comment-language defaults, non-English choices as recorded exceptions | Accepted |
+| [0017](0017-model-effort-routing.md) | Model & effort routing: advisory-first, capability tiers not model names, dated per-host catalog | Accepted |
