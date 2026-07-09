@@ -1,0 +1,108 @@
+# EADOS model & effort routing - reference instance. Schema: ./_schema.md (ADR-0017).
+# Advisory-first: the OS recommends, the human keeps final model authority. The rules speak
+# capability TIERS; concrete model names live ONLY in the dated catalog below, so model churn is
+# a catalog edit - never a policy or code change. Evaluator: tools/route_advice.py (M16 16.2).
+version: 1
+
+# Ordered cheapest -> most capable / lowest -> highest. Resolution starts at the `defaults` floor
+# and matched rules only ever RAISE (max over floor + matches) - the same only-add-never-relax
+# principle as the workflow's domain overlays. Deterministic and order-independent.
+tiers: [fast, standard, frontier-reasoning]
+efforts: [low, medium, high, max]
+
+# Derived signals beyond tracker labels, asserted by an evaluator heuristic or a human judgment.
+flags:
+  sets-pattern: "first of its class - fixes the template; the follower issues inherit a cheaper route"
+  decision-heavy: "the decision IS the deliverable (ADR / architecture call)"
+
+# The floor: absent any matching rule, work routes to the cheapest tier at the lowest effort
+# (doc fixes, small authoring). Everything above is earned by a signal.
+defaults:
+  tier: fast
+  effort: low
+
+# Signal vocabulary: "label:<tracker label>" or "flag:<flags key>". A rule matches when ALL of
+# its `when` signals hold; it raises the result to at least min_tier / min_effort.
+rules:
+  - id: severity-medium
+    when:
+      - "label:severity:medium"
+    min_tier: standard
+    min_effort: medium
+    why: "a significant gap deserves substantive work - standard tier, real effort"
+  - id: severity-high
+    when:
+      - "label:severity:high"
+    min_tier: standard
+    min_effort: high
+    why: "core-guarantee work needs sustained effort; tier rises via flags, not severity alone"
+  - id: security-surface
+    when:
+      - "label:security"
+    min_tier: frontier-reasoning
+    min_effort: high
+    why: "on security posture the cost of a subtle miss dwarfs the routing saving"
+  - id: decision-heavy
+    when:
+      - "flag:decision-heavy"
+    min_tier: frontier-reasoning
+    min_effort: high
+    why: "when the decision is the deliverable, reasoning depth is the product"
+  - id: adr-is-decision-heavy
+    when:
+      - "label:adr"
+    min_tier: frontier-reasoning
+    min_effort: high
+    why: "an ADR-bearing issue is decision-heavy by definition"
+  - id: sets-pattern
+    when:
+      - "flag:sets-pattern"
+    min_tier: frontier-reasoning
+    min_effort: high
+    why: "the first of a class fixes the template every follower copies - amortized quality"
+  - id: foundational-decision
+    when:
+      - "flag:decision-heavy"
+      - "label:severity:high"
+    min_tier: frontier-reasoning
+    min_effort: max
+    why: "a wrong foundational call is the most expensive artifact the factory can produce"
+
+# The ONLY place model names live. `as_of` is refreshed whenever a mapping changes - a stale
+# date is the review cue. Hosts with their own effort words map them via effort_aliases.
+catalog:
+  as_of: "2026-07-09"
+  hosts:
+    - host: claude-code
+      models:
+        frontier-reasoning: "Fable 5"
+        standard: "Opus 4.8"
+        fast: "Sonnet 5"
+      effort_aliases:
+        ultracode: max
+        ultrathink: max
+
+# Worked-example decision surface (#224) - the judgment call is WHICH TIER a unit of work
+# deserves. Shape-checked by the `examples` gate; drawn from the maintainer-reviewed M15
+# assessment of 2026-07-09 (.issues/M16-model-effort-routing-milestone.md, backfill table).
+examples:
+  verdicts: [fast, standard, frontier-reasoning]
+  cases:
+    - input: "Doc drift - two playbooks omit a domain the code already ships (severity:low)"
+      verdict: fast
+      why: "mechanical prose fix against a known source of truth; no design, small blast radius"
+    - input: "Author a persona file plus a worked config example (severity:low)"
+      verdict: fast
+      why: "authoring to an established format; review catches style drift cheaply"
+    - input: "Third cross-cutting command doc, after the first fixed the template (severity:medium)"
+      verdict: standard
+      why: "substantive but pattern-following; the expensive thinking was spent on the first of the class"
+    - input: "Reconcile a defect backlog against in-tree fixes and build a regression index (severity:high)"
+      verdict: standard
+      why: "meticulous verification, not open-ended design - effort high, tier standard"
+    - input: "The taxonomy ADR every other issue in the milestone builds on (label:adr, severity:high)"
+      verdict: frontier-reasoning
+      why: "decision-heavy and foundational; a wrong call here is repaid with interest downstream"
+    - input: "First command of a new class - fixes the shape its siblings will copy (sets-pattern)"
+      verdict: frontier-reasoning
+      why: "sets-pattern - the marginal cost of the best model is amortized across every follower"
