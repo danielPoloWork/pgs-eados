@@ -907,6 +907,7 @@ GATE_ALLOWLIST = [
     (".gitignore",                                 "VCS config"),
     (".eados-dev",                                 "repo marker file"),
     (".portfolio.json",                            "portfolio-card metadata"),
+    (".issues/**",                                 "issue drafts / milestone backlog — human-reviewed prose"),
     (".github/CODEOWNERS",                         "GitHub config"),
     (".github/dependabot.yml",                     "GitHub config"),
     (".github/PULL_REQUEST_TEMPLATE.md",           "GitHub PR template"),
