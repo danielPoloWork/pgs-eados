@@ -25,6 +25,16 @@ steps:
     route: five-step-loop             # interview -> resolve profile -> manifest -> render -> verify/PR
     enters_pipeline: true
 
+# M16 16.3 (#254): once the route is decided, ALSO state the recommended model tier + effort for
+# the work ahead - the os/routing policy (ADR-0017) evaluated by tools/route_advice.py
+# (offline: --labels "a,b" [--flags sets-pattern,decision-heavy]). Advisory only: the host states
+# tier/effort + today's catalog model and moves on; it never switches the session model - that
+# stays the human's call. `answer-directly` needs no advice (no work is being routed).
+routing_advice:
+  applies_to: [focused-change, five-step-loop]
+  tool: tools/route_advice.py
+  boundary: "advisory only - the human keeps final model authority (ADR-0017)"
+
 # #225 / #224: worked examples of the classification, shape-checked by eados_lint's `examples` gate.
 # `verdicts` are the `steps[].route` names, so the examples stay congruent with the routes they teach.
 examples:

@@ -24,6 +24,15 @@ By default it looks for `ROADMAP.md` and `links.yaml` next to the manifest; `--r
 `--links` override. It **exits non-zero when it finds an actionable problem** (an undeclared phase,
 an uncovered RFC, or a dangling traceability edge), so it doubles as a pre-flight check.
 
+### Routing advice (optional)
+
+`--routing-milestone "TITLE"` appends one **advisory** line per open issue of that milestone —
+`#N -> tier/effort (model)` — from the [`os/routing`](../os/routing/_schema.md) policy (ADR-0017)
+via [`route_advice.py`](../../tools/route_advice.py). Label-only: asserted flags (`sets-pattern` /
+`decision-heavy`) may raise a route further; the reviewed call lives as the `Routing:` line in the
+issue body (see [`.issues/README.md`](../../../.issues/README.md)). It needs `gh` and degrades to
+`SKIP` offline; **advice never changes the exit code** — the human keeps final model authority.
+
 ## Boundary
 
 Assessment only — `status` makes no change, proposes no transition, and runs no phase tool that

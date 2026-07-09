@@ -24,6 +24,7 @@ sys.path.insert(0, HERE)
 import render          # noqa: E402  — the hand-rolled YAML loader
 import phase_runner    # noqa: E402  — current phase + legal transitions (the deterministic engine)
 import traceability    # noqa: E402  — coverage + dangling-edge checks
+import route_advice    # noqa: E402  — advisory model/effort routing (M16 16.3; opt-in readout)
 
 
 def _state(workflow, phase):
@@ -100,6 +101,24 @@ def status_report(manifest, workflow, roadmap_text=None, links=None):
     return lines, healthy
 
 
+def routing_lines(issues, spec, host=None):
+    """Advisory model/effort routing for a milestone's open issues (M16 16.3 / #254). Pure:
+    `issues` are {number, title, labels[]} dicts. One line per issue from the label-only advice —
+    asserted flags (`sets-pattern` / `decision-heavy`) may raise a route further; the reviewed
+    call lives as the `Routing:` line in the issue body. Advisory only (ADR-0017): this readout
+    never touches health or the exit code."""
+    lines = []
+    for it in issues:
+        adv = route_advice.advise(
+            route_advice.signals_for(it.get("labels") or [], [], spec), spec, host=host)
+        lines.append(f"#{it.get('number')} -> {adv['tier']}/{adv['effort']} ({adv['model']})  "
+                     f"{it.get('title')}")
+    if lines:
+        lines.append("advisory only - the human keeps final model authority (ADR-0017); "
+                     "asserted flags may raise a route")
+    return lines
+
+
 def _read(path):
     with open(path, encoding="utf-8") as handle:
         return handle.read()
@@ -116,6 +135,9 @@ def main(argv=None):
     ap.add_argument("--root", help="project root for ROADMAP.md / links (default: the manifest's dir)")
     ap.add_argument("--roadmap", help="path to ROADMAP.md (default: <root>/ROADMAP.md)")
     ap.add_argument("--links", help="traceability links file (default: <root>/links.yaml if present)")
+    ap.add_argument("--routing-milestone", metavar="TITLE",
+                    help="append advisory model/effort routing for the milestone's open issues "
+                         "(needs gh; degrades to SKIP offline; never changes the exit code)")
     args = ap.parse_args(argv)
 
     try:
@@ -136,6 +158,24 @@ def main(argv=None):
     print(f"EADOS status - {args.manifest}")
     for line in lines:
         print(f"  {line}")
+
+    # M16 16.3 (#254): opt-in advisory routing column. Advice is a readout, never a gate — a gh
+    # outage or a broken routing spec is reported loudly but does not change the health verdict
+    # (the spec's own integrity is eados_lint's + route_advice's loud-rejection job).
+    if args.routing_milestone:
+        print(f"  routing advice - milestone '{args.routing_milestone}':")
+        try:
+            spec = route_advice.load_routing()
+            issues = route_advice.fetch_milestone_issues(args.routing_milestone)
+            out = routing_lines(issues, spec) or \
+                [f"no open issues in milestone '{args.routing_milestone}'"]
+        except RuntimeError as exc:
+            out = [f"SKIP - {exc}"]
+        except (OSError, ValueError) as exc:
+            out = [f"ERROR - {exc}"]
+        for line in out:
+            print(f"    {line}")
+
     return 0 if healthy else 1
 
 

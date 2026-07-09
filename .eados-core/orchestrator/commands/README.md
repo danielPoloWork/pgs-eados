@@ -23,6 +23,12 @@ to the **minimal** path — the ordered, **stop-at-first-match** procedure in
 gate (#224). The point is to avoid firing the whole pipeline at a one-line doc fix while keeping a
 maintenance edit under the same ownership + human-gate rules as everything else.
 
+Once the route is decided (a `focused-change` or the `five-step-loop`), the host also **states the
+recommended model tier + effort** for the work ahead — `triage.yaml` `routing_advice`, the
+[`os/routing`](../os/routing/_schema.md) policy (ADR-0017) evaluated by
+[`route_advice.py`](../../tools/route_advice.py). Advisory only: the human keeps final model
+authority, and the session model is never switched by the agent.
+
 | Command | Phase | Status | Procedure |
 |---------|-------|--------|-----------|
 | `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
