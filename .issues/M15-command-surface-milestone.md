@@ -80,6 +80,26 @@ model (RFC-0001). Restore governance-doc integrity **first**, so the wave lands 
   domain-profile materialization gap (6 of 8 domain fields never reach disk).
 - **0021** — links forward to **0025** (the QA persona owns the new `testcases` command).
 
+## GitHub tracker mapping
+
+Every work item is tracked as a GitHub issue in milestone
+[`M15 — command surface & governed assistants`](https://github.com/danielPoloWork/pgs-eados/milestone/15)
+(all assigned to `@danielPoloWork`). The in-repo drafts remain the canonical spec; the issues
+carry the labels, wave, and dependency header.
+
+| Draft | GitHub issue | Draft | GitHub issue |
+|---|---|---|---|
+| 0022 | [#234](https://github.com/danielPoloWork/pgs-eados/issues/234) | 0018 | [#244](https://github.com/danielPoloWork/pgs-eados/issues/244) |
+| 0023 | [#235](https://github.com/danielPoloWork/pgs-eados/issues/235) | 0021 | [#245](https://github.com/danielPoloWork/pgs-eados/issues/245) |
+| 0014 | [#236](https://github.com/danielPoloWork/pgs-eados/issues/236) | 0025 | [#246](https://github.com/danielPoloWork/pgs-eados/issues/246) |
+| 0013 | [#237](https://github.com/danielPoloWork/pgs-eados/issues/237) | 0015 | [#247](https://github.com/danielPoloWork/pgs-eados/issues/247) |
+| 0012 | [#238](https://github.com/danielPoloWork/pgs-eados/issues/238) | 0020 | [#248](https://github.com/danielPoloWork/pgs-eados/issues/248) |
+| 0011 | [#239](https://github.com/danielPoloWork/pgs-eados/issues/239) | 0026 | [#249](https://github.com/danielPoloWork/pgs-eados/issues/249) |
+| 0019 | [#240](https://github.com/danielPoloWork/pgs-eados/issues/240) | 0010-res | [#250](https://github.com/danielPoloWork/pgs-eados/issues/250) |
+| 0024 | [#241](https://github.com/danielPoloWork/pgs-eados/issues/241) | | |
+| 0016 | [#242](https://github.com/danielPoloWork/pgs-eados/issues/242) | | |
+| 0017 | [#243](https://github.com/danielPoloWork/pgs-eados/issues/243) | | |
+
 ## Out of scope (invariants)
 
 - Autonomous agent merge/publish authority (RFC-0001 N2) — agent drafts, human merges.
