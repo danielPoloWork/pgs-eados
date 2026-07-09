@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Routing advice at the OS's read-points (#254, M16 16.3).** The advisory model/effort route
+  (ADR-0017) now surfaces where work is actually picked up: **Step-0 triage** states the
+  recommended tier + effort once a request routes to a `focused-change` or the `five-step-loop`
+  (a new `routing_advice:` block in [`triage.yaml`](.eados-core/orchestrator/triage.yaml));
+  **`/eados status`** gains an opt-in `--routing-milestone "TITLE"` readout — one advisory line
+  per open issue (`#N -> tier/effort (model)`), degrading to SKIP offline and **never changing
+  the exit code**; and the **planning protocol** is now written down in
+  [`.issues/README.md`](.issues/README.md) — plan-doc `Routing` column + a `Routing:` line in
+  every filed issue body, with the `sets-pattern` / `decision-heavy` flags recording what labels
+  cannot say. The 17 open M15 issues (#234–#250) are backfilled with their reviewed 2026-07-09
+  routing lines. Covered by new `routing_lines` checks in `test_doctor.py`.
+
 - **`tools/route_advice.py` — the routing policy as a tool (#253, M16 16.2).** A pure evaluator
   over [`os/routing/routing.yaml`](.eados-core/orchestrator/os/routing/routing.yaml): tracker
   labels + asserted flags in → tier / effort / current model (per catalog host) + the matched

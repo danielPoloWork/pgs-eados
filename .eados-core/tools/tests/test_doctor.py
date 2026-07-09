@@ -93,6 +93,24 @@ def main():
     check("audit -> refactor is shown", has(lines, "-> refactor"), failures)
     check("no roadmap stays healthy", healthy, failures)
 
+    # --- M16 16.3 (#254): the advisory routing readout (pure; the gh shell is not touched) ---
+    import route_advice
+    spec = route_advice.load_routing()
+    issues = [
+        {"number": 1, "title": "ratify the ADR", "labels": ["adr", "severity:high"]},
+        {"number": 2, "title": "fix a doc typo", "labels": ["documentation", "severity:low"]},
+    ]
+    rl = doctor.routing_lines(issues, spec)
+    check("one advisory line per issue (+ the boundary line)", len(rl) == 3, failures)
+    check("an ADR-labelled issue routes to frontier-reasoning",
+          has(rl, "#1 -> frontier-reasoning/"), failures)
+    check("a small doc fix stays on the floor",
+          has(rl, f"#2 -> {spec['defaults']['tier']}/{spec['defaults']['effort']}"), failures)
+    check("the advice names today's catalog model", has(rl, "("), failures)
+    check("the advisory boundary is stated", has(rl, "advisory only"), failures)
+    check("no issues -> no lines (nothing to advise)",
+          doctor.routing_lines([], spec) == [], failures)
+
     if failures:
         print("test-doctor: FAIL\n")
         for f in failures:
