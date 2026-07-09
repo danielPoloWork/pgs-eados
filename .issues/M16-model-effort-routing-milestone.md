@@ -1,6 +1,6 @@
 # Milestone M16 — Model & Effort Routing
 
-**Status:** planning · **Predecessor:** M15 (in progress; only 16.4 depends on an M15 item)
+**Status:** in progress · **Predecessor:** M15 (in progress; only 16.4 depends on an M15 item)
 **Owner:** `@danielPoloWork` · **Planned:** 2026-07-09
 
 ## Theme
@@ -37,30 +37,39 @@ surfacing through the read-points that already exist (Step-0 triage, `/eados sta
 | 16.3 | [#254](https://github.com/danielPoloWork/pgs-eados/issues/254) | Surface advice: Step-0 triage, `/eados status`, planning-doc `Routing` column, M15 backfill | M | standard / medium |
 | 16.4 | [#255](https://github.com/danielPoloWork/pgs-eados/issues/255) | Auto-apply for delegated subagent work via host adapters (depends on M15 [#239](https://github.com/danielPoloWork/pgs-eados/issues/239)) | M | standard / medium |
 
-## M15 backfill table (feeds 16.3 / #254)
+## Delivery record
+
+| Item | Issue | PR | Status |
+|---|---|---|---|
+| 16.1 | #252 | [#257](https://github.com/danielPoloWork/pgs-eados/pull/257) | **merged 2026-07-09** — `os/routing/` spec + ADR-0017 (catalog folded into `routing.yaml` as `catalog:`, stated deviation from the sketched `models.yaml`) |
+| 16.2 | #253 | [#258](https://github.com/danielPoloWork/pgs-eados/pull/258) | **merged 2026-07-09** — `route_advice.py`: pure core + loud spec rejection + `--milestone` batch |
+| 16.3 | #254 | [#259](https://github.com/danielPoloWork/pgs-eados/pull/259) | draft PR open — triage/status surfaces + `.issues/README.md` protocol; **M15 backfill APPLIED 2026-07-09** (owner-approved: the table below written to #234–#250 as `Routing:` body lines) |
+| 16.4 | #255 | — | queued — depends on M15 [#239](https://github.com/danielPoloWork/pgs-eados/issues/239) (host adapters) |
+
+## M15 backfill table (feeds 16.3 / #254) — applied 2026-07-09
 
 Maintainer-reviewed assessment of 2026-07-09, expressed in M16 vocabulary
-(tier — today's Claude Code model — / effort):
+(tier — today's Claude Code model — / effort; "ultracode" = the Claude Code alias of `max`):
 
-| Issue | Routing | Rationale |
-|---|---|---|
-| [#234](https://github.com/danielPoloWork/pgs-eados/issues/234) | frontier-reasoning (Fable 5) / max | decision-heavy: the ADR the whole milestone hangs on |
-| [#235](https://github.com/danielPoloWork/pgs-eados/issues/235) | standard (Opus 4.8) / high | meticulous verification, not design |
-| [#236](https://github.com/danielPoloWork/pgs-eados/issues/236) | standard (Opus 4.8) / medium | mechanical but wide rename + ADR |
-| [#237](https://github.com/danielPoloWork/pgs-eados/issues/237) | fast (Sonnet 5) / medium | doc reconciliation against recorded history |
-| [#238](https://github.com/danielPoloWork/pgs-eados/issues/238) | fast (Sonnet 5) / low | small doc-drift fix |
-| [#239](https://github.com/danielPoloWork/pgs-eados/issues/239) | frontier-reasoning (Fable 5) / high | sets-pattern: cross-host adapter design all commands inherit |
-| [#240](https://github.com/danielPoloWork/pgs-eados/issues/240) | standard (Opus 4.8) / high | broad but contained template/orchestrator decisions |
-| [#241](https://github.com/danielPoloWork/pgs-eados/issues/241) | frontier-reasoning (Fable 5) / high | security posture |
-| [#242](https://github.com/danielPoloWork/pgs-eados/issues/242) | frontier-reasoning (Fable 5) / high | sets-pattern: first cross-cutting command, fixes the template |
-| [#243](https://github.com/danielPoloWork/pgs-eados/issues/243) | standard (Opus 4.8) / medium | follows the #242 pattern |
-| [#244](https://github.com/danielPoloWork/pgs-eados/issues/244) | standard (Opus 4.8) / high | follows the #242 pattern; measurement design adds weight |
-| [#245](https://github.com/danielPoloWork/pgs-eados/issues/245) | fast (Sonnet 5) / medium | persona + example authoring |
-| [#246](https://github.com/danielPoloWork/pgs-eados/issues/246) | standard (Opus 4.8) / high | follows the #242 pattern; QA-ownership wiring |
-| [#247](https://github.com/danielPoloWork/pgs-eados/issues/247) | frontier-reasoning (Fable 5) / max | largest design surface of the milestone (brownfield interview + routing) |
-| [#248](https://github.com/danielPoloWork/pgs-eados/issues/248) | standard (Opus 4.8) / high | renderer/template materialization, contained decisions |
-| [#249](https://github.com/danielPoloWork/pgs-eados/issues/249) | frontier-reasoning (Fable 5) / high | schema-first budget design + enforcement coherence |
-| [#250](https://github.com/danielPoloWork/pgs-eados/issues/250) | frontier-reasoning (Fable 5) / high | enforcement coherent with the gate model, multi-tool |
+| Issue | Title (summary) |  Model                                                                                                        | Effort        | Routing                             | Rationale                                                                |
+|---|---|--------------------------------------------------------------------------|---------------|-------------------------------------|--------------------------------------------------------------------------|
+| [#234](https://github.com/danielPoloWork/pgs-eados/issues/234) | [Wave 0] Ratify the command‑surface taxonomy (foundational ADR of M15)                                       |  **Fable 5** | **ultracode** | frontier-reasoning (Fable 5) / ultracode  | decision-heavy: the ADR the whole milestone hangs on                     |
+| [#235](https://github.com/danielPoloWork/pgs-eados/issues/235) | [Wave 0] Reconcile defect backlog 0001–0010 + regression index (severity: high)                              |  **Opus 4.8** | **high**      | standard (Opus 4.8) / high          | meticulous verification, not design                                      |
+| [#236](https://github.com/danielPoloWork/pgs-eados/issues/236) | [Wave 0] Rename phase ``refactor`` → ``migrate`` + ADR                                                       |  **Opus 4.8** | **medium**    | standard (Opus 4.8) / medium        | mechanical but wide rename + ADR                                         |
+| [#237](https://github.com/danielPoloWork/pgs-eados/issues/237) | [Wave 0] ROADMAP.md outdated: M10–M13 delivered but never recorded                                           |  **Sonnet 5** | **medium**    | fast (Sonnet 5) / medium            | doc reconciliation against recorded history                              |
+| [#238](https://github.com/danielPoloWork/pgs-eados/issues/238) | [Wave 0] Doc drift: ``commands/init.md`` and ``AGENTS.md`` omit ``web`` domain and Q0.5                      |  **Sonnet 5** | **low**       | fast (Sonnet 5) / low               | small doc-drift fix                                                      |
+| [#239](https://github.com/danielPoloWork/pgs-eados/issues/239) | [Wave 1] Host adapters: ``/eados ``<cmd>`` as discoverable slash‑command (severity: high)                    |  **Fable 5** | **high**      | frontier-reasoning (Fable 5) / high | sets-pattern: cross-host adapter design all commands inherit             |
+| [#240](https://github.com/danielPoloWork/pgs-eados/issues/240) | [Wave 1] Design‑phase folds: API contracts, data/schema, budget, algorithms                                  |  **Opus 4.8** | **high**      | standard (Opus 4.8) / high          | broad but contained template/orchestrator decisions                      |
+| [#241](https://github.com/danielPoloWork/pgs-eados/issues/241) | [Wave 1] Security/threat‑modeling surface discoverable (audit sub‑mode)                                      |  **Fable 5** | **high**      | frontier-reasoning (Fable 5) / high | security posture                                                         |
+| [#242](https://github.com/danielPoloWork/pgs-eados/issues/242) | [Wave 2] ``/eados ``debug`` — governed defect investigation + bug ledger                                     |  **Fable 5** | **high**      | frontier-reasoning (Fable 5) / high | sets-pattern: first cross-cutting command, fixes the template            |
+| [#243](https://github.com/danielPoloWork/pgs-eados/issues/243) | [Wave 2] ``/eados ``refactor`` — pattern‑guided code‑quality refactoring                                     |  **Opus 4.8** | **medium**    | standard (Opus 4.8) / medium        | follows the #242 pattern                                                 |
+| [#244](https://github.com/danielPoloWork/pgs-eados/issues/244) | [Wave 2] ``/eados ``optimize`` — measure‑first optimization against NFR budgets                              |  **Opus 4.8** | **high**      | standard (Opus 4.8) / high          | follows the #242 pattern; measurement design adds weight                 |
+| [#245](https://github.com/danielPoloWork/pgs-eados/issues/245) | [Wave 2] QA/test‑engineer persona + working ``config/agents/`` example                                       |  **Sonnet 5** | **medium**    | fast (Sonnet 5) / medium            | persona + example authoring                                              |
+| [#246](https://github.com/danielPoloWork/pgs-eados/issues/246) | [Wave 2] ``/eados ``testcases`` — governed test generation (QA‑owned)                                        |  **Opus 4.8** | **high**      | standard (Opus 4.8) / high          | follows the #242 pattern; QA-ownership wiring                            |
+| [#247](https://github.com/danielPoloWork/pgs-eados/issues/247) | [Wave 3] ``/eados ``adopt`` — brownfield adoption interview (severity: high)                                 |  **Fable 5** | **ultracode** | frontier-reasoning (Fable 5) / ultracode  | largest design surface of the milestone (brownfield interview + routing) |
+| [#248](https://github.com/danielPoloWork/pgs-eados/issues/248) | [Wave 3] ``governance.posture: ``enterprise`` has no effect on rendered output                               |  **Opus 4.8** | **high**      | standard (Opus 4.8) / high          | renderer/template materialization, contained decisions                   |
+| [#249](https://github.com/danielPoloWork/pgs-eados/issues/249) | [Wave 3] Numeric and *enforced* NFR budgets (scalability/hardware/store)                                     |  **Fable 5** | **high**      | frontier-reasoning (Fable 5) / high | schema-first budget design + enforcement coherence                       |
+| [#250](https://github.com/danielPoloWork/pgs-eados/issues/250) | [Wave 3] Honor‑system hardening: ``git_check.py``, ``gate_results`` persistence, evaluator traceability‑lint |  **Fable 5** | **high**      | frontier-reasoning (Fable 5) / high | enforcement coherent with the gate model, multi-tool                     |
 
 ## Out of scope (invariants)
 
