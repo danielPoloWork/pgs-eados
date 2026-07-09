@@ -11,6 +11,17 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`tools/route_advice.py` — the routing policy as a tool (#253, M16 16.2).** A pure evaluator
+  over [`os/routing/routing.yaml`](.eados-core/orchestrator/os/routing/routing.yaml): tracker
+  labels + asserted flags in → tier / effort / current model (per catalog host) + the matched
+  rules' rationale out, by the spec's monotonic escalation. The spec is **loud-rejected on load**
+  when it breaks its own `_schema.md` invariants (unknown tier/effort/flag, a host missing a
+  tier) — the enforcement ADR-0017 assigned to 16.2. Offline by default (`--labels`); a thin `gh`
+  shell adds `--issue N` and a `--milestone` batch (one advice line per open issue — the 16.3
+  status surface), degrading cleanly to SKIP/exit 2 like `pr_review.py`. Advice always states the
+  advisory boundary: the human keeps final model authority. Covered by `test_route_advice.py`
+  (fixture spec + the shipped instance + the ratified M16 anchor cases), discovered by `run_all.py`.
+
 - **Model & effort routing policy — advisory-first, tiers-not-names (#252, M16 16.1, ADR-0017).**
   A new eighth OS spec [`orchestrator/os/routing/`](.eados-core/orchestrator/os/routing/_schema.md)
   turns "which model, how much effort?" from a manual per-issue judgment into policy-as-data: work
