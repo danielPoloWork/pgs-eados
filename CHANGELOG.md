@@ -11,6 +11,33 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`/eados testcases` — governed test generation ships; the first QA-owned code command
+  (#246, M15 Wave 2; ADR-0019 class 3, follows the #242 pattern) — completing Wave 2's
+  cross-cutting class.** `testcases` was a **true gap**: no test-generation command existed
+  anywhere in the factory, and with #245's `qa-engineer` persona + `src/test/**` ownership now
+  landed, this is the command that role drives. **(1) the procedure** —
+  `orchestrator/commands/testcases.md`, on `debug.md`'s shape but **owned by the `qa-engineer`**
+  (not the tech-lead — the first such command): a **testable target** tied to a spec §6
+  verification claim (a vague/untestable target — "add some tests", "improve coverage" with no
+  named behavior — is **refused** as interview Phase 5 refuses an untestable requirement) →
+  **generate** unit/integration tests against §6 using the project profile's test toolchain,
+  landing under `src/test/**` → **verify & record**: the suite runs **green** (entering the
+  coverage the reviewer enforces) **or** is marked **`xfail`** with the defect handed to
+  `/eados debug` (#242) and its bug-ledger record linked — a generated test never enshrines wrong
+  behavior as an expected pass. Includes the worked fixture example (`pbr-cpp-memory-pool` spec §6
+  → a green distinctness/alignment suite plus a defect-linked `xfail` double-release test that
+  becomes `BUG-0001`'s reproduction). Sibling boundaries: the code fix is `/eados debug`,
+  restructuring is `/eados refactor`, optimization is `/eados optimize`. **(2) the authority** —
+  no new record needed: the `qa-engineer` already owns `src/test/**` (may_draft + the
+  `ownership_map` row, #245); the persona gains the `/eados testcases` authoring note and the
+  ownership-map comment now cites the command. **(3) the surface** — the `commands/README.md` row
+  flips **available**, the `testcases` alias-table verb drops `planned`, and the `/eados:testcases`
+  pointer adapter ships (covered by the #239 `command-adapters` lint). Guarded by the new
+  `test_testcases_command.py` (procedure contract incl. the untestable-target refusal, the
+  green-or-xfail discipline, and the QA — not tech-lead — ownership; live registry row + adapter).
+  **With this, M15 Wave 2 is complete** (#242 debug, #243 refactor, #244 optimize, #245 qa-engineer,
+  #246 testcases).
+
 - **The `qa-engineer` persona ships + a worked `config/agents/` example (#245, M15 Wave 2).**
   The registry shipped 9 roles, but test authorship fell implicitly to the `tech-lead` (owns
   `src/**`) and enforcement to the `reviewer` — no role owned the verification strategy

@@ -42,19 +42,23 @@ authority, and the session model is never switched by the agent.
 | `/eados debug` | — (any) | **available** (M15 W2) | [`debug.md`](debug.md) |
 | `/eados refactor` | — (any) | **available** (M15 W2) | [`refactor.md`](refactor.md) |
 | `/eados optimize` | — (any) | **available** (M15 W2) | [`optimize.md`](optimize.md) |
+| `/eados testcases` | — (any) | **available** (M15 W2) | [`testcases.md`](testcases.md) |
 
-`/eados status`, `/eados review`, `/eados debug`, `/eados refactor`, and `/eados optimize` are
-**cross-cutting** — not phases that advance. `/eados status` is a **read-only doctor** (current
-phase, legal moves, traceability coverage at a glance; roadmap 6.4); `/eados review` evaluates an
-**inbound PR** against the contribution policy and drafts a recommended disposition (M8) — it
-**recommends, never merges**; `/eados debug` (#242) is the first cross-cutting **code** command —
-governed defect investigation (reproduce → root-cause → one-change fix + regression test →
-bug-ledger record); `/eados refactor` (#243) is **behavior-preserving** code-quality refactoring
-(a green test suite on both sides of the change, guided by the patterns catalogue); `/eados
-optimize` (#244) is **measure-first** performance work (a numeric NFR budget, a benchmark
-baseline, one change, a re-measure — never "make it faster" on a hunch). The code commands
-**draft, never merge, and never advance state**, and all follow the shape [`debug.md`](debug.md)
-set for the Wave-2 code commands.
+`/eados status`, `/eados review`, `/eados debug`, `/eados refactor`, `/eados optimize`, and
+`/eados testcases` are **cross-cutting** — not phases that advance. `/eados status` is a
+**read-only doctor** (current phase, legal moves, traceability coverage at a glance; roadmap 6.4);
+`/eados review` evaluates an **inbound PR** against the contribution policy and drafts a
+recommended disposition (M8) — it **recommends, never merges**; `/eados debug` (#242) is the first
+cross-cutting **code** command — governed defect investigation (reproduce → root-cause →
+one-change fix + regression test → bug-ledger record); `/eados refactor` (#243) is
+**behavior-preserving** code-quality refactoring (a green test suite on both sides of the change,
+guided by the patterns catalogue); `/eados optimize` (#244) is **measure-first** performance work
+(a numeric NFR budget, a benchmark baseline, one change, a re-measure — never "make it faster" on
+a hunch); `/eados testcases` (#246) is governed **test generation** against spec §6 — the first
+code command owned by the **`qa-engineer`** (not the tech-lead), producing a green suite (or an
+`xfail` with a defect linked via `/eados debug`). The code commands **draft, never merge, and
+never advance state**, and all follow the shape [`debug.md`](debug.md) set for the Wave-2 code
+commands.
 
 ## Host adapters — `/eados <cmd>` as a discoverable slash command (#239, ADR-0019 class 4)
 
@@ -104,8 +108,9 @@ takes an ADR:
    `review`, `debug` (#242 — the first cross-cutting *code* command; [`debug.md`](debug.md) is the
    shape the rest of the class follows), `refactor` (#243 — code-quality meaning, now the #236
    phase rename has vacated the name; behavior-preserving restructuring), and `optimize` (#244 —
-   the wishlist's `optimizecode`; measure-first performance work against a numeric NFR budget).
-   Ratified to join in M15 Wave 2: `testcases` (#246, QA-owned).
+   the wishlist's `optimizecode`; measure-first performance work against a numeric NFR budget),
+   and `testcases` (#246 — governed test generation against spec §6, the first command owned by
+   the `qa-engineer` rather than the tech-lead). This completes M15 Wave 2's cross-cutting class.
 4. **Adapters + aliases** — the surfacing mechanism (#239). An alias routes a verb to its class
    target; it never adds behavior.
 
@@ -123,7 +128,7 @@ no command run).
 | `debug` | `/eados debug` | cross-cutting | #242 |
 | `refactor` (code cleanup) | `/eados refactor` | cross-cutting | #243 |
 | `optimizecode` | `/eados optimize` | cross-cutting | #244 |
-| `testcases` | `/eados testcases` | cross-cutting, QA-owned | #246 · planned, with #245 |
+| `testcases` | `/eados testcases` | cross-cutting, QA-owned | #246 |
 
 A planned command keeps its `· planned` marker here until it ships; shipping adds its row to the
 command table at the top **and** its host adapter (#239). This alias table is the **canonical

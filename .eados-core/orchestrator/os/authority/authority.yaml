@@ -97,7 +97,7 @@ ownership_map:
   - glob: "src/**"
     role: tech-lead
     action: approve
-  - glob: "src/test/**"             # the qa-engineer persona (#245) — the test suite ships with the role
+  - glob: "src/test/**"             # the qa-engineer persona (#245); /eados testcases authors the suite here (#246)
     role: qa-engineer
     action: draft
   - glob: ".github/**"

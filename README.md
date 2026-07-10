@@ -123,15 +123,17 @@ generation runs `/eados scaffold` and ignores the rest.
 | **`migrate`** | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. | write-contained sandbox |
 
 Full detail is in [`USAGE.md`](.eados-core/docs/USAGE.md) and the
-[command playbooks](.eados-core/orchestrator/commands/README.md). Five cross-cutting commands work
+[command playbooks](.eados-core/orchestrator/commands/README.md). Six cross-cutting commands work
 in any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor),
 [`/eados review`](.eados-core/orchestrator/commands/review.md) (inbound-PR triage),
 [`/eados debug`](.eados-core/orchestrator/commands/debug.md) (governed defect investigation:
 reproduce → root-cause → fix + regression test → bug ledger),
 [`/eados refactor`](.eados-core/orchestrator/commands/refactor.md) (behavior-preserving
-code-quality refactoring: a green suite on both sides, guided by the patterns catalogue), and
+code-quality refactoring: a green suite on both sides, guided by the patterns catalogue),
 [`/eados optimize`](.eados-core/orchestrator/commands/optimize.md) (measure-first performance work:
-a numeric NFR budget, a benchmark baseline, one change, a re-measure).
+a numeric NFR budget, a benchmark baseline, one change, a re-measure), and
+[`/eados testcases`](.eados-core/orchestrator/commands/testcases.md) (QA-owned test generation
+against spec §6: a green suite, or an `xfail` with a linked defect).
 
 ---
 

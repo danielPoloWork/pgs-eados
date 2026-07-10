@@ -118,15 +118,17 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 | **`migrate`** | 通过受门禁、沙箱化、**追加式**的 PR 把既有仓库带到标准。 | 写入受限的沙箱 |
 
 完整细节见 [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) 与
-[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。五个跨切面命令在任何阶段都可用：
+[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。六个跨切面命令在任何阶段都可用：
 [`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)（只读体检）、
 [`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)（入站 PR 分流）、
 [`/eados debug`](../../../../.eados-core/orchestrator/commands/debug.md)（受治理的缺陷调查：
 复现 → 根因 → 修复 + 回归测试 → 缺陷台账）、
 [`/eados refactor`](../../../../.eados-core/orchestrator/commands/refactor.md)（保行为的
-代码质量重构：变更两侧测试皆绿，由模式目录导引）与
+代码质量重构：变更两侧测试皆绿，由模式目录导引）、
 [`/eados optimize`](../../../../.eados-core/orchestrator/commands/optimize.md)（度量优先的
-性能工作：数值化 NFR 预算、基准基线、单次改动、再度量）。
+性能工作：数值化 NFR 预算、基准基线、单次改动、再度量）与
+[`/eados testcases`](../../../../.eados-core/orchestrator/commands/testcases.md)（QA 拥有的、
+针对规格 §6 的测试生成：绿色测试套件，或带关联缺陷的 `xfail`）。
 
 ---
 
