@@ -23,7 +23,7 @@ roles:
   - name: tech-lead                 # Tech/Engineering Lead | Lead Programmer. Authors RFCs.
     pillar: engineering
     phases: [design, plan, scaffold]
-    may_draft: ["docs/rfc/**", "docs/specs/**", "src/**", "docs/bugs/**", "docs/patterns/**"]   # bug ledger (#242) + patterns catalogue (#243) ship with the code
+    may_draft: ["docs/rfc/**", "docs/specs/**", "src/**", "docs/bugs/**", "docs/patterns/**", "docs/benchmarks/**"]   # bug ledger (#242) + patterns catalogue (#243) + benchmarks (#244) ship with the code
     may_approve: ["docs/rfc/**", "src/**"]
     owns: ["docs/rfc/**", "src/**"]
   - name: reviewer                  # Senior peers — structured findings, no final authority.
@@ -104,6 +104,9 @@ ownership_map:
     role: tech-lead
     action: draft
   - glob: "docs/patterns/**"        # the patterns catalogue (#243, /eados refactor) — the row ships with the restructure
+    role: tech-lead
+    action: draft
+  - glob: "docs/benchmarks/**"      # the benchmark record (#244, /eados optimize) — before/after numbers ship with the change
     role: tech-lead
     action: draft
   - glob: "CHANGELOG.md"

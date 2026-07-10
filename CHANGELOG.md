@@ -11,6 +11,33 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`/eados optimize` — measure-first performance optimization ships (#244, M15 Wave 2;
+  ADR-0019 class 3, follows the #242 pattern).** No optimization procedure existed; the
+  measurement scaffolding did (the optional benchmarks capability — the CI bench job +
+  `docs/benchmarks/` with its record-the-configuration discipline — spec §3 non-functional
+  budgets, and the domains' hard `nfr_axes`: web Core Web Vitals, game framerate/RAM, mobile
+  cold-start/app-size). This is the command that drives them. **(1) the procedure** —
+  `orchestrator/commands/optimize.md`, on `debug.md`'s shape with the added **measure-first**
+  weight: a **numeric** target from spec §3 or the domain's `nfr_axes` (`p99 < 5 ms`,
+  `cold-start < 2 s` — "make it faster" with no number is **refused** and routed to elicitation,
+  exactly as interview Phase 5 refuses an untestable requirement) → a **benchmark baseline**
+  recorded to the `docs/benchmarks/` discipline (enabling `capabilities.bench` is step zero if it
+  is off) → **profile → one** evidenced change → **re-measure**, accepted only if the number moves
+  toward budget with the suite green and the reviewer's verdict on the readability/complexity cost
+  → the before/after numbers recorded in `docs/benchmarks/` and the PR body. Includes the worked
+  fixture example (`pbr-cpp-memory-pool` `acquire()` `p99 310 ns → 150 ns` via an intrusive
+  free-list) **and the refusal path** ("make it faster", no number). Sibling boundaries: a
+  structure-only change is `/eados refactor`, a defect is `/eados debug`. **(2) the authority** —
+  the `tech-lead` authors the change *and* drafts the `docs/benchmarks/**` record in the same PR
+  (`may_draft` + an `ownership_map` row — previously nobody was routed for `docs/benchmarks/**`);
+  persona updated; the `reviewer` judges the cost. **(3) the surface** — the `commands/README.md`
+  row flips **available**, the `optimizecode` alias-table verb drops `planned`, the `/eados:optimize`
+  pointer adapter ships, **and** `/eados:optimizecode` ships as the **second alias adapter** (after
+  `/eados:security`, #241) so the maintainer's exact wishlist verb resolves. Guarded by the new
+  `test_optimize_command.py` (procedure contract incl. the numeric-target refusal and the
+  baseline→change→re-measure gate, live registry row + both adapters, tech-lead benchmark
+  authority).
+
 - **`/eados refactor` — behavior-preserving code-quality refactoring ships (#243, M15 Wave 2;
   ADR-0019 class 3, follows the #242 pattern).** With the #236 rename having vacated the name
   (brownfield `refactor` → `migrate`), `refactor` takes its universal meaning: behavior-preserving
