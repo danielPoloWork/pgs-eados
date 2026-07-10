@@ -257,6 +257,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Fixed
 
+- **Patterns-catalogue template wording drift: the section named a non-existent `Adopted` status.**
+  The generated `docs/patterns/README.md` seeded its live table under a `## Adopted / Planned`
+  heading and told authors to "add a row to *Adopted*", but the file's own status vocabulary — and
+  the row cells, and the generated `consistency_lint.py` `patterns` check — only know `Implemented`
+  / `Planned` / `Considered` / `Rejected` / `Superseded`; there is no `Adopted` status to file a
+  row under. Reconciled to the real vocabulary: the heading is now `## Implemented / Planned`, the
+  "Adding a pattern" prose says to add the row as `Implemented` (or `Planned` before it lands), and
+  the two sibling references that named the section (`generate.md`'s Step-4 scaffold note and the
+  lint's own comments) match. No behavior change — the `patterns` check already keyed off the
+  `Implemented`/`Planned` status strings, not the heading. Found while shipping `/eados refactor`
+  (#243), whose catalogue hand-off writes exactly this row.
+
 - **`commands/init.md` and `AGENTS.md` §3 doc-drift: the `web` domain and `Q0.5` were missing
   from Phase 0 (#238, M15 Wave 0).** Since M12 ([ADR-0015](.eados-core/docs/adr/0015-web-domain-and-enterprise-posture.md)),
   `interview.md` Phase 0 asks **four** targets at `Q0.4` (`software`/`web`/`game`/`mobile`) plus an

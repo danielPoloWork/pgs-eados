@@ -19,8 +19,9 @@ rather than an application architecture). Record one in an ADR here if that chan
 
 ## How to use this catalogue
 
-- **Adding a pattern** — when a PR adopts one, add a row to *Adopted* with the ADR link and
-  the code location (a real path under `src/main/{{LANG}}/...`).
+- **Adding a pattern** — when a PR lands one, add a row to *Implemented / Planned* as
+  `Implemented`, with the ADR link and the code location (a real path under
+  `src/main/{{LANG}}/...`); a pattern decided in an ADR but not yet in code is added as `Planned`.
 - **Refining** — update the row and link the new ADR.
 - **Rejecting** — add it to *Rejected* with the reason; do not silently drop it.
 - **Removing** — move the row to *Superseded*, link the superseding ADR, keep the history.
@@ -28,7 +29,7 @@ rather than an application architecture). Record one in an ADR here if that chan
 Status vocabulary: `Planned` (decided in an ADR, not yet landed) · `Implemented` (present
 in `src/main/...`, ADR `Accepted`) · `Considered` · `Rejected` · `Superseded`.
 
-## Adopted / Planned
+## Implemented / Planned
 
 _Patterns named in the spec at intake are seeded below as **Planned**; each becomes
 **Implemented** with its ADR and a real code location in the PR that introduces it._

@@ -171,7 +171,7 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
   the constant and the badge equal is what makes the lint's `version-lockstep` pass on day
   zero.
 - `docs/adr/README.md`: index rows for ADR-0001 and ADR-0002 only.
-- `docs/patterns/README.md`: empty *Adopted* table + the candidate-pattern scaffold.
+- `docs/patterns/README.md`: empty *Implemented / Planned* table + the candidate-pattern scaffold.
 
 ## Step 7 — Verify
 
