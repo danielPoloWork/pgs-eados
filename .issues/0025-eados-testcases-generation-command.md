@@ -1,5 +1,18 @@
 # [FEATURE] `/eados testcases` — governed unit/integration test generation (QA-owned)
 
+> **✅ Delivered** (2026-07-10, closes [#246](https://github.com/danielPoloWork/pgs-eados/issues/246)).
+> `/eados testcases` ships as a cross-cutting code command (ADR-0019 class 3) on `debug.md`'s
+> shape and is the **first command owned by the `qa-engineer`** (#245), not the tech-lead:
+> `commands/testcases.md` (testable target tied to spec §6 — vague/untestable refused; generate
+> unit/integration tests against §6 via the profile's test toolchain into `src/test/**`; verify →
+> **green** into the reviewer's coverage gate, **or** `xfail` with the defect handed to
+> `/eados debug` and its ledger record linked), with the worked fixture example (a green
+> distinctness suite + a defect-linked `xfail` → `BUG-0001`). The **available** registry row +
+> live `testcases` alias + the `/eados:testcases` pointer adapter ship; the `qa-engineer`'s
+> `src/test/**` ownership (from #245) already covered the surface (persona + ownership-map comment
+> updated to cite the command). Sibling boundaries drawn against `debug`/`refactor`/`optimize`.
+> Guarded by `test_testcases_command.py`. **Completes M15 Wave 2.**
+
 **Labels:** `enhancement`, `severity:medium`, `area:commands`, `area:agent`
 **Component:** `.eados-core/orchestrator/commands/testcases.md` (new), `.eados-core/agent/qa-engineer.md`, `.eados-core/orchestrator/os/authority/authority.yaml`
 **Milestone:** M15 — Command Surface & Governed Assistants · **Wave 2**

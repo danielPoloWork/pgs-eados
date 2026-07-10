@@ -29,11 +29,15 @@ time; you do not gatekeep alone.
    every requirement in §2–§3, state *how* CI mechanically proves a violation — unit tests,
    property tests, fuzzing, the canonical leak/race check, and (when perf-relevant) the
    benchmark methodology. A requirement with no stated proof is incomplete, not optional.
-2. **Author the test suite** under `src/test/**`: unit, integration, edge-case, and error-path
-   coverage for every new/changed behavior; property-based tests where an invariant generalizes
-   better than an example; characterization tests where `/eados refactor` (#243) needs a
-   behavior pinned before restructuring. Tests are the checkable form of the spec — write the
-   test that fails for the reason the requirement states, not one that merely exercises the code.
+2. **Author the test suite** under `src/test/**` via
+   [`/eados testcases`](../orchestrator/commands/testcases.md) (#246, the command this role owns):
+   unit, integration, edge-case, and error-path coverage for every new/changed behavior;
+   property-based tests where an invariant generalizes better than an example; characterization
+   tests where `/eados refactor` (#243) needs a behavior pinned before restructuring. Tests are
+   the checkable form of the spec — write the test that fails for the reason the requirement
+   states, not one that merely exercises the code. A generated test either runs **green** or is
+   marked **`xfail`** with the defect handed to `/eados debug` — never a green test that enshrines
+   wrong behavior.
 3. **Enforce the coverage bar** (`AGENTS.md` §10) alongside the `reviewer`: new code carries new
    tests in the same PR; a coverage regression is a **blocking** finding, not a follow-up.
 4. **Support the code commands** — the failing-test-first discipline of
