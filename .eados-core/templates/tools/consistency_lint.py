@@ -15,8 +15,8 @@ contract (the "congruence checks"):
      latest released changelog/release file (if any) agree;
   2. adr-index       — every docs/adr/NNNN-*.md is indexed and every indexed ADR exists,
      with sequential numbering and no gap;
-  3. patterns        — every Adopted catalogue row cites an existing ADR and an existing
-     code location under the source tree;
+  3. patterns        — every Implemented/Planned catalogue row cites an existing ADR and an
+     existing code location under the source tree;
   4. spec-map        — the ROADMAP Spec Coverage Map has no dangling row;
   5. milestones      — README ↔ ROADMAP milestone-completion state is consistent and no
      checkbox is malformed;
@@ -174,11 +174,11 @@ def check_patterns():
         fail(name, "docs/patterns/README.md is missing")
         return
     cat = read("docs", "patterns", "README.md")
-    # Real Adopted rows start with `| <digits> |`. The `| — |` placeholder row is ignored,
-    # so a freshly-generated empty catalogue passes.
+    # Real Implemented/Planned rows start with `| <digits> |`. The `| — |` placeholder row is
+    # ignored, so a freshly-generated empty catalogue passes.
     rows = re.findall(r"^\|\s*\d+\s*\|.*\|.*$", cat, re.MULTILINE)
-    adopted = [r for r in rows if "Implemented" in r or "Planned" in r]
-    for row in adopted:
+    catalogued = [r for r in rows if "Implemented" in r or "Planned" in r]
+    for row in catalogued:
         pattern = row.split("|")[2].strip()
         adrs = re.findall(r"\((?:\.\./)*adr/(\d{4}-[a-z0-9-]+\.md)\)", row)
         if not adrs:
