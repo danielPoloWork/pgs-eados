@@ -49,6 +49,44 @@ recommended disposition (M8) — it **recommends, never merges**.
 mechanism (Claude Code `.claude/skills/`, a Codex/Gemini agent registry). The adapter is thin — it
 points at the procedure, exactly as `CLAUDE.md` / `GEMINI.md` point at `AGENTS.md`.
 
+## Command classes & the canonical alias table (ADR-0019)
+
+The surface has exactly **four classes**
+([ADR-0019](../../docs/adr/0019-command-surface-taxonomy.md)); each is closed — extending one
+takes an ADR:
+
+1. **Phases** — the `workflow.yaml` state machine above. No wishlist verb mints a phase.
+2. **Phase sub-modes** — a deepened entry into an existing phase; no new state, transition, or
+   authority. Design sub-modes: `systemdesign`/`api`/`database`/`scalability`/`pseudocode` (#240);
+   audit sub-mode: `security` (#241).
+3. **Cross-cutting commands** — advisory, **non-state-advancing** (never write
+   `delivery_state.phase`), still role-owned, gated, and human-confirmed. Today: `status`,
+   `review`. Ratified to join in M15 Wave 2: `debug` (#242), `refactor` — code-quality meaning,
+   after the #236 phase rename (#243), `optimize` (#244), `testcases` (#246, QA-owned).
+4. **Adapters + aliases** — the surfacing mechanism (#239). An alias routes a verb to its class
+   target; it never adds behavior.
+
+**Manifest boundary (ADR-0019).** A cross-cutting code command runs only against an initialized
+project (a manifest with `delivery_state`). Pasted/standalone code → the command **refuses and
+routes**: greenfield to `/eados init`, an existing ungoverned repo to `/eados adopt` (#247).
+Questions about code stay the Step-0 triage question route (`0-question` — answered directly,
+no command run).
+
+| Alias (wishlist verb) | Routes to | Class | Ref |
+|---|---|---|---|
+| `interview` | `/eados init` (brownfield: `/eados adopt`) | phase intake | #247 |
+| `systemdesign` · `api` · `database` · `scalability` · `pseudocode` | `/eados design` | design sub-mode | #240 |
+| `security` | `/eados audit` | audit sub-mode | #241 |
+| `debug` | `/eados debug` | cross-cutting | #242 · planned |
+| `refactor` (code cleanup) | `/eados refactor` | cross-cutting | #243 · planned, after #236 |
+| `optimizecode` | `/eados optimize` | cross-cutting | #244 · planned |
+| `testcases` | `/eados testcases` | cross-cutting, QA-owned | #246 · planned, with #245 |
+
+A planned command keeps its `· planned` marker here until it ships; shipping adds its row to the
+command table at the top **and** its host adapter (#239). This alias table is the **canonical
+registry**: the adapter-coverage check (#239) requires an adapter for every shipped target and
+skips `· planned` rows.
+
 ## The phase runner
 
 ```bash

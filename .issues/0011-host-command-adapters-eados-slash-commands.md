@@ -6,7 +6,7 @@
 ## Context
 
 The eight `/eados` commands exist only as portable markdown procedures under
-`.eados-core/orchestrator/commands/`. `commands/README.md` (lines 25–27) explicitly delegates
+`.eados-core/orchestrator/commands/`. `commands/README.md` (the "Portable." paragraph) explicitly delegates
 the "thin adapter" to the host ("a host wraps it with its own skill mechanism — Claude Code
 `.claude/skills/`, a Codex/Gemini agent registry"), but **no adapter exists on disk**: `.claude/`
 contains only `settings.local.json`, and the `setup/` installers deliver the bundle only
@@ -32,3 +32,6 @@ command surface is undiscoverable until the agent happens to read `commands/READ
 A fresh install into an empty repo exposes the full `/eados` palette as host slash commands; the
 canonical procedure remains the single source of truth (adapter carries no procedure body);
 self-lint green with the new coverage check.
+
+**Depends on:** ADR-0019 (taxonomy, drafted as 0022) — the `commands/README.md` alias table it
+ratifies is the canonical registry the adapters and the coverage check enforce against.

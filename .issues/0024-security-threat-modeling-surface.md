@@ -14,7 +14,8 @@ maintainer's `security` wishlist verb (controls + threat modeling) therefore has
 
 ## Direction
 
-A **sub-mode/alias of `audit`** (not a new phase — per the taxonomy ADR 0022):
+A **sub-mode/alias of `audit`** (not a new phase — per ADR-0019, the taxonomy ADR drafted
+as 0022):
 
 1. `/eados security` alias routes into an `audit` threat-modeling sub-mode via the adapter + alias
    table (0011).
@@ -28,6 +29,6 @@ A **sub-mode/alias of `audit`** (not a new phase — per the taxonomy ADR 0022):
 `/eados security` is reachable via the adapter/alias and enters the audit threat-modeling sub-mode;
 a fixture run renders a threat-model artifact with a STRIDE checklist owned by the security-auditor;
 the wishlist mapping (`security → /eados audit`) is documented in `commands/README.md`; self-lint
-green. Cites ADR 0022.
+green. Cites ADR-0019.
 
-**Depends on:** 0022 (taxonomy ADR), 0011 (adapters + alias table).
+**Depends on:** ADR-0019 (taxonomy; draft 0022, delivered), 0011 (adapters + alias table).

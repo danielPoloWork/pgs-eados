@@ -11,6 +11,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **ADR-0019 — the command-surface taxonomy, ratified (#234, M15 Wave 0).** The foundational M15
+  decision is now recorded authority: the maintainer's eleven wishlist verbs classify into
+  **four closed classes** — phases (unchanged; no verb mints one), **design/audit sub-modes**
+  (`systemdesign/api/database/scalability/pseudocode` → `design`, #240; `security` → `audit`,
+  #241), a bounded **cross-cutting command class** (`status`/`review` today; `debug` #242,
+  code-quality `refactor` #243 after the #236 rename, `optimize` #244, `testcases` #246 ratified
+  to join — advisory, non-state-advancing, still role-owned/gated/human-confirmed), and
+  **adapters + a canonical alias table** in `commands/README.md` (#239). The governance boundary
+  is decided: a cross-cutting code command **requires an initialized manifest** — pasted or
+  standalone code is refused and routed to `/eados init` / `/eados adopt` (#247), closing the
+  ungoverned per-snippet-chatbot door. RFC-0001 gains non-goal **N5** admitting the bounded class
+  explicitly; the M15 command drafts (0011, 0016–0019, 0024, 0025) now cite the ADR.
+
 - **ADR-0018 — the ops & deployment perimeter, decided (#261).** The boundary the 2026-07-09
   prompt-pack review found silent is now written down: **ops documents are in scope** (deployment
   architecture, monitoring/observability strategy, the production-readiness checklist — landing

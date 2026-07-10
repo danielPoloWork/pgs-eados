@@ -14,8 +14,9 @@ self-scored — a weak enterprise/AAA verification bar.
 
 ## Direction
 
-A **cross-cutting command** `commands/testcases.md` (per taxonomy ADR 0022), owned by the
-`qa-engineer` persona shipped in 0021:
+A **cross-cutting command** `commands/testcases.md` (per ADR-0019, the taxonomy ADR drafted as
+0022; **manifest required** — pasted/standalone code is refused and routed to
+`/eados init` / `/eados adopt`), owned by the `qa-engineer` persona shipped in 0021:
 
 1. **Intake** — the target unit/behavior + its spec §6 verification strategy; **refuse untestable /
    vague targets** the same way Phase 5 refuses untestable requirements.
@@ -30,6 +31,7 @@ A **cross-cutting command** `commands/testcases.md` (per taxonomy ADR 0022), own
 A worked example generates a passing (or intentionally-failing, defect-linked) suite against a
 fixture spec §6; the command file states owner role, preconditions, gates, and boundary like the
 existing commands; `commands/README.md` gains its row and the 0011 adapter check covers it; the
-`qa-engineer` owns the surface. Cites ADR 0022.
+`qa-engineer` owns the surface. Cites ADR-0019.
 
-**Depends on:** 0021 (qa-engineer persona + `src/test/**` ownership), 0022 (taxonomy ADR).
+**Depends on:** 0021 (qa-engineer persona + `src/test/**` ownership), ADR-0019 (taxonomy;
+draft 0022, delivered).

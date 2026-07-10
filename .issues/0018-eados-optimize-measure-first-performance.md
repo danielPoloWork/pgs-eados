@@ -14,7 +14,9 @@ requirement class the interview's Phase-5 discipline exists to refuse.
 
 ## Direction
 
-A **cross-cutting** command, `commands/optimize.md`, owned by the **tech-lead**:
+A **cross-cutting** command, `commands/optimize.md` (class ratified in ADR-0019, drafted as
+0022; **manifest required** — pasted/standalone code is refused and routed to
+`/eados init` / `/eados adopt`), owned by the **tech-lead**:
 
 1. **Target** — a numeric goal from spec §3 or the domain's `nfr_axes` (e.g. "p99 < 5 ms",
    "cold-start < 2 s"). No numeric target → elicit one first (the Phase-5 testability follow-up);
