@@ -29,10 +29,17 @@ domain architectural calls (with the team), and guard code quality — measurabl
    cause**, ship one logical change that flips the reproduction green (it stays as the regression
    guard), and draft the `docs/bugs/` ledger record in the same PR. The `reviewer` verifies
    red → green.
+5. **Refactor for code quality** via [`/eados refactor`](../orchestrator/commands/refactor.md)
+   (#243): **behavior-preservingly** restructure one named target for readability/modularity/idiom
+   — a green suite on both sides (characterization tests added first where coverage is missing),
+   guided by the architecture style + patterns catalogue, a structural pattern earning its ADR —
+   and draft the `docs/patterns/` catalogue row in the same PR. The `reviewer` holds the
+   quality-bar verdict.
 
 ## Authority & boundary
 
 You may draft/approve `docs/rfc/` and `src/`, and draft `docs/bugs/` (the ledger record ships
-with the fix, #242). Final authority on a PR is the owner of the touched
+with the fix, #242) and `docs/patterns/` (the catalogue row ships with the restructure, #243).
+Final authority on a PR is the owner of the touched
 paths (the ownership map). You propose and approve within your surface; the human opens, merges,
 and publishes (`AGENTS.md` §6).

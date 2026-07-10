@@ -11,6 +11,32 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`/eados refactor` — behavior-preserving code-quality refactoring ships (#243, M15 Wave 2;
+  ADR-0019 class 3, follows the #242 pattern).** With the #236 rename having vacated the name
+  (brownfield `refactor` → `migrate`), `refactor` takes its universal meaning: behavior-preserving
+  restructuring of application code for **readability, modularity, and idiom**. The guidance layer
+  already existed (the 8-category patterns taxonomy + living catalogue, the committed architecture
+  style, `spec.pattern_discipline: advisory|enforced` at interview Q5.4, the reviewer's quality
+  bar) — this is the command that applies it to code. **(1) the procedure** —
+  `orchestrator/commands/refactor.md`, built on `debug.md`'s shape: a **named single target**
+  (open-ended "clean everything" scope is refused) → the **behavior-preservation gate** (the
+  affected surface is test-covered green *before* restructuring; characterization tests fill any
+  gap first) → restructure as **one logical change** guided by the architecture style + catalogue
+  (a *structural* pattern earns its ADR) → **prove** (the same suite green after, formatter/linter
+  gates pass, no public-API change without the SemVer/ADR path) → record the catalogue row
+  (`Planned → Implemented`) + the gated draft PR the human merges. Includes the worked fixture
+  example (`pbr-cpp-memory-pool`'s inline allocation switch → a Strategy extraction). Sibling
+  boundaries are explicit: behavior changes go to `/eados debug`, performance to `/eados optimize`
+  (#244), bringing an ungoverned repo to standard to the `migrate` phase. **(2) the authority** —
+  the `tech-lead` authors the restructure *and* drafts the `docs/patterns/**` catalogue row in the
+  same PR (`may_draft` + an `ownership_map` row — previously nobody was routed for
+  `docs/patterns/**`); persona updated; the `reviewer` holds the quality-bar verdict. **(3) the
+  surface** — the `commands/README.md` row flips **available**, the `refactor` alias-table verb
+  drops its `planned, after #236` marker, and the `/eados:refactor` pointer adapter ships (covered
+  by the #239 `command-adapters` lint). Guarded by the new `test_refactor_command.py` (procedure
+  contract incl. the behavior-preservation gate and sibling boundaries, live registry row +
+  adapter, tech-lead authority).
+
 - **`/eados debug` — governed defect investigation ships; the first cross-cutting *code* command
   (#242, M15 Wave 2; ADR-0019 class 3).** The factory had every artifact a debugging discipline
   ends in (the bug-ledger templates, the generated `AGENTS.md` §7 reproduce-and-root-cause
