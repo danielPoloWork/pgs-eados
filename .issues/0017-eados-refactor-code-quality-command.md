@@ -1,5 +1,17 @@
 # [FEATURE] `/eados refactor` — code-quality refactoring: readability, modularity, idiom (pattern-guided)
 
+> **✅ Delivered** (2026-07-10, closes [#243](https://github.com/danielPoloWork/pgs-eados/issues/243)).
+> Unblocked by #236 (the brownfield phase vacated the name). `/eados refactor` ships as a
+> cross-cutting code command (ADR-0019 class 3) on `debug.md`'s shape: `commands/refactor.md`
+> (named single target → **behavior-preservation gate** (green suite both sides; characterization
+> tests first) → restructure guided by the architecture style + patterns catalogue, a structural
+> pattern earning its ADR → prove (suite/formatter/linter, no public-API break without SemVer/ADR)
+> → catalogue row `Planned → Implemented`, with the worked fixture example), the **available**
+> registry row + live `refactor` alias + `/eados:refactor` pointer adapter, and `tech-lead`
+> authority over `docs/patterns/**` (`may_draft` + ownership-map row; the reviewer holds the
+> quality-bar verdict). Sibling boundaries drawn against `debug`/`optimize`/`migrate`. Guarded by
+> `test_refactor_command.py`.
+
 **Labels:** `enhancement`, `severity:medium`, `area:commands`
 **Component:** `orchestrator/commands/` (new `refactor.md`, post-rename)
 
