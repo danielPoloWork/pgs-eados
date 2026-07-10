@@ -683,6 +683,50 @@ def check_version_lockstep(fail):
 
 
 # ---------------------------------------------------------------------------
+# 12.5. Roadmap freshness (#237) — ROADMAP.md declares itself the single source of truth for
+#     EADOS's own delivery plan, but nothing enforced that a milestone the CHANGELOG documents as
+#     RELEASED actually got a "done" row in the roadmap's status table — the gap that let M10–M14
+#     ship undocumented for four consecutive milestones before this check existed. Every milestone
+#     number tagged in a RELEASED CHANGELOG section (`(#NNN, M<n>` — the citation style every entry
+#     has used since M11) must appear as a done row (`**M<n>` + a ✅ on the same line) in
+#     ROADMAP.md's status table. Unreleased milestones (still under `## [Unreleased]`, e.g. M15+)
+#     are exempt — they are tracked by their own `.issues/M<n>-*-milestone.md` plan doc until
+#     released, per the roadmap-vs-issues-plan-doc split that emerged starting M15.
+# ---------------------------------------------------------------------------
+_CHANGELOG_MILESTONE_TAG_RE = re.compile(r"\(#\d+,\s*M(\d+)\b")
+_ROADMAP_DONE_ROW_RE = re.compile(r"\*\*M(\d+)\b[^\n]*✅")
+
+
+def roadmap_freshness_problems(changelog_text, roadmap_text):
+    """Pure check: every milestone number tagged in a RELEASED CHANGELOG section (text from the
+    first `## [X.Y.Z]` heading onward — `[Unreleased]` is excluded) must have a done row in
+    ROADMAP.md's status table. Returns problem strings (empty == fresh)."""
+    released_start = re.search(r"(?m)^##\s*\[\d+\.\d+\.\d+\]", changelog_text)
+    if released_start is None:
+        return []  # nothing released yet — nothing to backfill
+    released_text = changelog_text[released_start.start():]
+    tagged = {int(m) for m in _CHANGELOG_MILESTONE_TAG_RE.findall(released_text)}
+    done = {int(m) for m in _ROADMAP_DONE_ROW_RE.findall(roadmap_text)}
+    missing = sorted(tagged - done)
+    if not missing:
+        return []
+    names = ", ".join(f"M{n}" for n in missing)
+    return [f"ROADMAP.md's status table has no done row for {names} — the CHANGELOG documents "
+            f"{'it' if len(missing) == 1 else 'them'} as released; backfill the milestone "
+            "section(s) + status row(s) in the same PR (the cross-cutting lockstep invariant)"]
+
+
+def check_roadmap_freshness(fail):
+    name = "roadmap-freshness"
+    changelog_path = os.path.join(REPO_ROOT, "CHANGELOG.md")
+    roadmap_path = os.path.join(ROOT, "docs", "rfc", "ROADMAP.md")
+    if not os.path.exists(changelog_path) or not os.path.exists(roadmap_path):
+        return  # a partial checkout without one of the two documents — nothing to check
+    for problem in roadmap_freshness_problems(read(changelog_path), read(roadmap_path)):
+        fail(name, problem)
+
+
+# ---------------------------------------------------------------------------
 # 13. Manifest-template integrity — orchestrator/project.yaml.template is the one factory file a
 #     consumer copies and hand-fills, yet nothing validated it: it is not under templates/** (so
 #     placeholder-integrity skips it) and render-smoke renders reference.yaml instead. A broken
@@ -1315,6 +1359,7 @@ CHECKS = [
     check_authority_personas,
     check_cross_spec_consistency,
     check_version_lockstep,
+    check_roadmap_freshness,
     check_manifest_template,
     check_data_files,
     check_run_records,

@@ -11,6 +11,30 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **ROADMAP.md backfilled through M14 + a `roadmap-freshness` self-lint (#237, M15 Wave 0).**
+  `ROADMAP.md` declares itself the single source of truth for EADOS's own delivery plan, but its
+  status table and milestone sections stopped at **M9 / v2.3.0** while the CHANGELOG and four
+  published releases documented five further delivered milestones — the lockstep invariant broken
+  for M10 through M14. Reconstructed from `CHANGELOG.md` and `gh` milestone/issue data (owner
+  scope refinement widened the original M10–M13 title to **M10–M14**, five milestones): **M10 —
+  post-audit hardening** (v2.4.0, #128–#132), **M11 — delivery-workflow automation** + **M12 —
+  interview completeness** (both v2.5.0, #141–#144 / #149–#154), **M13 — audit remediation &
+  learning loop** (v2.6.0, #163–#176), and **M14 — agent-contract hardening & runtime
+  re-grounding** (v2.8.0, #221–#225) each gain a full milestone section (goal, checkbox items with
+  issue references, acceptance gate); the un-milestoned **v2.7.0** release (the #203 audit-trail
+  epic + the #194–#202 defect-backlog fixes) gets a status-table row noting it carries no GitHub
+  milestone. The previously-missing **v2.3.0 release row** (M9's own release) is added too. A new
+  **`roadmap-freshness`** check in `eados_lint.py` (`roadmap_freshness_problems` +
+  `check_roadmap_freshness`) prevents recurrence: every milestone number tagged in a *released*
+  CHANGELOG section (`(#NNN, M<n>` — the citation convention already in use since M11) must have a
+  done row (`**M<n>` + a ✅ on the same line) in ROADMAP.md's status table; an `[Unreleased]`
+  milestone (M15+) is exempt until it ships, since it is tracked by its own
+  `.issues/M<n>-*-milestone.md` plan doc in the meantime. Covered by `test_roadmap_freshness.py`
+  (synthetic drift/multi-gap/exempt cases, plus a live-repo invariant). The same staleness class
+  M10.3 already fixed once ("M1 → M5" → "M1 → M9") had recurred: RFC-0001 §12 and `docs/rfc/README.md`
+  still hardcoded **"M1 → M9"** — both corrected to **"M1 → M14"** and reworded to stop enumerating
+  a fixed endpoint (a snapshot pointing at `ROADMAP.md`, not a duplicate of it).
+
 - **Defect backlog `0001–0010` reconciled + a regression index and a `safe-write` lint (#234's
   sibling, #235, M15 Wave 0).** The ten defect drafts under `.issues/0001-0010` were all fixed and
   released in **v2.7.0** (originating issues #194–#203 are CLOSED) yet lingered in the tree as a

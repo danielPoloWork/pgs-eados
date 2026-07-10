@@ -13,8 +13,10 @@ record* that ratifies it. Numbering is sequential and never reused.
 
 ## Roadmap
 
-The delivery plan (M1 → M9) is the **single source of truth** in [`ROADMAP.md`](ROADMAP.md) —
-living and checkbox-driven. RFC-0001 §12 points to it; it is not duplicated.
+The delivery plan (M1 → M14, as of 2026-07-10) is the **single source of truth** in
+[`ROADMAP.md`](ROADMAP.md) — living and checkbox-driven. RFC-0001 §12 points to it; it is not
+duplicated here, so this line is a snapshot, not the source (`eados_lint`'s `roadmap-freshness`
+gate keeps `ROADMAP.md` itself honest against the CHANGELOG).
 
 ## Diagrams
 

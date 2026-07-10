@@ -229,12 +229,16 @@ Monolithic 360° orchestrator (§1); strip roadmap into loose modules (§1); man
 store (§8); intent-classification routing and event-driven runtime (§10). Each is rejected for a
 concrete reason recorded above — not on taste.
 
-## 12. Roadmap — M1 → M9
+## 12. Roadmap — M1 → M14 (and counting)
 
 The roadmap is maintained as a living, checkbox-driven file — the **single source of truth**:
 **[`ROADMAP.md`](ROADMAP.md)**. It sequences `init → design → plan → scaffold → audit → migrate`
-across its milestones (M1 foundation → M9 guided installer; the pipeline lands in M1–M5), each with deliverables, an
-acceptance gate, and dependencies. The factory keeps working throughout; every phase is opt-in.
+across its milestones (M1 foundation → M14 agent-contract hardening & runtime re-grounding, as of
+2026-07-10 — the pipeline itself lands in M1–M5; later milestones harden and extend it), each with
+deliverables, an acceptance gate, and dependencies. `ROADMAP.md` is the moving document — this
+section is not re-numbered as milestones land, so it deliberately does not enumerate beyond the
+latest reconciled point (`eados_lint`'s `roadmap-freshness` gate, #237, keeps `ROADMAP.md` itself
+honest against the CHANGELOG). The factory keeps working throughout; every phase is opt-in.
 (This is the EADOS *self* roadmap — distinct from the `ROADMAP.md` template that generated
 projects receive.)
 
