@@ -27,3 +27,4 @@ is sequential and never reused. Template: the generated
 | [0016](0016-authoring-language-model.md) | Authoring-language model: confirmed doc/comment-language defaults, non-English choices as recorded exceptions | Accepted |
 | [0017](0017-model-effort-routing.md) | Model & effort routing: advisory-first, capability tiers not model names, dated per-host catalog | Accepted |
 | [0018](0018-ops-delivery-perimeter.md) | Ops & deployment perimeter: ops documents in scope, live infrastructure a recorded non-goal, `deploy` phase deferred | Accepted |
+| [0019](0019-command-surface-taxonomy.md) | Command-surface taxonomy: phases closed, design/audit sub-modes, bounded cross-cutting class, adapters+aliases; manifest required | Accepted |

@@ -60,7 +60,14 @@ machine-readable OS artifacts (`workflow`, `authority`, `git`, traceability) wit
 **opinionated governance layer that decides how work flows**, declarative and human-gated, not a
 process runtime. (N2) Autonomous merge/publish authority for agents. (N3) Replacing Git as the
 source of truth for *content*. (N4) Reworking the existing generation templates' behavior (the
-`scaffold` phase is today's renderer, untouched).
+`scaffold` phase is today's renderer, untouched). (N5) An **unbounded command menu or per-snippet
+code chatbot.** The command surface is the phase machine plus a small, **closed** class of
+cross-cutting commands (`status`, `review`; extended by ADR-0019 with
+`debug`/`optimize`/`refactor`/`testcases`) — advisory and non-state-advancing; the **code
+commands** among them (`debug`/`optimize`/`refactor`/`testcases`) are gated, human-confirmed,
+and **bound to an initialized manifest** (ADR-0019: pasted/standalone code is refused and routed
+to `init`/`adopt`). Admitting this bounded class is a recorded exception (ADR-0019), not a step
+toward the monolithic orchestrator rejected in §1.
 
 ## 3. The phase model (state machine)
 

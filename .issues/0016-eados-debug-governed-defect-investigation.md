@@ -13,7 +13,9 @@ What is missing is the command that walks a defect from report to closed, govern
 
 ## Direction
 
-A **cross-cutting** command (usable in any phase, like `/eados status`), `commands/debug.md`.
+A **cross-cutting** command (usable in any phase, like `/eados status`; class ratified in
+ADR-0019, drafted as 0022), `commands/debug.md`. **Manifest required** (ADR-0019 boundary):
+pasted/standalone code is refused and routed to `/eados init` / `/eados adopt`.
 Fix authorship belongs to the **tech-lead** (owns `src/**`); the **reviewer** verifies.
 
 1. **Intake** — the observed failing behavior (bug report, failing CI job, or user description);

@@ -12,9 +12,11 @@ model (RFC-0001). Restore governance-doc integrity **first**, so the wave lands 
 
 ## Ratified decisions (2026-07-09)
 
-1. **Taxonomy = hybrid** (ADR in 0022): `systemdesign/api/database/scalability/pseudocode` →
-   `design` sub-modes; `security` → `audit` sub-mode; `debug/optimize/refactor-cleanup` →
-   cross-cutting commands (class of `status`/`review`); all via adapters + alias table.
+1. **Taxonomy = hybrid** (delivered from 0022 as **ADR-0019**, 2026-07-10):
+   `systemdesign/api/database/scalability/pseudocode` → `design` sub-modes; `security` → `audit`
+   sub-mode; `debug/optimize/refactor-cleanup` → cross-cutting commands (class of
+   `status`/`review`); all via adapters + alias table. Boundary: **manifest required** for
+   cross-cutting code commands (refuse + route to `init`/`adopt`).
 2. **`enterprise` = posture that must materialize** (0020): stays orthogonal to
    software/web/game/mobile but must change rendered output (`{{POSTURE}}`/`IF_ENTERPRISE` +
    compliance/docs index + stricter gate selection).

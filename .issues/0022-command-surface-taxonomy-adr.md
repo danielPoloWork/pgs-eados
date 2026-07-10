@@ -1,5 +1,10 @@
 # [TASK] Ratify the command-surface taxonomy (ADR): phase vs sub-mode vs cross-cutting vs adapter
 
+> **Delivered:** [ADR-0019](../.eados-core/docs/adr/0019-command-surface-taxonomy.md)
+> (2026-07-10, closes [#234](https://github.com/danielPoloWork/pgs-eados/issues/234)).
+> Boundary decided: **manifest required** — a cross-cutting code command refuses
+> pasted/standalone code and routes to `/eados init` / `/eados adopt`.
+
 **Labels:** `enhancement`, `severity:high`, `area:orchestrator`, `adr`
 **Component:** `.eados-core/docs/adr/`, `.eados-core/docs/rfc/0001-eados-delivery-os.md`, `.eados-core/orchestrator/commands/README.md`
 **Milestone:** M15 — Command Surface & Governed Assistants · **Wave 0**

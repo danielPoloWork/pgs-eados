@@ -6,7 +6,8 @@
 ## Context
 
 Four maintainer wishlist items (`api`, `database`, `scalability`, `pseudocode`) are best served
-by strengthening the **design phase** rather than minting commands (decision of 2026-07-09):
+by strengthening the **design phase** rather than minting commands (decision of 2026-07-09,
+ratified as the design-sub-mode class in ADR-0019, drafted as 0022):
 the RFC template already prompts for "API contracts, data/schema, sequence"; spec §5 elicits the
 public interface (Q5.5); ADR-0004 deliberately keeps SQL a secondary Q1.2 surface; "scalab*"
 has zero occurrences in the factory content (its only hits are this planning wave: ROADMAP

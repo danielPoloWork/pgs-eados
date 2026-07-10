@@ -14,7 +14,9 @@ interview Q5.4, and the reviewer persona's quality bar — but no command applie
 
 ## Direction
 
-A **cross-cutting** command, `commands/refactor.md` (new meaning). Owned by the **tech-lead**
+A **cross-cutting** command, `commands/refactor.md` (new meaning; class ratified in ADR-0019,
+drafted as 0022). **Manifest required** (ADR-0019 boundary): pasted/standalone code is refused
+and routed to `/eados init` / `/eados adopt`. Owned by the **tech-lead**
 (owns `src/**`); the **reviewer** holds the quality-bar verdict.
 
 1. **Scope** — one named smell/target per run (a module, a pattern violation, a duplication
