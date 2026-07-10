@@ -1,5 +1,15 @@
 # [FEATURE] `/eados debug` — governed defect investigation: reproduce → root-cause → fix + regression test → bug ledger
 
+> **✅ Delivered** (2026-07-10, closes [#242](https://github.com/danielPoloWork/pgs-eados/issues/242)).
+> `/eados debug` ships as the **first cross-cutting code command** (ADR-0019 class 3) and the
+> shape #243/#244/#246 inherit: `commands/debug.md` (falsifiable intake → reproduce-first →
+> root-cause → one-change fix + regression guard → ledger record + gated draft PR, with the
+> worked fixture example), the **available** registry row + live `debug` alias + `/eados:debug`
+> pointer adapter, and `tech-lead` authority over `docs/bugs/**` (`may_draft` + ownership-map
+> row; the reviewer verifies red → green). Found and fixed in passing: the ledger prose
+> documents `rejected` but the generated lint's `BUG_STATUSES` only knew `wontfix` — `rejected`
+> is now accepted. Guarded by `test_debug_command.py`.
+
 **Labels:** `enhancement`, `severity:medium`, `area:commands`
 **Component:** `orchestrator/commands/` (new `debug.md`)
 

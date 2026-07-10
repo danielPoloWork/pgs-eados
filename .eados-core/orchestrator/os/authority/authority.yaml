@@ -23,7 +23,7 @@ roles:
   - name: tech-lead                 # Tech/Engineering Lead | Lead Programmer. Authors RFCs.
     pillar: engineering
     phases: [design, plan, scaffold]
-    may_draft: ["docs/rfc/**", "docs/specs/**", "src/**"]
+    may_draft: ["docs/rfc/**", "docs/specs/**", "src/**", "docs/bugs/**"]   # ledger record ships with the fix (#242)
     may_approve: ["docs/rfc/**", "src/**"]
     owns: ["docs/rfc/**", "src/**"]
   - name: reviewer                  # Senior peers — structured findings, no final authority.
@@ -99,6 +99,9 @@ ownership_map:
     action: review
   - glob: "docs/security/**"        # the threat-model artifact (#241, audit sub-mode)
     role: security-auditor
+    action: draft
+  - glob: "docs/bugs/**"            # the bug ledger (#242, /eados debug) — the record ships with the fix
+    role: tech-lead
     action: draft
   - glob: "CHANGELOG.md"
     role: release-manager

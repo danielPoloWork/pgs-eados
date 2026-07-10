@@ -123,9 +123,11 @@ generation runs `/eados scaffold` and ignores the rest.
 | **`migrate`** | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. | write-contained sandbox |
 
 Full detail is in [`USAGE.md`](.eados-core/docs/USAGE.md) and the
-[command playbooks](.eados-core/orchestrator/commands/README.md). Two cross-cutting commands work in
-any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor) and
-[`/eados review`](.eados-core/orchestrator/commands/review.md) (inbound-PR triage).
+[command playbooks](.eados-core/orchestrator/commands/README.md). Three cross-cutting commands work
+in any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor),
+[`/eados review`](.eados-core/orchestrator/commands/review.md) (inbound-PR triage), and
+[`/eados debug`](.eados-core/orchestrator/commands/debug.md) (governed defect investigation:
+reproduce → root-cause → fix + regression test → bug ledger).
 
 ---
 
