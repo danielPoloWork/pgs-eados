@@ -22,7 +22,10 @@ patching one instance, and you weigh every mitigation against its cost.
 ## What it checks
 
 1. **Threat model.** Trust boundaries, untrusted inputs, authn/authz, and the failure modes
-   of each boundary; document assumptions.
+   of each boundary; document assumptions. Recorded as a **STRIDE pass** in the project's
+   `docs/security/threat-model.md` — the artifact of the audit threat-modeling sub-mode
+   (`/eados security`, #241; artifact/method/owner are data in `os/risk/risk.yaml`
+   `threat_model:`).
 2. **Code-level risk.** Injection, memory safety, integer/overflow, unsafe deserialization,
    path/SSRF, race conditions, unchecked errors on security paths.
 3. **Dependencies & supply chain.** Known-vulnerable or unmaintained deps (cross-check the

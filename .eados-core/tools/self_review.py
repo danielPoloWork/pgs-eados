@@ -33,6 +33,7 @@ REQUIRED_FILES = [
     "docs/patterns/README.md", "docs/patterns/design-patterns.md",
     "docs/specs/template.md",
     "docs/bugs/README.md", "docs/bugs/template.md",
+    "docs/security/README.md", "docs/security/threat-model.md",
     "docs/journal/README.md",
     "docs/releases/README.md",
     "docs/workflow/git-workflow.md", "docs/workflow/documentation.md",

@@ -35,9 +35,9 @@ roles:
   - name: security-auditor          # Application-security specialist (defensive only).
     pillar: engineering
     phases: [audit]
-    may_draft: ["SECURITY.md", "docs/bugs/**"]
+    may_draft: ["SECURITY.md", "docs/bugs/**", "docs/security/**"]   # threat model (#241)
     may_approve: []
-    owns: ["SECURITY.md"]
+    owns: ["SECURITY.md", "docs/security/**"]
   - name: contribution-reviewer     # Inbound-PR steward: composes reviewer + security-auditor.
     pillar: engineering
     phases: []                      # cross-cutting (like /eados review), not a delivery-phase role
@@ -97,6 +97,9 @@ ownership_map:
   - glob: "SECURITY.md"
     role: security-auditor
     action: review
+  - glob: "docs/security/**"        # the threat-model artifact (#241, audit sub-mode)
+    role: security-auditor
+    action: draft
   - glob: "CHANGELOG.md"
     role: release-manager
     action: draft

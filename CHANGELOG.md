@@ -11,6 +11,29 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **The security / threat-modeling surface is discoverable — the audit sub-mode ships (#241,
+  M15 Wave 1; ADR-0019 §2, closes Wave 1).** Security was strong at the role and phase level (a
+  defensive `security-auditor` persona, a conditional deep-audit gate, a risk register) but had
+  **no command identity** — the maintainer's `security` wishlist verb had no front door. Now:
+  **(1) the sub-mode** — `commands/audit.md` gains a *Threat-modeling sub-mode* section (map the
+  trust boundaries → run the STRIDE pass → feed the risk register); no new phase, state, or
+  authority. **(2) the artifact** — every generated repo is scaffolded with
+  `docs/security/threat-model.md` (a STRIDE checklist per trust boundary: every cell a threat, a
+  mitigation, or an explicit `n/a (reason)`) + a `docs/security/README.md` distinguishing policy
+  (`SECURITY.md`) / analysis (threat model) / outcome (risk register) — a universal governed stub,
+  like the bug ledger. **(3) the data** — `os/risk/risk.yaml` gains a `threat_model:` block
+  (`{artifact, method: STRIDE, owner_role: security-auditor}`, schema in lockstep) so the command
+  surface, the persona, and the templates point at one source of truth; `authority.yaml` gives the
+  `security-auditor` `docs/security/**` (may_draft + owns + an ownership-map row). **(4) the
+  alias adapter** — `/eados:security` ships as the first **alias adapter** (routes into
+  `audit.md`'s sub-mode section), and the `command-adapters` self-lint learns the class: a **live**
+  alias-table verb may optionally ship an adapter that must point at its *target's* procedure,
+  while a planned alias shipping early stays an orphan failure. Covered by `test_threat_model.py`
+  (STRIDE artifact + the risk data block) and the extended `test_command_adapters.py` (live-alias
+  clean / wrong-target flagged / planned-alias orphan). Partially mechanizing
+  `risk-register-present` was considered per the issue and **deferred to the #250
+  enforcement-hardening residuals** (recorded in `audit.md`).
+
 - **Design-phase folds — API contract, data/schema, numeric budgets, algorithm sketch (#240,
   M15 Wave 1; ADR-0019 §2).** The maintainer's `systemdesign`/`api`/`database`/`scalability`/
   `pseudocode` wishlist verbs are **sub-modes of `design`**, not commands — this gives them real
