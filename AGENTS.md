@@ -66,7 +66,7 @@ factored into three layers:
 - **Templates** — `templates/**`: the reference artifacts with project facts replaced by
   `{{PLACEHOLDERS}}`.
 
-A parallel **domain axis** (`orchestrator/domains/{software,game,mobile}.yaml`) adapts the active
+A parallel **domain axis** (`orchestrator/domains/{software,web,game,mobile}.yaml`) adapts the active
 roles, artifacts, and NFRs to the target. The README explains the pipeline;
 [`orchestrator/generate.md`](.eados-core/orchestrator/generate.md) is the executable `scaffold`
 procedure. **Every phase is opt-in — a maintainer who only wants generation runs `scaffold` and

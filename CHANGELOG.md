@@ -133,6 +133,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
   one-line deprecation warning at the CLI boundary. Update the manifest to `migrate`; the alias is
   scheduled for removal in the next minor.
 
+### Fixed
+
+- **`commands/init.md` and `AGENTS.md` §3 doc-drift: the `web` domain and `Q0.5` were missing
+  from Phase 0 (#238, M15 Wave 0).** Since M12 ([ADR-0015](.eados-core/docs/adr/0015-web-domain-and-enterprise-posture.md)),
+  `interview.md` Phase 0 asks **four** targets at `Q0.4` (`software`/`web`/`game`/`mobile`) plus an
+  orthogonal `Q0.5 — enterprise posture`, but `commands/init.md` step 2 still said "Q0.1–Q0.4" with
+  only three targets, and `AGENTS.md` §3 still enumerated the domain axis as
+  `{software,game,mobile}` — an agent following `init.md` literally never offered `web` (the
+  shipped seed for the most common modern target) and never asked the posture question, silently
+  reverting ADR-0015 for pipeline users. Both now match `interview.md`'s actual Phase 0
+  (`Q0.1–Q0.5`, four targets, the posture note) and `orchestrator/domains/`'s actual four `.yaml`
+  seeds. Docs-only.
+
 ## [2.8.0] - 2026-07-08
 
 ### Added

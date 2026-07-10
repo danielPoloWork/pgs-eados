@@ -1,5 +1,10 @@
 # [BUG] Doc drift: `commands/init.md` and `AGENTS.md` omit the `web` domain and Q0.5
 
+> **✅ Delivered** (2026-07-10, closes [#238](https://github.com/danielPoloWork/pgs-eados/issues/238)).
+> `commands/init.md` step 2 now says "Q0.1–Q0.5" with the four-target list (`software`/`web`/
+> `game`/`mobile`) + a one-line posture note; `AGENTS.md` §3's domain axis is now
+> `{software,web,game,mobile}`. Docs-only.
+
 **Labels:** `bug`, `severity:low`, `area:commands`, `docs`
 **Component:** `.eados-core/orchestrator/commands/init.md`, `AGENTS.md`
 

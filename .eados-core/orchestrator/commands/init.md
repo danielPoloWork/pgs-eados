@@ -27,9 +27,10 @@ python .eados-core/tools/cleanup_installer.py . --apply  # remove them
    tool surfaces here, not mid-run. (Python-missing-entirely is out of scope for a Python tool; the
    guided installer under [`setup/`](../../../setup/setup.sh) carries that non-Python bootstrap hint.)
    On a non-zero result, resolve what it flags, then continue.
-2. **Frame** — run interview [Phase 0](../interview.md) (Q0.1–Q0.4), **including
-   `Q0.4 — development target`** (`software` / `game` / `mobile`), which loads the matching
-   [`domains/<domain>.yaml`](../domains/_schema.md).
+2. **Frame** — run interview [Phase 0](../interview.md) (Q0.1–Q0.5), **including
+   `Q0.4 — development target`** (`software` / `web` / `game` / `mobile`), which loads the
+   matching [`domains/<domain>.yaml`](../domains/_schema.md), and `Q0.5 — enterprise posture`
+   (`standard` default / `enterprise`) — orthogonal to the target, not a fifth domain.
 3. **Write the manifest skeleton** — copy [`project.yaml.template`](../project.yaml.template) to
    `orchestrator/project.yaml` and fill the framing facts: `identity`, the top-level `domain`, the
    `schema_version`, and a `delivery_state` block with `phase: init` (empty `checkpoints` /
