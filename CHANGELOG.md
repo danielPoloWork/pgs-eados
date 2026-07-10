@@ -11,6 +11,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Defect backlog `0001–0010` reconciled + a regression index and a `safe-write` lint (#234's
+  sibling, #235, M15 Wave 0).** The ten defect drafts under `.issues/0001-0010` were all fixed and
+  released in **v2.7.0** (originating issues #194–#203 are CLOSED) yet lingered in the tree as a
+  false open-work picture. Each draft now carries a **resolved banner** (fix PR + issue + commit +
+  guarding test), and a new [`.issues/REGRESSION-INDEX.md`](.issues/REGRESSION-INDEX.md) **binds
+  every closed defect to the named test that must stay green** — re-verified against the current
+  tree, not taken on faith (each fix confirmed present, its commit real, its test reversion-
+  sensitive). To keep the shared invariant behind 0002/0003 from silently regressing, a new
+  **`safe-write` self-lint** ([`eados_lint.check_safe_write`](.eados-core/tools/eados_lint.py))
+  asserts every factory tool routes file writes through `sandbox.safe_write`/`resolve` (the single
+  guarded sink `render.write_file` now delegates to), with a justified allow-list for the three
+  factory-internal writers (`record_run`, `derive_links`, `sync_action_pins`) plus the `sandbox`
+  primitive; guarded by [`test_safe_write.py`](.eados-core/tools/tests/test_safe_write.py) (a
+  synthetic direct write is caught, the shipped tree is clean). Reconciliation only — no defect fix
+  was modified.
+
 - **ADR-0019 — the command-surface taxonomy, ratified (#234, M15 Wave 0).** The foundational M15
   decision is now recorded authority: the maintainer's eleven wishlist verbs classify into
   **four closed classes** — phases (unchanged; no verb mints one), **design/audit sub-modes**
