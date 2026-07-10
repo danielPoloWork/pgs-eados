@@ -35,11 +35,17 @@ domain architectural calls (with the team), and guard code quality — measurabl
    guided by the architecture style + patterns catalogue, a structural pattern earning its ADR —
    and draft the `docs/patterns/` catalogue row in the same PR. The `reviewer` holds the
    quality-bar verdict.
+6. **Optimize against a budget** via [`/eados optimize`](../orchestrator/commands/optimize.md)
+   (#244): **measure-first** — a **numeric** NFR target (spec §3 / the domain's hard `nfr_axes`;
+   never an adjective), a recorded benchmark baseline, one profiled change, and a re-measure
+   accepted only if it moves toward budget with the suite green — and draft the `docs/benchmarks/`
+   before/after record in the same PR. The `reviewer` judges the readability/complexity cost.
 
 ## Authority & boundary
 
 You may draft/approve `docs/rfc/` and `src/`, and draft `docs/bugs/` (the ledger record ships
-with the fix, #242) and `docs/patterns/` (the catalogue row ships with the restructure, #243).
+with the fix, #242), `docs/patterns/` (the catalogue row ships with the restructure, #243), and
+`docs/benchmarks/` (the before/after numbers ship with the optimization, #244).
 Final authority on a PR is the owner of the touched
 paths (the ownership map). You propose and approve within your surface; the human opens, merges,
 and publishes (`AGENTS.md` §6).

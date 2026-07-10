@@ -1,5 +1,17 @@
 # [FEATURE] `/eados optimize` — measure-first performance optimization against NFR budgets
 
+> **✅ Delivered** (2026-07-10, closes [#244](https://github.com/danielPoloWork/pgs-eados/issues/244)).
+> `/eados optimize` ships as a cross-cutting code command (ADR-0019 class 3) on `debug.md`'s shape
+> with the measurement weight: `commands/optimize.md` (numeric target from spec §3 / domain
+> `nfr_axes` — "make it faster" refused; benchmark **baseline** to the `docs/benchmarks/`
+> discipline, `capabilities.bench` off → step zero; profile → **one** change → **re-measure**
+> toward budget with the suite green + reviewer cost verdict; before/after recorded), with the
+> worked fixture example (`acquire()` p99 310→150 ns) and the refusal path exercised. The
+> **available** registry row + live `optimizecode` alias + the `/eados:optimize` pointer adapter
+> **and** the `/eados:optimizecode` alias adapter (the second alias adapter, after `security`)
+> ship; `tech-lead` gains `docs/benchmarks/**` authority (`may_draft` + ownership-map row).
+> Sibling boundaries drawn against `refactor`/`debug`. Guarded by `test_optimize_command.py`.
+
 **Labels:** `enhancement`, `severity:medium`, `area:commands`
 **Component:** `orchestrator/commands/` (new `optimize.md`)
 

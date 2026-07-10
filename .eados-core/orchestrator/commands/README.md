@@ -41,17 +41,20 @@ authority, and the session model is never switched by the agent.
 | `/eados review` | — (any) | **available** (M8) | [`review.md`](review.md) |
 | `/eados debug` | — (any) | **available** (M15 W2) | [`debug.md`](debug.md) |
 | `/eados refactor` | — (any) | **available** (M15 W2) | [`refactor.md`](refactor.md) |
+| `/eados optimize` | — (any) | **available** (M15 W2) | [`optimize.md`](optimize.md) |
 
-`/eados status`, `/eados review`, `/eados debug`, and `/eados refactor` are **cross-cutting** —
-not phases that advance. `/eados status` is a **read-only doctor** (current phase, legal moves,
-traceability coverage at a glance; roadmap 6.4); `/eados review` evaluates an **inbound PR**
-against the contribution policy and drafts a recommended disposition (M8) — it **recommends,
-never merges**; `/eados debug` (#242) is the first cross-cutting **code** command — governed
-defect investigation (reproduce → root-cause → one-change fix + regression test → bug-ledger
-record); `/eados refactor` (#243) is **behavior-preserving** code-quality refactoring (a green
-test suite on both sides of the change, guided by the patterns catalogue). Both **draft, never
-merge, and never advance state**, and both follow the shape [`debug.md`](debug.md) set for the
-Wave-2 code commands.
+`/eados status`, `/eados review`, `/eados debug`, `/eados refactor`, and `/eados optimize` are
+**cross-cutting** — not phases that advance. `/eados status` is a **read-only doctor** (current
+phase, legal moves, traceability coverage at a glance; roadmap 6.4); `/eados review` evaluates an
+**inbound PR** against the contribution policy and drafts a recommended disposition (M8) — it
+**recommends, never merges**; `/eados debug` (#242) is the first cross-cutting **code** command —
+governed defect investigation (reproduce → root-cause → one-change fix + regression test →
+bug-ledger record); `/eados refactor` (#243) is **behavior-preserving** code-quality refactoring
+(a green test suite on both sides of the change, guided by the patterns catalogue); `/eados
+optimize` (#244) is **measure-first** performance work (a numeric NFR budget, a benchmark
+baseline, one change, a re-measure — never "make it faster" on a hunch). The code commands
+**draft, never merge, and never advance state**, and all follow the shape [`debug.md`](debug.md)
+set for the Wave-2 code commands.
 
 ## Host adapters — `/eados <cmd>` as a discoverable slash command (#239, ADR-0019 class 4)
 
@@ -99,9 +102,10 @@ takes an ADR:
 3. **Cross-cutting commands** — advisory, **non-state-advancing** (never write
    `delivery_state.phase`), still role-owned, gated, and human-confirmed. Today: `status`,
    `review`, `debug` (#242 — the first cross-cutting *code* command; [`debug.md`](debug.md) is the
-   shape the rest of the class follows), and `refactor` (#243 — code-quality meaning, now the
-   #236 phase rename has vacated the name; behavior-preserving restructuring). Ratified to join
-   in M15 Wave 2: `optimize` (#244), `testcases` (#246, QA-owned).
+   shape the rest of the class follows), `refactor` (#243 — code-quality meaning, now the #236
+   phase rename has vacated the name; behavior-preserving restructuring), and `optimize` (#244 —
+   the wishlist's `optimizecode`; measure-first performance work against a numeric NFR budget).
+   Ratified to join in M15 Wave 2: `testcases` (#246, QA-owned).
 4. **Adapters + aliases** — the surfacing mechanism (#239). An alias routes a verb to its class
    target; it never adds behavior.
 
@@ -118,7 +122,7 @@ no command run).
 | `security` | `/eados audit` | audit sub-mode | #241 |
 | `debug` | `/eados debug` | cross-cutting | #242 |
 | `refactor` (code cleanup) | `/eados refactor` | cross-cutting | #243 |
-| `optimizecode` | `/eados optimize` | cross-cutting | #244 · planned |
+| `optimizecode` | `/eados optimize` | cross-cutting | #244 |
 | `testcases` | `/eados testcases` | cross-cutting, QA-owned | #246 · planned, with #245 |
 
 A planned command keeps its `· planned` marker here until it ships; shipping adds its row to the
@@ -126,7 +130,8 @@ command table at the top **and** its host adapter (#239). This alias table is th
 verb → command mapping**, and the `command-adapters` check (#239) reads both tables: every
 `**available**` command row must ship its pointer adapter; a **live** alias verb here *may* ship
 an optional alias adapter that must point at its target's procedure (#241 — `security` is the
-first); and a planned command or alias must ship none.
+first; `optimizecode` → `optimize.md` is the second, #244); and a planned command or alias must
+ship none.
 
 ## The phase runner
 

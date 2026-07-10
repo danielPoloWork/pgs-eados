@@ -129,13 +129,15 @@ placeholder は推測ではなくハードエラーです。
 | **`migrate`** | 既存リポジトリを、ゲート付き・サンドボックス化・**追加方式**の PR で標準へ。 | 書き込み制限サンドボックス |
 
 詳細は [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) と
-[コマンド・プレイブック](../../../../.eados-core/orchestrator/commands/README.md) に。横断的な四つの
+[コマンド・プレイブック](../../../../.eados-core/orchestrator/commands/README.md) に。横断的な五つの
 コマンドはどのフェーズでも使えます：[`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)
 （読み取り専用ドクター）、[`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)
 （入力 PR の分流）、[`/eados debug`](../../../../.eados-core/orchestrator/commands/debug.md)
-（統治された欠陥調査：再現 → 根本原因 → 修正 + 回帰テスト → バグ台帳）、そして
+（統治された欠陥調査：再現 → 根本原因 → 修正 + 回帰テスト → バグ台帳）、
 [`/eados refactor`](../../../../.eados-core/orchestrator/commands/refactor.md)（振る舞いを保つ
-コード品質リファクタリング：変更の両側でテストが緑、パターンカタログに導かれて）。
+コード品質リファクタリング：変更の両側でテストが緑、パターンカタログに導かれて）、そして
+[`/eados optimize`](../../../../.eados-core/orchestrator/commands/optimize.md)（計測優先の
+パフォーマンス作業：数値の NFR 予算、ベンチマークのベースライン、単一の変更、再計測）。
 
 ---
 
