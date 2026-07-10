@@ -32,6 +32,12 @@ roles:
     may_draft: []
     may_approve: []
     owns: []
+  - name: qa-engineer                # QA/Test Engineer. Owns the verification strategy end-to-end.
+    pillar: engineering
+    phases: [plan, scaffold, audit]
+    may_draft: ["src/test/**", "docs/specs/**"]   # test authorship + the spec's §6 verification strategy
+    may_approve: []
+    owns: ["src/test/**"]
   - name: security-auditor          # Application-security specialist (defensive only).
     pillar: engineering
     phases: [audit]
@@ -91,6 +97,9 @@ ownership_map:
   - glob: "src/**"
     role: tech-lead
     action: approve
+  - glob: "src/test/**"             # the qa-engineer persona (#245) — the test suite ships with the role
+    role: qa-engineer
+    action: draft
   - glob: ".github/**"
     role: enterprise-architect
     action: approve

@@ -18,6 +18,7 @@ boundary (draft/propose; the human opens, merges, publishes).
 | [`profile-author`](profile-author.md) | Add or refresh a language profile (toolchain knowledge as data). |
 | [`product-manager`](product-manager.md) | Own the "what"/"why": vision, priorities, the product spec (PRD/GDD). The Product pillar. |
 | [`tech-lead`](tech-lead.md) | Lead a team technically: author RFCs, map requirements to tasks, approve RFCs/code. |
+| [`qa-engineer`](qa-engineer.md) | Own the verification strategy end-to-end: negotiate the spec's §6 test strategy, author the test suite, enforce the coverage bar. |
 | [`producer`](producer.md) | Guard delivery: negotiate the milestone roadmap, manage scope and dependencies. The Delivery pillar. |
 
 ## How they compose
@@ -25,8 +26,11 @@ boundary (draft/propose; the human opens, merges, publishes).
 A generation run is the **architect**; before the bootstrap PR it invokes the **reviewer** and
 (for sensitive surfaces) the **security-auditor**; an inbound PR from a non-owner is the
 **contribution-reviewer** (which composes those two and adds provenance + policy + triage); a
-release is the **release-manager**; adding a language is the **profile-author**. They share one
-contract, so handing off between them does not change the rules — only the focus.
+release is the **release-manager**; adding a language is the **profile-author**. The **tech-lead**
+and the **qa-engineer** negotiate the verification strategy together at design time, and the
+**qa-engineer** partners with the **reviewer** on the coverage bar at merge time — neither gatekeeps
+alone. They share one contract, so handing off between them does not change the rules — only the
+focus.
 
 ## Persona vs. authority (the separation is the point)
 
