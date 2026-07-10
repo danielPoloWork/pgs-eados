@@ -141,6 +141,7 @@ def build_context(m):
         "IF_HOUSE_RULES": bool(str(gov.get("house_rules", "") or "").strip()),
         "IF_ARCHITECTURE_STYLE": bool(str(spec.get("architecture_style", "") or "").strip()),  # #151
         "IF_LAYERED": bool(caps.get("layered")),   # #152: opt-in layered package skeleton
+        "IF_API_SPEC": bool(caps.get("api_spec")),  # #240: opt-in docs/api/ OpenAPI/IDL stub (service/web)
         # #150: recorded authoring-language exceptions (ADR-0016) — non-English choices render an
         # explicit exception block into the generated AGENTS.md §2 instead of silently deviating.
         "IF_COMMENT_LANG_NONEN": scalars["CODE_COMMENT_LANG"].strip().lower() not in ("", "en"),
@@ -539,6 +540,8 @@ def main():
             if rel.startswith("docs/i18n/") and not flags["IF_I18N"]:
                 continue
             if rel.startswith("docs/benchmarks/") and not flags["IF_BENCH"]:
+                continue
+            if rel.startswith("docs/api/") and not flags["IF_API_SPEC"]:
                 continue
             if rel == "docs/workflow/announcements.md.tmpl" and not flags["IF_ANNOUNCE"]:
                 continue

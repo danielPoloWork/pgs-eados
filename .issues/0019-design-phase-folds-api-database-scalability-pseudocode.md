@@ -1,5 +1,14 @@
 # [FEATURE] Design-phase folds: API contracts, data/schema, scalability budgets, algorithm sketches
 
+> **✅ Delivered** (2026-07-10, closes [#240](https://github.com/danielPoloWork/pgs-eados/issues/240)).
+> The RFC template's Decision section now carries four folds (API-contract checklist, Data & schema
+> within ADR-0004's frame, numeric scalability budgets, optional language-free algorithm sketch),
+> interview Q5.3/Q5.4/Q5.5 elicit them (+ the `web` UI-architecture enrichment), and spec §3/§4/§5
+> guide the write-up. Optional `capabilities.api_spec` seeds a `docs/api/` OpenAPI/IDL stub
+> (mirrors `capabilities.bench`; guarded by `test_api_spec.py`). **Boundary:** the *numeric* budgets
+> are elicited here; turning them into evaluated audit-phase gates is #249. No new command — all via
+> the `design` sub-modes (ADR-0019 §2) + the alias table.
+
 **Labels:** `enhancement`, `severity:low`, `area:orchestrator`, `area:templates`
 **Component:** `orchestrator/os/rfc/template.md`, `templates/docs/specs/template.md`, `orchestrator/interview.md`
 

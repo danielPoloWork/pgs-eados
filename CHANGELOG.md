@@ -11,6 +11,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Design-phase folds — API contract, data/schema, numeric budgets, algorithm sketch (#240,
+  M15 Wave 1; ADR-0019 §2).** The maintainer's `systemdesign`/`api`/`database`/`scalability`/
+  `pseudocode` wishlist verbs are **sub-modes of `design`**, not commands — this gives them real
+  depth. The RFC template's Decision section (`orchestrator/os/rfc/template.md`) gains four folds:
+  an **API-contract checklist** (endpoints, payloads, error model, versioning/SemVer surface,
+  aligned with spec §5), a **Data & schema** subsection (entities, relations, normal form,
+  migration policy — strictly within ADR-0004's *secondary-SQL* frame: no primary profile, no
+  `database` command without a superseding ADR), **numeric scalability budgets** per hard NFR axis,
+  and an optional language-free **algorithm sketch**. Interview Phase 5 elicits them —
+  **Q5.3** now forces a *numeric* target per hard `nfr_axis` (p99, FPS, cold-start, memory ceiling
+  — never an adjective), **Q5.4** offers the algorithm sketch + a data/schema note, **Q5.5**
+  expands the public interface into the API-contract checklist — plus the **`web` UI-architecture**
+  enrichment (loading/empty/error states, responsive breakpoints, the a11y conformance level,
+  component reusability + props conventions). The generated spec template guides §3/§4/§5 to match.
+  New optional **`capabilities.api_spec`** seeds a `docs/api/` OpenAPI/IDL contract stub for
+  `service`/`web` projects (mirrors `capabilities.bench`: opt-in, skipped when off; adds an
+  API-contract row to the generated `AGENTS.md` review table), covered by `test_api_spec.py`. No
+  new command; all via the `design` sub-modes + the `commands/README.md` alias table. **Boundary:**
+  the numeric budgets are *elicited* here; turning them into *evaluated* audit-phase gates is #249.
+
 - **Host adapters — `/eados <cmd>` is a discoverable slash command (#239, M15 Wave 1;
   ADR-0019 class 4).** The eight commands existed only as portable markdown procedures; on a
   fresh install, typing `/eados init` in Claude Code resolved to nothing. Each **available** row
