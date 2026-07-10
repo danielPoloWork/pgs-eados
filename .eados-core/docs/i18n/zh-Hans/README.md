@@ -118,9 +118,11 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 | **`migrate`** | 通过受门禁、沙箱化、**追加式**的 PR 把既有仓库带到标准。 | 写入受限的沙箱 |
 
 完整细节见 [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) 与
-[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。两个跨切面命令在任何阶段都可用：
-[`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)（只读体检）与
-[`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)（入站 PR 分流）。
+[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。三个跨切面命令在任何阶段都可用：
+[`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)（只读体检）、
+[`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)（入站 PR 分流）与
+[`/eados debug`](../../../../.eados-core/orchestrator/commands/debug.md)（受治理的缺陷调查：
+复现 → 根因 → 修复 + 回归测试 → 缺陷台账）。
 
 ---
 

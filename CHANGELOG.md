@@ -11,6 +11,34 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`/eados debug` — governed defect investigation ships; the first cross-cutting *code* command
+  (#242, M15 Wave 2; ADR-0019 class 3).** The factory had every artifact a debugging discipline
+  ends in (the bug-ledger templates, the generated `AGENTS.md` §7 reproduce-and-root-cause
+  contract, the audit phase's "confirmed defect → bug ledger" hand-off, the `consistency_lint.py`
+  `bugs` integrity check) — but **no command that walks a defect from report to closed, governed
+  record**. Now: **(1) the procedure** — `orchestrator/commands/debug.md`: falsifiable intake
+  (vague reports are refused like Phase 5 refuses untestable requirements) → **reproduce first**
+  (a failing test *before* any fix; `cannot-reproduce`/`rejected`/`duplicate` still get a ledger
+  record, so the triage trail survives) → isolate & root-cause (the hypothesis chain is narrated;
+  the **root cause** is recorded, never the symptom) → **one logical change** that flips the
+  reproduction green and keeps it as the regression guard → ledger record + `CHANGELOG` `Fixed`
+  line + the gated draft PR the human merges. Includes the worked fixture example
+  (`pbr-cpp-memory-pool`'s double-release defect → `BUG-0001`). **Cross-cutting and
+  non-state-advancing**: never writes `delivery_state.phase`; **manifest required** (ADR-0019
+  boundary — pasted/standalone code is refused and routed to `init`/`adopt`). This file is the
+  **shape #243/#244/#246 inherit** (the M16 routing table's `sets-pattern` flag). **(2) the
+  authority** — the `tech-lead` authors the fix *and* drafts the `docs/bugs/**` record in the
+  same PR (`may_draft` + an `ownership_map` row; the `security-auditor` keeps its audit-phase
+  draft surface); persona updated; the `reviewer` verifies red → green. **(3) the surface** —
+  the `commands/README.md` row flips **available**, the `debug` alias-table verb drops `planned`,
+  and the `/eados:debug` pointer adapter ships (covered by the #239 `command-adapters` lint).
+  **(4) a vocabulary drift fixed in passing** — the ledger README/template/`AGENTS.md.tmpl`
+  document `rejected` as a triage status, but the generated lint's `BUG_STATUSES` only knew
+  `wontfix`: a `status: rejected` record would have failed its own repo's lint. `rejected` is now
+  in the vocabulary (additive; `wontfix` — a real-but-won't-fix decision — stays distinct).
+  Guarded by the new `test_debug_command.py` (procedure contract, live registry row + adapter,
+  tech-lead authority, vocabulary congruence).
+
 - **The security / threat-modeling surface is discoverable — the audit sub-mode ships (#241,
   M15 Wave 1; ADR-0019 §2, closes Wave 1).** Security was strong at the role and phase level (a
   defensive `security-auditor` persona, a conditional deep-audit gate, a risk register) but had

@@ -39,11 +39,16 @@ authority, and the session model is never switched by the agent.
 | `/eados migrate` | migrate | **available** (M5) | [`migrate.md`](migrate.md) |
 | `/eados status` | — (any) | **available** (M6) | [`status.md`](status.md) |
 | `/eados review` | — (any) | **available** (M8) | [`review.md`](review.md) |
+| `/eados debug` | — (any) | **available** (M15 W2) | [`debug.md`](debug.md) |
 
-`/eados status` and `/eados review` are **cross-cutting** — not phases that advance. `/eados status`
-is a **read-only doctor** (current phase, legal moves, traceability coverage at a glance; roadmap
-6.4); `/eados review` evaluates an **inbound PR** against the contribution policy and drafts a
-recommended disposition (M8) — it **recommends, never merges**.
+`/eados status`, `/eados review`, and `/eados debug` are **cross-cutting** — not phases that
+advance. `/eados status` is a **read-only doctor** (current phase, legal moves, traceability
+coverage at a glance; roadmap 6.4); `/eados review` evaluates an **inbound PR** against the
+contribution policy and drafts a recommended disposition (M8) — it **recommends, never merges**;
+`/eados debug` (#242) is the first cross-cutting **code** command — governed defect investigation
+(reproduce → root-cause → one-change fix + regression test → bug-ledger record); it **drafts,
+never merges, and never advances state**, and its file is the shape the remaining Wave-2 code
+commands follow.
 
 ## Host adapters — `/eados <cmd>` as a discoverable slash command (#239, ADR-0019 class 4)
 
@@ -90,8 +95,10 @@ takes an ADR:
    audit sub-mode: `security` (#241).
 3. **Cross-cutting commands** — advisory, **non-state-advancing** (never write
    `delivery_state.phase`), still role-owned, gated, and human-confirmed. Today: `status`,
-   `review`. Ratified to join in M15 Wave 2: `debug` (#242), `refactor` — code-quality meaning,
-   after the #236 phase rename (#243), `optimize` (#244), `testcases` (#246, QA-owned).
+   `review`, and `debug` (#242 — the first cross-cutting *code* command; [`debug.md`](debug.md)
+   is the shape the rest of the class follows). Ratified to join in M15 Wave 2: `refactor` —
+   code-quality meaning, after the #236 phase rename (#243), `optimize` (#244), `testcases`
+   (#246, QA-owned).
 4. **Adapters + aliases** — the surfacing mechanism (#239). An alias routes a verb to its class
    target; it never adds behavior.
 
@@ -106,7 +113,7 @@ no command run).
 | `interview` | `/eados init` (brownfield: `/eados adopt`) | phase intake | #247 |
 | `systemdesign` · `api` · `database` · `scalability` · `pseudocode` | `/eados design` | design sub-mode | #240 |
 | `security` | `/eados audit` | audit sub-mode | #241 |
-| `debug` | `/eados debug` | cross-cutting | #242 · planned |
+| `debug` | `/eados debug` | cross-cutting | #242 |
 | `refactor` (code cleanup) | `/eados refactor` | cross-cutting | #243 · planned, after #236 |
 | `optimizecode` | `/eados optimize` | cross-cutting | #244 · planned |
 | `testcases` | `/eados testcases` | cross-cutting, QA-owned | #246 · planned, with #245 |

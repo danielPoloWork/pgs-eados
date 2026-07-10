@@ -256,7 +256,8 @@ def check_milestones():
 # ---------------------------------------------------------------------------
 # 6. Bug ledger integrity
 # ---------------------------------------------------------------------------
-BUG_STATUSES = {"open", "confirmed", "fixed", "wontfix", "duplicate", "cannot-reproduce"}
+BUG_STATUSES = {"open", "confirmed", "fixed", "wontfix", "rejected", "duplicate",
+                "cannot-reproduce"}   # `rejected`: an unsubstantiated report (ledger README, #242)
 BUG_SEVERITIES = {"low", "medium", "high", "critical"}
 BUG_REPORTERS = {"internal", "third-party"}
 BUG_REQUIRED = ("id", "title", "status", "severity", "reporter", "discovered")
