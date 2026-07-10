@@ -190,6 +190,13 @@ follow-ups until each is concrete enough to test against:
   `EACH_FUNCTIONAL_REQ`.
 - **Q5.3 — Non-functional requirements.** Performance, memory, portability, security,
   no-leak / no-UB guarantees, dependency policy. → `EACH_NONFUNCTIONAL_REQ`.
+  **Budget follow-up (scalability fold, #240).** For each **hard** NFR axis the domain declares
+  (`domains/<domain>.yaml` `nfr_axes[].hard_budget: true` — a game's framerate/RAM/GPU, web's
+  Core Web Vitals, a service's p99 latency), elicit a **numeric target**, never an adjective:
+  "p99 < 5 ms", "60 fps", "cold-start < 2 s", "heap ≤ 256 MB". Record each as a non-functional
+  requirement so spec §3 carries the number the design commits to, and the RFC's *Scalability
+  budgets* fold states it. *(Turning these numbers into evaluated audit-phase gates is #249; this
+  fold makes intake capture the value.)*
 - **Q5.4 — Logical architecture & core algorithm.** The central data structure or control
   flow. Capture it as prose + a diagram block; it seeds the first design ADRs. **Also elicit a
   structured architecture style** from
@@ -211,8 +218,27 @@ follow-ups until each is concrete enough to test against:
   `capabilities.layered: true` and records the package names in `spec.layers`; the generator seeds
   each as an empty (`.gitkeep`) package and notes the layout in the generated ADR-0002. →
   `capabilities.layered`, `spec.layers`.
-- **Q5.5 — Public interface.** The functions/types/endpoints consumers depend on, with the
-  error model. → `EACH_PUBLIC_API`, `PUBLIC_INCLUDE_HINT`.
+  - **Algorithm sketch (pseudocode fold, #240) — optional.** For a non-obvious core algorithm,
+    capture a short **language-free** pseudocode sketch (the control flow + invariants) alongside
+    the prose/diagram; it mirrors into the RFC Decision's *Algorithm sketch* fold. Skip it when the
+    approach is standard. → `SPEC_ARCHITECTURE` prose.
+  - **Data & schema (database fold, #240).** If the change owns persistent state, capture the data
+    model — entities, relations, the target normal form (+ any deliberate denormalization and its
+    reason), and the migration policy — **within ADR-0004's frame**: the store is a *secondary*
+    component declared at Q1.2, never a primary profile, and there is no `database` command without
+    a superseding ADR. → `SPEC_ARCHITECTURE`; the RFC's *Data & schema* fold.
+  - **Web UI architecture (web domain).** When `domain == web`, cover the frontend checklist the
+    other folds leave implicit: **loading / empty / error states**, **responsive breakpoints**, the
+    **accessibility conformance level** (state it — e.g. WCAG 2.2 AA, a web hard `nfr_axis`), and
+    **component reusability + props/API conventions**.
+- **Q5.5 — Public interface / API contract (api + systemdesign folds, #240).** The
+  functions/types/**endpoints** consumers depend on — a checklist, not prose: the operations, their
+  **payloads** (request/response or parameter/return shapes, required vs optional), the **error
+  model** (the failure taxonomy consumers must handle, not just the happy path), and the
+  **versioning / SemVer surface** (what a MAJOR bump would be). → `EACH_PUBLIC_API`,
+  `PUBLIC_INCLUDE_HINT`. For a `service`/`web` project, offer **`capabilities.api_spec`**: it seeds
+  a `docs/api/` OpenAPI/IDL stub the contract is written into (the RFC *states* it; the stub
+  *records* it). → `capabilities.api_spec`.
 - **Q5.6 — Verification & test strategy.** How correctness and performance are *proven* —
   unit tests, sanitizers, property tests, fuzzing, the canonical leak/race check, the
   benchmark methodology. → `SPEC_VERIFICATION`.

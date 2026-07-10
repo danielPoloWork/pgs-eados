@@ -263,7 +263,8 @@ Every PR must clear, at minimum:
 | Coverage | new code ≥ {{COVERAGE_TARGET}}% line (finalized in an ADR) |
 | API docs | `{{DOC_TOOL}}` builds without warnings |
 {{#IF_BENCH}}| Performance claims | backed by a reproducible benchmark under `src/bench/` |
-{{/IF_BENCH}}| Versioning | SemVer; `CHANGELOG.md` updated for user-visible changes |
+{{/IF_BENCH}}{{#IF_API_SPEC}}| API contract | endpoints/payloads/errors/versioning documented under `docs/api/`, in sync with spec §5 |
+{{/IF_API_SPEC}}| Versioning | SemVer; `CHANGELOG.md` updated for user-visible changes |
 | Congruence | `python tools/consistency_lint.py` passes |
 
 Shortcuts ("just disable the warning", "tests next PR", "docs follow-up") are not allowed.

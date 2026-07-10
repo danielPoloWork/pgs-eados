@@ -14,15 +14,25 @@
 
 ## 3. Non-Functional Requirements
 
+<!-- Scalability / load budgets belong here as NUMBERS, not adjectives (the design "scalability"
+     fold): a value per hard NFR axis — throughput / concurrency, p99 latency, memory ceiling,
+     target FPS, cold-start budget — each phrased so CI could prove a violation. -->
 {{#EACH_NONFUNCTIONAL_REQ}}- {{.}}
 {{/EACH_NONFUNCTIONAL_REQ}}
 
 ## 4. Logical Architecture & Core Algorithm
 
+<!-- For a non-obvious core algorithm, include a short LANGUAGE-FREE pseudocode sketch (control
+     flow + invariants) alongside the prose + diagram (the design "pseudocode" fold); skip it when
+     the approach is standard. If the design owns persistent state, capture the data model here —
+     entities, relations, normal form, migration policy — within ADR-0004's secondary-SQL frame. -->
 {{SPEC_ARCHITECTURE}}
 
 ## 5. Public Interface
 
+<!-- The API contract (the design "api" fold): each operation with its payload shapes, the error
+     model (the failure taxonomy, not just the happy path), and the versioning / SemVer surface.
+     A service/web project may keep the written-out contract under docs/api/ (capabilities.api_spec). -->
 Consumers import via `{{PUBLIC_INCLUDE_HINT}}`. The public surface:
 
 {{#EACH_PUBLIC_API}}- {{.}}

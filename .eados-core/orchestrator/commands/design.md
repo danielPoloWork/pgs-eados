@@ -17,7 +17,14 @@ product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review
    ```
 2. **Author the RFC** — copy [`../os/rfc/template.md`](../os/rfc/template.md) to
    `docs/rfc/NNNN-<slug>.md` and fill **Context, Decision, Alternatives, Consequences**. Push for
-   measurable phrasing and a concrete rejection reason per alternative.
+   measurable phrasing and a concrete rejection reason per alternative. The Decision section carries
+   the **design folds** (ADR-0019 §2 — the `systemdesign`/`api`/`database`/`scalability`/`pseudocode`
+   sub-modes): the **API contract** checklist (endpoints/payloads/error model/versioning, aligned
+   with spec §5), a **Data & schema** subsection when the change owns state (within ADR-0004's
+   secondary-SQL frame), the **numeric scalability budgets** per hard NFR axis (interview Q5.3 →
+   spec §3), and an optional language-free **algorithm sketch** (spec §4). Fill the folds that
+   apply; omit those that do not, never leaving one hollow. A `service`/`web` API surface may seed a
+   `docs/api/` stub via `capabilities.api_spec`.
 3. **Review** — `reviewer` peers (and the `enterprise-architect` when the change is cross-cutting)
    return **structured findings**; the author resolves each. No prose hand-waving.
 4. **Approve** — when findings are resolved, the **approver** (`tech-lead`) adds the record:

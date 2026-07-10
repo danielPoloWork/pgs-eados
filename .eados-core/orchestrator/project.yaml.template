@@ -99,6 +99,7 @@ governance:
     service:    false                             # Service-specific templates.
     announce:   false                             # Enables the announce block below.
     layered:    false                             # Lay down a layered package skeleton from spec.layers (service/app/web).
+    api_spec:   false                             # Seed a docs/api/ OpenAPI/IDL contract stub (service/web). Toggles #IF_API_SPEC.
 
 i18n:                          # Doc translations (used when capabilities.i18n).
   default_lang: "en"           # Canonical on-disk language. -> {{DOC_DEFAULT_LANG}}
