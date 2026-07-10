@@ -16,7 +16,7 @@ roles:
   # --- Engineering pillar (the "how") ---
   - name: enterprise-architect      # Staff/Principal/Solution Architect | Technical Director.
     pillar: engineering
-    phases: [init, scaffold, audit, refactor]
+    phases: [init, scaffold, audit, migrate]
     may_draft: ["**"]
     may_approve: ["docs/adr/**", ".github/**", "tools/**"]
     owns: ["AGENTS.md", "docs/adr/**", ".github/**", "tools/**", ".eados-core/**"]

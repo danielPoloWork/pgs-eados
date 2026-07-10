@@ -36,7 +36,7 @@ authority, and the session model is never switched by the agent.
 | `/eados plan` | plan | **available** (M3) | [`plan.md`](plan.md) |
 | `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
 | `/eados audit` | audit | **available** (M4) | [`audit.md`](audit.md) |
-| `/eados refactor` | refactor | **available** (M5) | [`refactor.md`](refactor.md) |
+| `/eados migrate` | migrate | **available** (M5) | [`migrate.md`](migrate.md) |
 | `/eados status` | — (any) | **available** (M6) | [`status.md`](status.md) |
 | `/eados review` | — (any) | **available** (M8) | [`review.md`](review.md) |
 

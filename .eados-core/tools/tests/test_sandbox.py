@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Negative-path tests for the refactor sandbox — a write may ONLY land inside the target repo,
+"""Negative-path tests for the migrate sandbox — a write may ONLY land inside the target repo,
 never via traversal/absolute/symlink, never into `.git/`, and never clobber a file unless asked.
 This is the safety backstop for the only phase that edits real user code. Dependency-free.
 

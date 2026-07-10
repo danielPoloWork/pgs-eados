@@ -215,8 +215,8 @@ def main():
         expect(failures, "audit: a docs-only change scores low -> gate optional", rc, out, 0,
                "risk: low", "optional")
 
-        rc, out = run_tool("phase_runner.py", manifest("audit"), "--propose", "refactor")
-        expect(failures, "audit: audit -> refactor is LEGAL", rc, out, 0, "LEGAL",
+        rc, out = run_tool("phase_runner.py", manifest("audit"), "--propose", "migrate")
+        expect(failures, "audit: audit -> migrate is LEGAL", rc, out, 0, "LEGAL",
                "risk-register-present")
 
         # === state machine — every declared transition is LEGAL, undeclared ones are not =========
@@ -247,7 +247,7 @@ def main():
                   os.path.exists(os.path.join(TOOLS, m.group(1))), failures)
 
     # A coherence guard: the phases the smoke walks are real workflow states.
-    for phase in ("design", "plan", "scaffold", "audit", "refactor"):
+    for phase in ("design", "plan", "scaffold", "audit", "migrate"):
         check(f"'{phase}' is a declared workflow state", phase in states, failures)
 
     if failures:

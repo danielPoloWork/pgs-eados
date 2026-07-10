@@ -26,7 +26,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from yamlmini import load_yaml  # noqa: E402,F401  — re-exported for every render.load_yaml caller
-import sandbox  # noqa: E402  — the ONE write-containment path, shared with the refactor phase
+import sandbox  # noqa: E402  — the ONE write-containment path, shared with the migrate phase
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = os.path.join(ROOT, "templates")
@@ -419,7 +419,7 @@ def out_relpath(rel, slug):
 def write_file(out_dir, rel, text, overwrite=False):
     # One write path for the whole factory: delegate to sandbox.safe_write so containment
     # (realpath + commonpath), the `.git`-at-any-depth refusal, and the additive no-clobber guard
-    # are a SINGLE implementation shared with the refactor phase (ADR-0007) — the renderer and the
+    # are a SINGLE implementation shared with the migrate phase (ADR-0007) — the renderer and the
     # sandbox can no longer drift. `overwrite=True` (via --force) is the only way to clobber; on a
     # violation sandbox raises SandboxError. The full-run pre-scan in main() is the all-or-nothing
     # gate; this is the per-file backstop underneath it.
@@ -459,7 +459,7 @@ def main():
                          "gate command, workflow.yaml)")
     ap.add_argument("--force", "--overwrite", action="store_true", dest="force",
                     help="overwrite pre-existing files in the target (default: refuse to clobber, "
-                         "like the refactor sandbox — a render is additive unless you pass this)")
+                         "like the migrate sandbox — a render is additive unless you pass this)")
     args = ap.parse_args()
     if sum((bool(args.out), args.in_place, args.check)) != 1:
         ap.error("provide exactly one of --out <dir>, --in-place, or --check")

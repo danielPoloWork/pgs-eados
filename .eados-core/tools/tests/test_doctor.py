@@ -90,7 +90,7 @@ def main():
 
     # --- refs present but no roadmap -> neutral (healthy), nothing to cover only if no rfcs ---
     lines, healthy = doctor.status_report(manifest_at("audit"), wf, None, None)
-    check("audit -> refactor is shown", has(lines, "-> refactor"), failures)
+    check("audit -> migrate is shown", has(lines, "-> migrate"), failures)
     check("no roadmap stays healthy", healthy, failures)
 
     # --- M16 16.3 (#254): the advisory routing readout (pure; the gh shell is not touched) ---

@@ -18,7 +18,7 @@ domain: software             # development target: software|web|game|mobile -> o
 # truth for content (RFC-0001 §8). The phase runner (M1-E) reads/writes it; a legacy manifest
 # without this block renders unchanged.
 delivery_state:
-  phase: init                # init|design|plan|scaffold|audit|refactor
+  phase: init                # init|design|plan|scaffold|audit|migrate
   checkpoints: []            # [{from, to, gates, at, confirmed_by}] — the transition ledger (#199):
                              # a legal, contiguous chain ending at `phase`; human-gated moves carry confirmed_by
   refs: { rfcs: [], milestones: [], prs: [], releases: [] }   # cross-link ids, not content

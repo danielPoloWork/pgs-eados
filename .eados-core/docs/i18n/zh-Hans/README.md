@@ -13,14 +13,14 @@
 > 用其他语言阅读：[English](../../../../README.md) · [日本語](../ja/README.md)。
 
 > 一个与语言无关的**交付操作系统**，面向企业级软件、Web、游戏与移动应用：一条可选用的阶段流水线
-> —— `init → design → plan → scaffold → audit → refactor` —— 从第一份 RFC 一直治理到发布。其
+> —— `init → design → plan → scaffold → audit → migrate` —— 从第一份 RFC 一直治理到发布。其
 > `scaffold` 阶段为*任何*语言批量生成一套**企业级智能体系统**，只需单一 manifest 与参数化的
 > template。
 
 EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统** —— 一个声明式、由门禁强制、保留
 人工确认的治理层（并非运行时内核）。其 **`scaffold` 阶段就是那座工厂**，批量生产共享同样企业级
 结构、GitHub 工作流、质量门禁与 AI 智能体契约的仓库 —— 无论语言、框架或工具如何；其余阶段
-（`design`、`plan`、`audit`、`refactor`）把这套治理扩展到整个交付生命周期。每个阶段都是一个可选用的
+（`design`、`plan`、`audit`、`migrate`）把这套治理扩展到整个交付生命周期。每个阶段都是一个可选用的
 `/eados <phase>` 命令，作用于一份持久、受门禁校验的 manifest（设计见
 [RFC-0001](../../../../.eados-core/docs/rfc/0001-eados-delivery-os.md)）。
 
@@ -52,7 +52,7 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
    服务 19+ 种语言（新增一门语言是加数据，而非改代码）。
 2. **生成的仓库自我治理** —— 它自带智能体契约、CI、质量门禁与 SemVer 流程，且自给自足
    （运行时不回耦到 EADOS）。
-3. **生成只是其中一个阶段** —— `design → plan → audit → refactor` 把治理扩展到整个生命周期，
+3. **生成只是其中一个阶段** —— `design → plan → audit → migrate` 把治理扩展到整个生命周期，
    作用于一份带角色权限与可追溯性图谱、受门禁校验的持久 manifest。
 
 它**确定且由人把关**：智能体起草，人类审阅并合并；未解析的 placeholder 是硬错误，绝不靠猜测。
@@ -60,7 +60,7 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 ## 能力一览
 
 - **生成**任意语言的企业级仓库 —— 已交付 19 个 profile；新增一门语言即加一份数据。
-- **治理整个生命周期** —— 六个可选用阶段（`init · design · plan · scaffold · audit · refactor`），
+- **治理整个生命周期** —— 六个可选用阶段（`init · design · plan · scaffold · audit · migrate`），
   作用于持久 manifest，并对每次转换设有门禁。
 - **可组合的智能体角色**，采用**人设 ≠ 权限**的分离 —— 架构师、reviewer、security-auditor、
   release-manager、product-manager、tech-lead、producer、contribution-reviewer。
@@ -115,7 +115,7 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 | **`plan`** | 从 RFC 共创路线图；构建可追溯性图谱。 | `roadmap-covers-rfcs` |
 | **`scaffold`** | **生成**受治理的仓库 —— 经典工厂。 | render + `consistency_lint` |
 | **`audit`** | 持续风险评分 + 强制的可追溯性 lint。 | `traceability-lint`、风险阈值 |
-| **`refactor`** | 通过受门禁、沙箱化、**追加式**的 PR 把既有仓库带到标准。 | 写入受限的沙箱 |
+| **`migrate`** | 通过受门禁、沙箱化、**追加式**的 PR 把既有仓库带到标准。 | 写入受限的沙箱 |
 
 完整细节见 [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) 与
 [命令手册](../../../../.eados-core/orchestrator/commands/README.md)。两个跨切面命令在任何阶段都可用：
@@ -215,7 +215,7 @@ pgs-eados/
 | `phase_runner.py` | 每个阶段背后的状态驱动检查器（门禁 + 领域叠加） |
 | `preflight.py` | 校验流水线假定的工具链已就位且已认证 |
 | `seed_milestones.py` | 读取 `ROADMAP.md` 并在 GitHub 上播种每个里程碑 |
-| `brownfield.py` · `migration_planner.py` · `sandbox.py` | 读取既有仓库、规划迁移、隔离重构写入 |
+| `brownfield.py` · `migration_planner.py` · `sandbox.py` | 读取既有仓库、规划迁移、隔离 `migrate` 阶段的写入 |
 
 **Govern —— 权限、可追溯性、PR、发布**
 
@@ -435,7 +435,7 @@ EADOS 把供应链与智能体边界视为一等公民：
 - **失败即拒绝的安装器完整性。** 引导式安装器在解压前会用发布的 `SHA256SUMS` 校验 bundle 的
   **SHA256**；未通过校验的 bundle 会被拒绝（没有盲目的 `curl | sh`），且以**追加方式**解压 ——
   绝不覆盖已有文件。
-- **写入受限的生成。** 渲染器与 `refactor` 沙箱拒绝任何逃逸出目标的写入 —— 路径穿越 / 绝对路径 /
+- **写入受限的生成。** 渲染器与 `migrate` 沙箱拒绝任何逃逸出目标的写入 —— 路径穿越 / 绝对路径 /
   符号链接 / `.git` / 覆盖（[ADR-0007](../../../../.eados-core/docs/adr/0007-renderer-write-guards-and-validation-independence.md)
   原则）。
 - **不可信的入站代码。** `/eados review` 按信任层级分类非 owner 的 PR，并标记“投毒流水线”的暴露面

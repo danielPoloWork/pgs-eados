@@ -1,5 +1,11 @@
 # [FEATURE] Rename the brownfield phase `refactor` → `migrate` (ADR; frees the name for code-quality refactoring)
 
+> **Delivered:** [ADR-0020](../.eados-core/docs/adr/0020-rename-refactor-phase-to-migrate.md)
+> (2026-07-10, closes [#236](https://github.com/danielPoloWork/pgs-eados/issues/236)). Phase
+> renamed across the machine + governed docs + i18n; `commands/refactor.md` → `commands/migrate.md`;
+> back-compat: `delivery_state.phase: refactor` accepted as a deprecated alias for one minor version
+> with a CLI warning. Unblocks #243 (`/eados refactor`, code-quality meaning).
+
 **Labels:** `enhancement`, `severity:medium`, `area:orchestrator`, `area:commands`
 **Component:** `orchestrator/os/workflow/workflow.yaml`, `orchestrator/commands/refactor.md`, `tools/eados.py`, docs
 

@@ -1,7 +1,7 @@
 # First project, phase by phase — an end-to-end walkthrough
 
 This is a **follow-along** run of the EADOS phase pipeline —
-`init → design → plan → scaffold → audit → refactor` — with the exact commands, the real console
+`init → design → plan → scaffold → audit → migrate` — with the exact commands, the real console
 output, what **you** confirm at each human-gated step, and how the manifest's `delivery_state`
 evolves. It complements the per-phase reference docs in
 [`orchestrator/commands/`](../orchestrator/commands/README.md): those say *what* each phase is; this
@@ -196,16 +196,16 @@ security-auditor gate: REQUIRED
 > the next move. The agent runs the deep audit and drafts a **risk register**; you resolve findings.
 
 ```text
-$ python .eados-core/tools/phase_runner.py project.yaml --propose refactor
-proposed transition: audit -> refactor
+$ python .eados-core/tools/phase_runner.py project.yaml --propose migrate
+proposed transition: audit -> migrate
   LEGAL — gates to satisfy: risk-register-present; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: audit, to: refactor, gates: ['risk-register-present'], at: 2026-07-06, confirmed_by: <owner> }
-    phase: refactor
+    - { from: audit, to: migrate, gates: ['risk-register-present'], at: 2026-07-06, confirmed_by: <owner> }
+    phase: migrate
 ```
 
-`refactor` (brownfield) is the terminal phase — bring an existing repo up to the standard via
-gated, sandboxed PRs; see [`refactor.md`](../orchestrator/commands/refactor.md).
+`migrate` (brownfield) is the terminal phase — bring an existing repo up to the standard via
+gated, sandboxed PRs; see [`migrate.md`](../orchestrator/commands/migrate.md).
 
 ---
 
@@ -240,7 +240,7 @@ EADOS plan - project.yaml
 | `design → plan` | `plan` | `rfc-approved` |
 | `plan → scaffold` | `scaffold` | `roadmap-covers-rfcs` |
 | `scaffold → audit` | `audit` | `consistency-lint` + `self-review` (automatic) |
-| `audit → refactor` | `refactor` | `risk-register-present` |
+| `audit → migrate` | `migrate` | `risk-register-present` |
 
 Every move is **gated**; every move that changes committed direction is **human-confirmed**. The
 tools compute what is legal and check the gates; you decide and write the state. For the authoring

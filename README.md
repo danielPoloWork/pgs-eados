@@ -11,7 +11,7 @@
 > **🌐 Translations:** [简体中文](.eados-core/docs/i18n/zh-Hans/README.md) · [日本語](.eados-core/docs/i18n/ja/README.md) — derived from this English source. Policy & freshness: [`.eados-core/docs/i18n/`](.eados-core/docs/i18n/README.md).
 
 > A language-agnostic **delivery operating system** for enterprise software, web, games, and mobile
-> apps: an opt-in phase pipeline — `init → design → plan → scaffold → audit → refactor` — that
+> apps: an opt-in phase pipeline — `init → design → plan → scaffold → audit → migrate` — that
 > governs a project from its first RFC to release. Its `scaffold` phase stamps out an **enterprise
 > agent system** for *any* language, from a single manifest and parameterized templates.
 
@@ -19,7 +19,7 @@ EADOS is not a product you ship; it is the **operating system for how the work f
 declarative, gate-enforced, human-in-the-loop governance layer (not a runtime kernel). Its
 **`scaffold` phase is the factory** that stamps out repositories sharing the same enterprise
 structure, GitHub workflow, quality gates, and AI-agent contract — regardless of language, framework,
-or tooling; the other phases (`design`, `plan`, `audit`, `refactor`) extend that governance across the
+or tooling; the other phases (`design`, `plan`, `audit`, `migrate`) extend that governance across the
 whole delivery lifecycle. Each phase is an opt-in `/eados <phase>` command over a persistent,
 gate-checked manifest (design: [RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md)).
 
@@ -52,7 +52,7 @@ the new repository — or fill the manifest and render deterministically, no age
    templates, so one factory serves 19+ languages (and a new one is added as data, not code).
 2. **The generated repo governs itself** — it ships its own agent contract, CI, quality gate, and
    SemVer flow, and is self-sufficient (no runtime coupling back to EADOS).
-3. **Generation is just one phase** — `design → plan → audit → refactor` extend governance across the
+3. **Generation is just one phase** — `design → plan → audit → migrate` extend governance across the
    whole lifecycle, over a persistent, gate-checked manifest with role authority and a traceability
    graph.
 
@@ -63,7 +63,7 @@ placeholder is a hard error, never a guess.
 
 - **Generate** an enterprise-grade repo in **any language** — 19 profiles shipped; add one as data.
 - **Govern the whole lifecycle** — six opt-in phases (`init · design · plan · scaffold · audit ·
-  refactor`) over a persistent manifest, with phase-transition gates.
+  migrate`) over a persistent manifest, with phase-transition gates.
 - **Composable agent roles** with a **persona ≠ authority** split — architect, reviewer,
   security-auditor, release-manager, product-manager, tech-lead, producer, contribution-reviewer.
 - **Quality & safety gates** — placeholder / profile / spec completeness, a generated
@@ -120,7 +120,7 @@ generation runs `/eados scaffold` and ignores the rest.
 | **`plan`** | Co-create the roadmap from the RFCs; build the traceability graph. | `roadmap-covers-rfcs` |
 | **`scaffold`** | **Generate** the governed repository — the classic factory. | render + `consistency_lint` |
 | **`audit`** | Continuous risk scoring + the enforced traceability lint. | `traceability-lint`, risk threshold |
-| **`refactor`** | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. | write-contained sandbox |
+| **`migrate`** | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. | write-contained sandbox |
 
 Full detail is in [`USAGE.md`](.eados-core/docs/USAGE.md) and the
 [command playbooks](.eados-core/orchestrator/commands/README.md). Two cross-cutting commands work in
@@ -221,7 +221,7 @@ deterministic spine, grouped by what they do:
 | `phase_runner.py` | State-driven checker behind each phase (gates + domain overlays) |
 | `preflight.py` | Verify the toolchain the pipeline assumes is present & authenticated |
 | `seed_milestones.py` | Read `ROADMAP.md` and seed every milestone on GitHub |
-| `brownfield.py` · `migration_planner.py` · `sandbox.py` | Read an existing repo, plan a migration, contain refactor writes |
+| `brownfield.py` · `migration_planner.py` · `sandbox.py` | Read an existing repo, plan a migration, contain migrate writes |
 
 **Govern — authority, traceability, PRs, releases**
 
@@ -455,7 +455,7 @@ EADOS treats the supply chain and the agent boundary as first-class:
 - **Fail-closed installer integrity.** The guided installer verifies the bundle's **SHA256** against
   the release `SHA256SUMS` before extracting; it refuses an unverified bundle (no blind `curl | sh`)
   and extracts **additively** — never overwriting an existing file.
-- **Write-contained generation.** The renderer and the `refactor` sandbox refuse any write that
+- **Write-contained generation.** The renderer and the `migrate` sandbox refuse any write that
   escapes the target — traversal / absolute / symlink / `.git` / clobber (the
   [ADR-0007](.eados-core/docs/adr/0007-renderer-write-guards-and-validation-independence.md) principle).
 - **Untrusted inbound code.** `/eados review` classifies a non-owner PR by trust tier and flags the

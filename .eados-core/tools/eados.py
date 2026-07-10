@@ -28,7 +28,7 @@ import traceability    # noqa: E402  — roadmap-covers-rfcs
 import rfc_check        # noqa: E402  — rfc-approved
 import doctor          # noqa: E402  — the `status` readout (reused, not re-implemented)
 
-PHASES = ("init", "design", "plan", "scaffold", "audit", "refactor")
+PHASES = ("init", "design", "plan", "scaffold", "audit", "migrate")
 
 
 def _rfcs(manifest):
@@ -152,7 +152,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="EADOS thin phase orchestrator - run a phase's "
                                              "deterministic gates, or `status` for the doctor.")
     ap.add_argument("command", choices=PHASES + ("status",),
-                    help="a phase (init|design|plan|scaffold|audit|refactor) or 'status'")
+                    help="a phase (init|design|plan|scaffold|audit|migrate) or 'status'")
     ap.add_argument("manifest", help="path to a project manifest (project.yaml)")
     ap.add_argument("--root", help="project root for ROADMAP.md / links (default: the manifest's dir)")
     ap.add_argument("--roadmap", help="path to ROADMAP.md (default: <root>/ROADMAP.md)")

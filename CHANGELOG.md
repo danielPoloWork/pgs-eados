@@ -85,6 +85,30 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
   entry. Advisory-first per RFC-0001: the human keeps final model authority; the evaluator and its
   surfaces land with 16.2–16.4 (#253–#255).
 
+### Changed
+
+- **The brownfield phase `refactor` was renamed `migrate` (ADR-0020, #236, M15 Wave 0).** The
+  last pipeline phase migrates an existing repo toward the EADOS standard via gated, sandboxed,
+  additive PRs — it never restructures application code, so `refactor` was a false friend that
+  also blocked shipping a true code-quality `/eados refactor` command (#243, ADR-0019). The rename
+  spans the live machine + governed docs in lockstep: `workflow.yaml` (state/transition/gate),
+  `authority.yaml`, `eados.PHASES` + `record_run.PHASES`, `project.yaml.template`,
+  `commands/refactor.md` → `commands/migrate.md` (+ the `commands/README.md` row), the tools' prose
+  (`render`/`render_artifact`/`sandbox`/`migration_planner`), and the user-facing prose (README +
+  zh-Hans/ja, AGENTS.md §3, RFC-0001, the walkthrough, the flow diagram, `learning/runs/README.md`).
+  Behavior is unchanged — `/eados migrate` does exactly what `/eados refactor` did. Prior history
+  (CHANGELOG / ADRs / completed ROADMAP milestones) keeps the old name; `refactor` remains the
+  Conventional-Commits type and the freed name for the future code-quality command. README's i18n
+  source hash refreshed `2007aeb5fd9d` → `d18e3e9d5228` (both translations updated in lockstep).
+
+### Deprecated
+
+- **`delivery_state.phase: refactor` is a deprecated alias of `migrate` (ADR-0020, #236).** An
+  existing manifest that still records the old phase name (or a checkpoint into it) keeps working
+  for **one minor version**: `phase_runner` canonicalizes it (`PHASE_ALIASES`) and prints a
+  one-line deprecation warning at the CLI boundary. Update the manifest to `migrate`; the alias is
+  scheduled for removal in the next minor.
+
 ## [2.8.0] - 2026-07-08
 
 ### Added

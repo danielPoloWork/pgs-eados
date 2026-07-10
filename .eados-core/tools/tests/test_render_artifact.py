@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests for render_artifact — the single-artifact render path (render one template -> sandbox)
-for the refactor phase (roadmap 6.3 / G2). Dependency-free.
+for the migrate phase (roadmap 6.3 / G2). Dependency-free.
 
     python .eados-core/tools/tests/test_render_artifact.py
 """
