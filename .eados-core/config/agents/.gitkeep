@@ -1,3 +1,0 @@
-# Drop custom or overriding role agents here (see ../README.md). A file with the same name as
-# a shipped role in ../../agent/ overrides it; a new name adds a role. Register it in the
-# agent registry (../../agent/README.md). This .gitkeep just keeps the empty folder tracked.

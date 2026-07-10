@@ -12,7 +12,7 @@ default. A blank/omitted overlay value falls through to the next layer.
 |---|---|
 | [`defaults.yaml`](defaults.yaml) | Pre-fills the interview's answers — default branch, license, group path, coverage target, commit scopes, i18n defaults. The architect uses these instead of the built-in defaults and still echoes them back for confirmation. |
 | [`house-rules.md`](house-rules.md) | Organization-specific rules **injected into every generated `AGENTS.md`** as §13 (via `{{HOUSE_RULES}}`). Where a house rule conflicts with a default, the house rule wins. Empty by default (no §13 is emitted). |
-| `agents/` | Drop custom role agents here, or a file overriding a shipped one (same name). They take precedence over [`../agent/`](../agent/README.md). |
+| `agents/` | Drop custom role agents here, or a file overriding a shipped one (same name). They take precedence over [`../agent/`](../agent/README.md). Worked example: [`agents/example-role.md`](agents/example-role.md) — copy its shape, fill it in, and register it with a two-line `authority.yaml` record; no tool source reading required. |
 
 ## How it flows into a generated repo
 
@@ -23,3 +23,13 @@ default. A blank/omitted overlay value falls through to the next layer.
 
 Nothing here is secret — keep tokens/webhooks out of these files (use CI secrets). Overlays are
 committed and version-controlled like everything else, so a change to house rules is reviewable.
+
+## Roles the factory does not ship
+
+A DBA/data-engineer, performance-engineer, or SRE persona is a real need for some
+organizations but not a universal one — exactly the logic [ADR-0004](../docs/adr/0004-seed-language-profiles.md)
+already applies to languages (a profile ships when it earns broad demand, not speculatively).
+These stay **organization overlays** under `agents/` (see the worked
+[`example-role.md`](agents/example-role.md), a filled-in `performance-engineer`) rather than
+shipped roles — add one the day a domain profile or your organization's scale genuinely needs it,
+and it composes with the shipped registry exactly like any other overlay.

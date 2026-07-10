@@ -1,5 +1,17 @@
 # [FEATURE] Fill the persona gaps (QA/test engineer first) and ship a worked `config/agents/` example
 
+> **✅ Delivered** (2026-07-10, closes [#245](https://github.com/danielPoloWork/pgs-eados/issues/245)).
+> `agent/qa-engineer.md` ships on the shape every role file uses (negotiates spec §6 alongside
+> the tech-lead, authors `src/test/**`, enforces the coverage bar alongside the reviewer, approves
+> nothing alone) with its `authority.yaml` role record + `ownership_map` row and its
+> `agent/README.md` registry row; both the `agent-registry` and `authority-personas` self-lints
+> stay clean. `config/agents/example-role.md` replaces the bare `.gitkeep` with an inert
+> (unregistered, no authority record), heavily-commented two-step walkthrough (copy the shape,
+> add a two-line authority record) plus a filled-in `performance-engineer` starting point;
+> `config/README.md` documents DBA/data-engineer, performance-engineer, and SRE as organization
+> overlays, not shipped roles (ADR-0004's logic for languages). Guarded by
+> `test_qa_engineer_persona.py`.
+
 **Labels:** `enhancement`, `severity:low`, `area:agent`
 **Component:** `.eados-core/agent/`, `orchestrator/os/authority/authority.yaml`, `config/agents/`
 

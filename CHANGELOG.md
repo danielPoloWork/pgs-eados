@@ -11,6 +11,29 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **The `qa-engineer` persona ships + a worked `config/agents/` example (#245, M15 Wave 2).**
+  The registry shipped 9 roles, but test authorship fell implicitly to the `tech-lead` (owns
+  `src/**`) and enforcement to the `reviewer` — no role owned the verification strategy
+  end-to-end, a gap the M15 code commands (`debug`/`refactor`/`optimize`, #242–#244) raised the
+  value of closing. Meanwhile `config/agents/` — the extension point documented for adding a
+  custom role — shipped **empty** (`.gitkeep` only): a maintainer had to read tool source to
+  learn the mechanism. **(1) the persona** — `agent/qa-engineer.md`, on the shape every role file
+  uses: negotiates the spec's §6 Verification & Test Strategy alongside the `tech-lead`, authors
+  the test suite under `src/test/**`, and enforces the coverage bar alongside the `reviewer` —
+  approving nothing alone. **(2) the authority** — a new `roles[]` record (`owns`/`may_draft`
+  `src/test/**`, `may_draft` `docs/specs/**` for §6, `may_approve: []`) + an `ownership_map` row,
+  so the role acts through data, not prose; both the `agent-registry` and `authority-personas`
+  self-lints stay clean (the anti-fragmentation invariant the issue calls out). **(3) the worked
+  example** — `config/agents/example-role.md` replaces the bare `.gitkeep`: an inert (unregistered,
+  no authority record — both persona lints correctly ignore it), heavily-commented walkthrough of
+  the two-step mechanism (copy the shape, then a two-line `authority.yaml` record), with a
+  filled-in `performance-engineer` as a concrete starting point. **(4) the documented boundary** —
+  `config/README.md` states that a DBA/data-engineer, performance-engineer, or SRE persona stays
+  an **organization overlay**, not a shipped role, until a domain profile or an organization's
+  scale genuinely needs it — the same logic ADR-0004 already applies to languages. Guarded by the
+  new `test_qa_engineer_persona.py` (persona shape, registry + authority lockstep, both self-lints
+  live-clean, the example's inertness, the documented boundary).
+
 - **`/eados optimize` — measure-first performance optimization ships (#244, M15 Wave 2;
   ADR-0019 class 3, follows the #242 pattern).** No optimization procedure existed; the
   measurement scaffolding did (the optional benchmarks capability — the CI bench job +
