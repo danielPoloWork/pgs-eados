@@ -11,6 +11,15 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **ADR-0018 — the ops & deployment perimeter, decided (#261).** The boundary the 2026-07-09
+  prompt-pack review found silent is now written down: **ops documents are in scope** (deployment
+  architecture, monitoring/observability strategy, the production-readiness checklist — landing
+  via #248/#249 as manifest-driven rendered artifacts), **live infrastructure is a recorded
+  non-goal** (EADOS never provisions, deploys, or operates — the gate path stays offline, the
+  human keeps every irreversible step), and a **`deploy` phase is deferred** until real demand
+  (its own milestone + ADR if it comes). README FAQ states the boundary in one line
+  (EN + zh-Hans + ja; i18n source hash `e3f203dc5962` → `2007aeb5fd9d`).
+
 - **Routing advice at the OS's read-points (#254, M16 16.3).** The advisory model/effort route
   (ADR-0017) now surfaces where work is actually picked up: **Step-0 triage** states the
   recommended tier + effort once a request routes to a `focused-change` or the `five-step-loop`

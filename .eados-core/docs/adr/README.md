@@ -26,3 +26,4 @@ is sequential and never reused. Template: the generated
 | [0015](0015-web-domain-and-enterprise-posture.md) | Web domain (shipped) + enterprise as an orthogonal posture flag, not a domain | Accepted |
 | [0016](0016-authoring-language-model.md) | Authoring-language model: confirmed doc/comment-language defaults, non-English choices as recorded exceptions | Accepted |
 | [0017](0017-model-effort-routing.md) | Model & effort routing: advisory-first, capability tiers not model names, dated per-host catalog | Accepted |
+| [0018](0018-ops-delivery-perimeter.md) | Ops & deployment perimeter: ops documents in scope, live infrastructure a recorded non-goal, `deploy` phase deferred | Accepted |

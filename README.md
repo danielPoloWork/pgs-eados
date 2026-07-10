@@ -481,6 +481,11 @@ phase of a governed delivery OS, and the output carries its own governance.
 **Does a generated repo depend on EADOS at runtime?** No — it is self-sufficient; its own `AGENTS.md`,
 CI, and lint travel with it. EADOS's job ends at generation.
 
+**Does EADOS deploy or operate my infrastructure?** No — the perimeter ends at the governed
+repository: CI/CD and release pipelines are rendered, and deployment/monitoring *documents* are
+planned surface, but EADOS never provisions, deploys, or operates infra
+([ADR-0018](.eados-core/docs/adr/0018-ops-delivery-perimeter.md)).
+
 **Can I use it offline / air-gapped?** Yes. The installer supports `--from` + `--sums-file` (verify a
 hand-downloaded bundle), and the deterministic render + gates need no network.
 
