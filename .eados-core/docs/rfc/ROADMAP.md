@@ -30,6 +30,17 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M8 — inbound contribution review** | ✅ **done** — items 8.1–8.6 (#105–#110) |
 | **v2.2.0 release** | ✅ published 2026-06-28 — M7 onboarding + contributor-safety hardening + M8 inbound review (bundles attached; Latest) |
 | **M9 — guided installer** | ✅ **done** — items 9.1–9.7 (`setup/` guided installer: download + SHA256-verify + additive extract; release integrity; static gate; docs) |
+| **v2.3.0 release** | ✅ published 2026-06-28 — M9 guided cross-platform installer (co-authored @AlexMnrs; bundles + `SHA256SUMS` attached) |
+| **M10 — post-audit hardening** | ✅ **done** — items 10.1–10.5 (#128–#132) |
+| **v2.4.0 release** | ✅ published 2026-06-28 — M10 post-v2.3.0 audit remediation |
+| **M11 — delivery-workflow automation** | ✅ **done** — items 11.1–11.4 (#141–#144) |
+| **M12 — interview completeness** | ✅ **done** — items 12.1–12.6 (#149–#154) |
+| **v2.5.0 release** | ✅ published 2026-07-01 — M11 delivery-workflow automation + M12 interview completeness |
+| **M13 — audit remediation & learning loop** | ✅ **done** — items 13.1–13.14 (#163–#176) |
+| **v2.6.0 release** | ✅ published 2026-07-05 — M13 audit remediation & learning loop |
+| **v2.7.0 release** | ✅ published 2026-07-07 — post-v2.6.0 hardening: the #203 audit-trail epic (#213–#215) + the #194–#202 defect-backlog fixes (no GitHub milestone; see the un-numbered write-up below) |
+| **M14 — agent-contract hardening & runtime re-grounding** | ✅ **done** — items 14.1–14.5 (#221–#225) |
+| **v2.8.0 release** | ✅ published 2026-07-08 — M14 agent-contract hardening & runtime re-grounding |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
@@ -377,6 +388,227 @@ path made real: we build it our way and **co-author @AlexMnrs** (credited in the
 macOS, and Windows; the SHA256 is verified and no existing file is clobbered; self-lint (incl. the new
 script-file gate) + render-smoke stay green. **No agentic-OS init in scope.**
 **Depends on:** M8 / v2.2.0 (post-release); ships to consumers in the bundle → a later release.
+
+---
+
+## Milestone 10 — post-audit hardening (post-v2.3.0)
+
+**Goal.** Close the gaps a post-v2.3.0 repository audit surfaced — a mojibake/crash risk on
+non-UTF-8 consoles, a tar-slip vector in the new installers, stale docs, latent tooling edge
+cases, and a re-confirmed action-pinning policy — **without changing the shipped pipeline's
+behavior**. Each item is one PR, tracked under the `M10 — post-audit hardening` milestone.
+
+- [x] 10.1 (#128) **UTF-8 stdio guard** — every CLI tool forces UTF-8 on `stdout`/`stderr` at
+      `main()` entry, so non-ASCII output (the em-dash, `→`, `✓`) renders correctly instead of
+      garbling or raising `UnicodeEncodeError` on a non-UTF-8 console (Windows `cp1252`);
+      `test_utf8_stdio.py` proves it end-to-end and statically asserts every CLI tool carries it.
+- [x] 10.2 (#129) **Installer tar-slip hardening** — `setup.sh` / `setup.ps1` refuse any
+      symlink/hardlink entry in the release bundle *before* extracting (closes a path-escape
+      vector), even under `--no-verify`; regression tests in `test_setup_sh.py` / `test_setup_ps1.py`.
+- [x] 10.3 (#130) **Documentation accuracy sweep** — SECURITY.md's stale pre-v1.0.0 note, a 404
+      USAGE.md link in the zh-Hans/ja READMEs, the missing `contribution` OS-spec index row, and
+      RFC-0001's stale "M1 → M5" pipeline description (now M1 → M9) are all corrected.
+- [x] 10.4 (#131) **Defensive hardening of latent tooling edge cases** — `risk_score` *requires*
+      (never raises on) an out-of-range `mandatory_gate_level`; `cleanup_installer` matches a
+      setup-leftover by filesystem entry *type*, not name; `gate-coverage`'s `git ls-files` handles
+      a non-ASCII filename; the CLI tools (`doctor`/`eados`/`phase_runner`/`traceability`/
+      `rfc_check`) report a missing/invalid path as a clean non-zero exit, not a raw traceback
+      (`test_cli_guards.py`); `git.yaml`'s commit `scopes` vocabulary catches up to actual use.
+- [x] 10.5 (#132) **ADR-0009 addendum — profile action-pinning reaffirmed** — a dated addendum
+      records that `profiles/*.yaml` referencing Actions by floating tag, while the factory
+      SHA-pins its own workflows, is the deliberate tiered policy of ADR-0009 §3 — an apparent
+      inconsistency re-surfaced by audit, not a design gap.
+
+**Acceptance gate.** Every item lands as a gated PR with a regression test; no change to the
+shipped pipeline's behavior; self-lint + render-smoke stay green.
+**Depends on:** v2.3.0 (post-release); incremental — items are independent.
+
+---
+
+## Milestone 11 — delivery-workflow automation (post-v2.3.0)
+
+**Goal.** Automate the delivery-workflow hygiene the owner was enforcing by hand on every PR —
+complete PR metadata, a green-CI bootstrap gate before milestone delivery starts, every roadmap
+milestone seeded on GitHub, and a verbose squash-merge body — closing the last manual steps in
+the PR lifecycle. Each item is one PR, tracked under the `M11 — delivery-workflow automation`
+milestone.
+
+- [x] 11.1 (#141) **PR-metadata contract as data** — `os/git/git.yaml` gains a `pr.metadata` block
+      (`assignee`, one type `label`, `milestone`, `project`-if-present) distinct from
+      `required_crosslinks`; new `tools/pr_metadata_check.py --pr N` verifies an open PR carries
+      them; the assignee resolves to the **owner**, never `@me`.
+- [x] 11.2 (#142) **"CI live & green" bootstrap gate** — `generate.md` Step 8 makes a green,
+      configured CI on the bootstrap PR an explicit, hard-stop precondition before per-milestone
+      PR delivery opens.
+- [x] 11.3 (#143) **`seed_milestones.py`** — reads `ROADMAP.md` and prints (or `--run` executes)
+      the exact `gh api …/milestones` calls to create **every** milestone as `MN — <name>` with a
+      goal-derived description, so milestone-scoped delivery starts against a complete board.
+- [x] 11.4 (#144) **Verbose squash-body policy as data** — `git.yaml`'s `commit.squash_body`
+      requires the squash-merge commit to carry the PR's context/change/verification body, never a
+      one-line collapse of the title.
+
+**Acceptance gate.** A fresh repo's bootstrap PR cannot proceed to milestone delivery on red or
+absent CI; every PR the tooling checks carries complete metadata; the full milestone board seeds
+from one command.
+**Depends on:** v2.3.0 (post-release); incremental — items are independent.
+
+---
+
+## Milestone 12 — interview completeness (post-v2.3.0)
+
+**Goal.** Close six interview gaps a completeness review surfaced — a first-class web/enterprise
+target, an asked (not hidden-behind-a-toggle) authoring language, real architecture-style/pattern
+elicitation, an optional layered scaffold, a spec-import path, and an environment preflight —
+**without changing the render output for existing defaults**. Each item is one PR, tracked under
+the `M12 — interview completeness` milestone.
+
+- [x] 12.1 (#149) **First-class `web` domain + enterprise posture (ADR-0015)** — new
+      `orchestrator/domains/web.yaml` (web-vocabulary roles, hard accessibility + Core Web Vitals
+      NFR budgets, a `[design, content]` cross-discipline pipeline, an `accessibility-review` +
+      `web-vitals-budget` overlay) and a new orthogonal **`Q0.5 — enterprise posture`**
+      (`governance.posture: standard | enterprise`) — deliberately not a fourth domain.
+- [x] 12.2 (#150) **Unconditional authoring-language question (ADR-0016)** — `Q4.7` states and
+      confirms the documentation language, a new code-comment language, and any extra doc
+      languages; identifiers/public API/commits/branches/PR text stay **English regardless**, a
+      non-English choice becomes a recorded exception rendered into the generated `AGENTS.md` §2.
+- [x] 12.3 (#151) **Architecture-style & design-pattern elicitation** — `Q5.4` captures
+      `spec.architecture_style`, the expected first-class patterns, and a
+      `pattern_discipline: advisory | enforced` posture, seeding the generated
+      `docs/patterns/README.md` catalogue instead of shipping an empty one.
+- [x] 12.4 (#152) **Optional layered package scaffold** — a `service`/`app`/`web` project can opt
+      into a layered internal layout (`controller/service/repository/dto/mapper`); the generator
+      seeds each layer under both `src/main/…` and `src/test/…`; a library keeps the flat shape.
+- [x] 12.5 (#153) **Phase-5 spec-import branch** — a new `Q5.0 — provenance` (`import` |
+      `coauthor`) lets a maintainer with an existing spec import-and-validate it through a gap
+      audit instead of always co-authoring from scratch; this work also fixed the loader silently
+      truncating `questionnaire.yaml` on the wrapped `Q4.7` prompt — the discovery that motivated
+      M13's #166.
+- [x] 12.6 (#154) **Environment preflight** — new `tools/preflight.py` detects the Python/git/`gh`
+      toolchain (+ `gh auth status`) and prints an OS-specific install/auth hint; `/eados init` and
+      `generate.md` Step 0 run it first.
+
+**Acceptance gate.** Each new interview branch is fixture-tested end-to-end; the
+`en`/`en`/`standard`/flat-shape defaults render byte-identical to before; self-lint +
+render-smoke stay green.
+**Depends on:** v2.3.0 (post-release); incremental — items are independent.
+
+---
+
+## Milestone 13 — audit remediation & learning loop (post-v2.4.0/v2.5.0)
+
+**Goal.** Close every gap a self-audit of the deterministic path and the (still-empty) learning
+loop surfaced — a namespace-leak fallback, dead gate wiring, unapplied domain overlays, a fragile
+loader, module-global lint state, an ungated test suite, unenforced interview provenance, a
+hollow-spec floor, a playbook that never touched memory, and the run-recorder + auto-tuner
+watchdogs the learning loop needed to have any input at all. Each item is one PR, tracked under
+the `M13 — audit remediation & learning loop` milestone.
+
+- [x] 13.1 (#163) **No silent `it/d4np` namespace fallback** — a missing `language.group_path` now
+      fails the `{{GROUP_PATH}}` required-field guard instead of stamping the factory owner's
+      namespace into a stranger's repo; `it/d4np` survives only as `examples/reference.yaml`'s
+      truthful value.
+- [x] 13.2 (#164) **`render.py --check` + the `gate-executability` lint** — the `manifest-valid`
+      gate command documented in `workflow.yaml` is now real; a new `eados_lint` check guards the
+      whole data→code seam (every `python <script>` gate names a real script that knows its
+      flags; `wired: in-process` matches `eados.py`'s `GATE_EVALUATORS` exactly).
+- [x] 13.3 (#165) **`domain_overlays` actually applied** — `phase_runner.apply_overlay(workflow,
+      domain)` wires the web/game/mobile overlay gates + inserted states into the live machine
+      (previously read by no engine); `/eados status` surfaces the applied overlay; a bare
+      overlay id with no gate-registry entry is now rejected.
+- [x] 13.4 (#166) **`yamlmini.py` — the loader is its own module, and the #153 truncation class is
+      rejected loudly** — moved out of `render.py`; an unclosed quoted scalar or an open flow
+      collection now raises a loud `ValueError` naming the line instead of silently dropping the
+      rest of the file; a `SUBSET_REJECTIONS` PyYAML-differential corpus proves each rejection is
+      a deliberate subset boundary, never a misparse.
+- [x] 13.5 (#167) **`eados_lint` checks are reentrant** — every `check_*(fail)` receives the
+      reporting callable; a new `run_checks()` owns the per-run accumulator, removing the
+      linter's last module-global mutable state.
+- [x] 13.6 (#168) **The test suite is discovered, never enumerated** — `tools/tests/run_all.py`
+      globs `test_*.py` so a new test runs in CI with **zero** `ci.yml` edits, replacing the
+      hand-maintained unit block + `py_compile` mega-line.
+- [x] 13.7 (#169) **Interview provenance recorded — asked vs. defaulted vs. imported** — a new
+      `interview:` state block (shape-enforced by `validate_manifest`) makes a considered answer
+      distinguishable from a silent assumption, feeding the run-recorder this milestone also ships.
+- [x] 13.8 (#170) **A spec-substance floor** — `validate_manifest` rejects an empty
+      `spec.objective`/`spec.verification` or zero `functional_reqs`/`milestones` instead of
+      producing a hollow repository; presence only, not a taste test.
+- [x] 13.9 (#171) **The playbook itself recalls and records** — `generate.md` gains **Step 0.a
+      Recall** (apply every matching lesson) and **Step 9 Record** (append the run record); before
+      this, an agent following the playbook to the letter never touched memory.
+- [x] 13.10 (#172) **`record_run.py` — mechanized run records** — `overrides:` derive
+      mechanically from the manifest's `interview:` provenance block against the template
+      defaults; the schema gains `outcome`, `lessons_applied`, `failures`, and `rubric`; records
+      are facts, never overwritten.
+- [x] 13.11 (#173) **`lesson_audit.py` — the learning-loop watchdog** — regression-against-lesson
+      detection, a scope-matched dead-lesson report, and rubric-dimension trending, report-only
+      like `autotune.py`.
+- [x] 13.12 (#174) **Review-time lesson capture** — an optional PR-template `Lesson:` field
+      (owner-approved by construction via the squash-merge body) + new `tools/lesson_sweep.py`
+      (prints draft ledger entries, never writes); a one-time backfill promotes two prior
+      discoveries to L-0003/L-0004.
+- [x] 13.13 (#175) **`run-records` self-lint gate** — every `learning/runs/*.yaml` is validated
+      against the recorder schema, moving `learning/runs/**` from allow-listed prose to a gated
+      file class.
+- [x] 13.14 (#176) **README: the tools table, "How EADOS learns", date-stamped model claims** —
+      closes the M13 documentation debt; i18n hash refreshed in lockstep.
+
+**Acceptance gate.** A malformed manifest or run record fails loudly with an actionable message
+at every one of these seams; the run-recorder produces its first genuine override on
+`reference.yaml`; self-lint (all checks) + render-smoke + the discovery-run suite stay green.
+**Depends on:** v2.4.0 / v2.5.0 (post-release); incremental — items are independent.
+
+---
+
+**v2.7.0 release (no GitHub milestone) — post-v2.6.0 hardening & the #203 audit-trail epic.**
+Three items closed the epic issue [#203](https://github.com/danielPoloWork/pgs-eados/issues/203)
+(cross-phase audit trail, manifest concurrency, learning-loop phase coverage), tracked as its own
+children rather than a numbered milestone: **#213** — a transition's checkpoint records **live**
+`gate_results` (the audit trail becomes the runner's own observation, not a copy of
+`workflow.yaml`); **#214** — **optimistic concurrency** for the manifest (`manifest_rev` +
+`--expect-rev`, refusing a stale write with `CONFLICT` instead of silently clobbering it); **#215**
+— learning-loop coverage (a `migrate`/audit failure channel, a corpus-scaled `autotune` confidence
+floor, sensitive-override redaction before the ledger). Alongside the epic, this release also
+closed the **#194–#202** defect backlog (`yamlmini` folded-scalar rejection, the renderer's
+clobber + `.git`-segment guards, `record_run`'s same-day collision, `autotune`/`lesson_audit`
+malformed-record robustness, the phase-skip honor-system gap, fail-open gates under `--strict`,
+interview-provenance completeness, and the bidirectional `agent-registry` lint) — fixed here, but
+left open as tickets until M15 Wave 0 reconciled the backlog + built its regression index
+([#235](https://github.com/danielPoloWork/pgs-eados/issues/235)).
+
+---
+
+## Milestone 14 — agent-contract hardening & runtime re-grounding (post-v2.6.0/v2.7.0)
+
+**Goal.** Close the drift between the deterministic pipeline and the agent actually executing
+it, surfaced once multi-step/long-running agent sessions became the norm: re-ground the runtime
+invariants at every phase boundary, write down the precedence order across overlapping knowledge
+layers, give the agent a pre-flight self-check before opening a PR, promote judgment-laden
+guidance to validated few-shot data, and add a Step-0 triage front door so not every request
+enters the five-step generation loop. Each item is one PR, tracked under the
+`M14 — agent-contract hardening & runtime re-grounding` milestone.
+
+- [x] 14.1 (#221) **Re-ground runtime invariants at phase boundaries** — `phase_runner` emits a
+      re-grounding preamble (acting role, human gate, one-PR) at every `report`/`report --propose`
+      boundary, plus a compact long-run reminder past `LONG_RUN_CHECKPOINTS` (3) recorded
+      transitions — every fact derived from a spec, never a hardcoded copy.
+- [x] 14.2 (#222) **Explicit precedence order across knowledge layers** — a new Precedence section
+      in `orchestrator/os/README.md` states the canonical order (human decision > blocking
+      gate/spec > manifest > profile default > advisory lesson); documentation only.
+- [x] 14.3 (#223) **Agent-facing pre-flight self-check** — new `tools/self_check.py` prints an
+      advisory checklist (ownership, one-PR, PR metadata, body cross-links, English-on-disk,
+      precedence) derived from the specs, front-running the gates before a PR round-trip.
+- [x] 14.4 (#224) **Worked-example decision surfaces** — three judgment-laden calls (interview
+      ask-vs-default, contribution adopt/decline/escalate, learning apply-vs-skip) become
+      `examples:` blocks a new `eados_lint` shape-check validates.
+- [x] 14.5 (#225) **Step-0 triage front door** — `orchestrator/triage.yaml`'s ordered,
+      stop-at-first-match classification (question/status read → answer directly; bounded
+      maintenance edit → one focused PR; generation → the five-step loop), so not every request
+      fires the whole pipeline. **Completes M14.**
+
+**Acceptance gate.** A long, multi-transition session still re-states its non-negotiables at each
+boundary; a maintenance one-liner no longer forces interview→profile→manifest→render; self-lint
+(incl. the new `examples` check) + render-smoke stay green.
+**Depends on:** v2.6.0 / v2.7.0 (post-release); incremental — items are independent.
 
 ---
 

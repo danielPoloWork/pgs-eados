@@ -1,5 +1,12 @@
 # [BUG] ROADMAP.md is stale: M10–M13 delivered but never recorded (lockstep invariant broken)
 
+> **✅ Delivered — scope widened to M10–M14 (five milestones) per the M15 plan's owner-refined
+> rescope.** Backfilled 2026-07-10, closes
+> [#237](https://github.com/danielPoloWork/pgs-eados/issues/237): ROADMAP.md status table +
+> milestone sections through M14/v2.8.0 (+ the previously-missing v2.3.0 row and the un-milestoned
+> v2.7.0 row), and a new `roadmap-freshness` self-lint in `eados_lint.py` (guarded by
+> `test_roadmap_freshness.py`) so a released milestone can no longer ship without a done row.
+
 **Labels:** `bug`, `severity:medium`, `area:docs`, `governance`
 **Component:** `.eados-core/docs/rfc/ROADMAP.md`, `.eados-core/tools/eados_lint.py`
 
