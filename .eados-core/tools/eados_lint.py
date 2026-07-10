@@ -1215,6 +1215,93 @@ def check_examples(fail):
             fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 19. safe-write containment (#235, guards #195/#196) — every file write in the factory's tools
+#     must route through `sandbox` (safe_write/resolve), the single guarded sink that closed the
+#     `render --in-place` clobber (#195) and the `.git`-segment escape (#196). render.write_file
+#     is now a pure delegator to sandbox.safe_write; a tool that opens its own truncating write
+#     path bypasses the containment + no-clobber + `.git` refusal and silently re-opens that defect
+#     class. The factory-internal writers that legitimately write OUTSIDE a rendered repo — the
+#     learning ledger, a maintainer `--out`, the factory's own workflow templates — are allow-listed
+#     WITH a justification (mirroring WORKFLOW_SAFETY_ALLOWLIST), and the sandbox primitive itself is
+#     the sink they all funnel into. Symmetric hygiene: an allow-list entry that no longer writes
+#     directly is flagged stale, exactly like workflow-safety and agent-registry.
+# ---------------------------------------------------------------------------
+SAFE_WRITE_ALLOWLIST = {
+    "sandbox.py": "the guarded write primitive itself — safe_write's open() is the single sink "
+                  "every other writer funnels through (containment + .git refusal + no-clobber)",
+    "record_run.py": "writes the factory's own learning ledger under learning/runs/ with its own "
+                     "#197 same-day no-clobber suffix; never a rendered-repo path",
+    "derive_links.py": "writes the traceability links file to an explicit maintainer --out (or "
+                       "stdout) — a CI/factory artifact, not a rendered repo file",
+    "sync_action_pins.py": "rewrites the factory's OWN templates/**/.github workflows in --fix "
+                           "mode; never a rendered-repo path",
+}
+
+# The lint reads its own source when it walks the tools dir; its regex literals below name the very
+# write verbs it hunts for, which would self-trip. A lint that performs no file writes need not
+# police itself — exclude it rather than allow-list it (an entry that never fires reads as noise).
+SAFE_WRITE_UNSCANNED = {"eados_lint.py"}
+
+# Direct file-creation/write sites: open(...) with a w/a/x/+ mode, pathlib write_*, os.replace/
+# rename, shutil copy/move. A static proxy (like gate-executability's flag check) — good enough to
+# catch a new private write path; the allow-list carries the reviewed exceptions.
+_DIRECT_WRITE_RE = re.compile(
+    r"""open\([^)]*["'][rbt+]*[wax][rwaxbt+]*["']"""             # open(..., "w"/"a"/"x"/"w+"/"wb"…)
+    r"""|\.write_text\(|\.write_bytes\("""                       # pathlib.Path.write_*
+    r"""|\bos\.(?:replace|rename)\("""                           # atomic replace / rename
+    r"""|\bshutil\.(?:copy|copyfile|copy2|copytree|move)\("""    # shutil file copy/move
+)
+
+
+def _strip_line_comments(text):
+    """Drop whole-line `#` comments so a commented-out example write isn't flagged. Inline comments
+    and docstrings are left in — a proxy check tolerates the rare docstring hit, and the
+    guard-required scope plus the allow-list keep false positives out of practice."""
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+
+def safe_write_problems(items, allowlist=SAFE_WRITE_ALLOWLIST):
+    """items: (basename, source_text) per tool module. Flags a direct file-write outside the
+    allow-list. Pure (allow-list injectable) so the synthetic-direct-write contract is testable."""
+    problems = []
+    for name, text in items:
+        if name in allowlist:
+            continue
+        if _DIRECT_WRITE_RE.search(_strip_line_comments(text)):
+            problems.append(
+                f"{name}: opens a file for writing directly instead of routing through "
+                f"sandbox.safe_write — the containment / .git / no-clobber guard that closed "
+                f"#195/#196 is bypassed. Delegate to sandbox.safe_write/resolve, or add '{name}' "
+                f"to SAFE_WRITE_ALLOWLIST with a justification if it writes outside a rendered repo")
+    return problems
+
+
+def _tool_sources():
+    """(basename, source) for each production tool module (tests/, __pycache__, and the lint's own
+    self-tripping source excluded)."""
+    items = []
+    for fn in sorted(os.listdir(TOOLS)):
+        if fn.endswith(".py") and fn not in SAFE_WRITE_UNSCANNED:
+            items.append((fn, read(os.path.join(TOOLS, fn))))
+    return items
+
+
+def check_safe_write(fail):
+    name = "safe-write"
+    items = _tool_sources()
+    if not items:
+        return  # a partial checkout without the tools
+    for problem in safe_write_problems(items):
+        fail(name, problem)
+    by_name = {n: t for n, t in items}
+    for fname in SAFE_WRITE_ALLOWLIST:
+        if fname not in by_name:
+            fail(name, f"safe-write allow-list names a missing tool: '{fname}'")
+        elif not safe_write_problems([(fname, by_name[fname])], allowlist={}):
+            fail(name, f"safe-write allow-list entry no longer needed (no direct write): '{fname}'")
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1235,6 +1322,7 @@ CHECKS = [
     check_workflow_safety,
     check_gate_executability,
     check_examples,
+    check_safe_write,
 ]
 
 
