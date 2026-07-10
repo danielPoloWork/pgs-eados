@@ -1352,14 +1352,27 @@ def check_safe_write(fail):
 #     table (orchestrator/commands/README.md) must ship its Claude Code adapter at
 #     .claude/commands/eados/<name>.md, and every adapter must be a genuine POINTER at the row's
 #     own procedure file (it carries the canonical path; the procedure stays the single source of
-#     truth). Symmetric, like agent-registry: an orphan adapter with no available row is stale
-#     (a planned command must not ship an adapter before its row flips to available). Runs only
+#     truth). ALIAS adapters (#241): a live (non-planned) alias-table row — e.g. `security` ->
+#     `/eados audit` — MAY ship an adapter too; it is optional, and when present it must point at
+#     its TARGET command's procedure (an alias routes, never adds behavior). Symmetric, like
+#     agent-registry: an orphan adapter matching neither an available row nor a live alias is
+#     stale (a planned command/alias must not ship an adapter before it flips live). Runs only
 #     in the factory checkout (the `.eados-dev` sentinel): a consumer who installed the bundle
 #     and declined the adapters must not fail their own self-lint.
 # ---------------------------------------------------------------------------
 _COMMAND_ROW_RE = re.compile(
     r"^\|\s*`/eados (\w+)`\s*\|[^|]*\|[^|]*\*\*available\*\*[^|]*\|\s*\[[^\]]+\]\(([^)]+)\)",
     re.MULTILINE)
+# Alias-table rows: `| <verb(s)> | ... `/eados <target>` ... | <class> | <ref> |`. The verbs cell
+# may carry several backticked verbs (the design sub-modes row); the ref cell's `planned` marker
+# excludes a row (the alias is not live yet). Command-table rows cannot match: their SECOND cell
+# is a bare phase name, never a backticked `/eados <cmd>`.
+# The lazy `[^|]*?` matters: a routes-to cell may carry several `/eados X` tokens (`interview` ->
+# init, with a brownfield `adopt` aside) and the FIRST one is the alias's target — a greedy
+# quantifier would capture the last.
+_ALIAS_ROW_RE = re.compile(
+    r"^\|([^|]+)\|[^|]*?`/eados (\w+)`[^|]*\|[^|]*\|([^|]*)\|", re.MULTILINE)
+_ALIAS_VERB_RE = re.compile(r"`(\w+)`")
 
 
 def _canonical_procedure(link):
@@ -1380,8 +1393,9 @@ def _canonical_procedure(link):
 def command_adapter_problems(readme_text, adapters):
     """Pure check. `readme_text`: orchestrator/commands/README.md; `adapters`: {name: file text}
     for .claude/commands/eados/*.md. Every available `/eados <name>` row needs an adapter whose
-    text carries the row's own canonical procedure path (the pointer contract); every adapter
-    needs an available row (no orphans). Returns problem strings (empty == covered)."""
+    text carries the row's own canonical procedure path (the pointer contract). A LIVE alias-table
+    verb (#241) may optionally ship an adapter pointing at its TARGET's procedure. Every adapter
+    needs one of the two (no orphans). Returns problem strings (empty == covered)."""
     rows = _COMMAND_ROW_RE.findall(readme_text)
     if not rows:
         return ["could not parse any available `/eados <name>` rows from commands/README.md — "
@@ -1390,6 +1404,15 @@ def command_adapter_problems(readme_text, adapters):
     available = {}
     for cmd, link in rows:
         available[cmd] = _canonical_procedure(link)
+    # Live aliases: verb -> the TARGET command's canonical procedure. A `planned` ref cell or a
+    # target that is not itself available keeps the alias out (not live yet).
+    aliases = {}
+    for verbs_cell, target, ref_cell in _ALIAS_ROW_RE.findall(readme_text):
+        if "planned" in ref_cell or target not in available:
+            continue
+        for verb in _ALIAS_VERB_RE.findall(verbs_cell):
+            if verb not in available:
+                aliases[verb] = available[target]
     for cmd, proc in sorted(available.items()):
         if cmd not in adapters:
             problems.append(f".claude/commands/eados/{cmd}.md is missing — every available "
@@ -1399,10 +1422,17 @@ def command_adapter_problems(readme_text, adapters):
                             f"procedure `{proc}` — an adapter is a pointer, never a copy "
                             "(ADR-0019 class 4)")
     for cmd in sorted(adapters):
-        if cmd not in available:
-            problems.append(f".claude/commands/eados/{cmd}.md has no available `/eados {cmd}` row "
-                            "in commands/README.md — a planned command must not ship an adapter "
-                            "before its row flips to available (orphan adapter)")
+        if cmd in available:
+            continue
+        if cmd in aliases:
+            if aliases[cmd] not in adapters[cmd]:
+                problems.append(f".claude/commands/eados/{cmd}.md is an alias adapter but does "
+                                f"not point at its target's canonical procedure `{aliases[cmd]}` "
+                                "— an alias routes, never adds behavior (ADR-0019 class 4, #241)")
+            continue
+        problems.append(f".claude/commands/eados/{cmd}.md matches no available `/eados {cmd}` row "
+                        "and no live alias-table verb — a planned command/alias must not ship an "
+                        "adapter before it flips live (orphan adapter)")
     return problems
 
 

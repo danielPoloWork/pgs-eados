@@ -36,3 +36,12 @@ mandatory_gate_level: high          # default: at/above HIGH the security-audito
 domain_overrides:
   mobile: { mandatory_gate_level: medium }
   game:   { mandatory_gate_level: high }
+
+# The audit threat-modeling sub-mode (#241, ADR-0019 §2 — the `security` wishlist verb): where the
+# artifact lives in a generated repo, the method it works, and the role that owns it. Data, so the
+# command surface, the persona, and any future check point at ONE source of truth. The scorer
+# ignores this block (deterministic scoring unchanged).
+threat_model:
+  artifact: docs/security/threat-model.md
+  method: STRIDE
+  owner_role: security-auditor

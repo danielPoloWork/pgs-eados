@@ -117,6 +117,8 @@ Render, stripping the `.tmpl` suffix and substituting placeholders:
 | `templates/docs/specs/01_spec.md.tmpl` | `docs/specs/01_spec_<slug>.md` | filled from Phase 5 |
 | `templates/docs/bugs/template.md` | `docs/bugs/template.md` | verbatim |
 | `templates/docs/bugs/README.md.tmpl` | `docs/bugs/README.md` | empty ledger index |
+| `templates/docs/security/README.md.tmpl` | `docs/security/README.md` | the security-docs surface (policy vs analysis vs outcome) |
+| `templates/docs/security/threat-model.md.tmpl` | `docs/security/threat-model.md` | STRIDE threat-model stub, filled by the audit sub-mode (#241; owner: security-auditor) |
 | `templates/docs/journal/README.md.tmpl` | `docs/journal/README.md` | empty journal index |
 | `templates/docs/releases/README.md.tmpl` | `docs/releases/README.md` | empty release-notes index (day-zero) |
 | `templates/docs/development/local-build.md.tmpl` | `docs/development/local-build.md` | local build/test guide (linked from README) |

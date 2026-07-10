@@ -211,6 +211,9 @@ Documentation is part of the deliverable. Every PR ships its own doc updates.
   defect under a discovery-date tree, indexed by `docs/bugs/README.md`. Reproduce and
   root-cause third-party reports before recording; an unsubstantiated report is recorded as
   `cannot-reproduce`/`rejected`/`duplicate`, never as a real defect.
+- **Threat model** — `docs/security/threat-model.md`: the STRIDE pass per trust boundary (the
+  analysis beside the root `SECURITY.md` policy). Update it in the same PR as any change to a
+  trust boundary — a new untrusted input, external service, or privilege change.
 - **Workflow docs** — `docs/workflow/` holds the git, documentation, release, and maintenance
   conventions, plus `github-setup.md` (one-time repo configuration).{{#IF_ANNOUNCE}} Release
   announcements: `docs/workflow/announcements.md`.{{/IF_ANNOUNCE}}{{#IF_SERVICE}} Production

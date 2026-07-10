@@ -21,7 +21,8 @@ import eados_lint as lint  # noqa: E402  (the module under test)
 REPO_ROOT = os.path.dirname(lint.ROOT)
 
 # A command table with two available rows (one with the scaffold-style ../ procedure link), one
-# not-yet-available row, and an alias-table row — only the available rows demand adapters.
+# not-yet-available row, and alias-table rows (one LIVE — the #241 class — and one planned) —
+# only the available rows demand adapters; a live alias may optionally ship one.
 README = (
     "| Command | Phase | Status | Procedure |\n"
     "|---------|-------|--------|-----------|\n"
@@ -29,12 +30,18 @@ README = (
     "| `/eados scaffold` | scaffold | **available** (today's factory) | "
     "[`../generate.md`](../generate.md) |\n"
     "| `/eados debug` | — | planned (M15 W2) | [`debug.md`](debug.md) |\n"
+    "| Alias (wishlist verb) | Routes to | Class | Ref |\n"
+    "|---|---|---|---|\n"
+    "| `secure` | `/eados init` (see also `/eados scaffold`) | sub-mode | #241 |\n"
     "| `refactor` (code cleanup) | `/eados refactor` | cross-cutting | #243 · planned |\n"
+    "| `later` | `/eados debug` | cross-cutting | #9 · planned |\n"
 )
 GOOD = {
     "init": "pointer -> `.eados-core/orchestrator/commands/init.md` (read and follow)",
     "scaffold": "pointer -> `.eados-core/orchestrator/generate.md` (read and follow)",
 }
+# The live-alias adapter: `secure` routes to init, so it must carry INIT's canonical procedure.
+ALIAS_OK = dict(GOOD, secure="alias -> `.eados-core/orchestrator/commands/init.md` (sub-mode)")
 
 
 def check(label, cond, failures):
@@ -71,7 +78,18 @@ def main():
     # --- an orphan adapter (planned command shipping early, or a deleted row) is flagged ---
     orphan = P(README, dict(GOOD, debug="pointer -> .eados-core/orchestrator/commands/debug.md"))
     check("an orphan adapter with no available row is flagged",
-          any("debug.md has no available" in p for p in orphan), failures)
+          any("debug.md matches no available" in p for p in orphan), failures)
+
+    # --- alias adapters (#241): a LIVE alias verb may ship one, pointing at its TARGET's procedure ---
+    check("a live-alias adapter pointing at its target's procedure is clean",
+          P(README, ALIAS_OK) == [], failures)
+    wrong = P(README, dict(GOOD, secure="alias -> `.eados-core/orchestrator/generate.md`"))
+    check("a live-alias adapter pointing at the WRONG procedure is flagged",
+          any("secure.md is an alias adapter but does not point" in p and
+              "commands/init.md" in p for p in wrong), failures)
+    early = P(README, dict(GOOD, later="alias -> `.eados-core/orchestrator/commands/debug.md`"))
+    check("a planned-alias adapter is an orphan (must not ship before it flips live)",
+          any("later.md matches no available" in p for p in early), failures)
 
     # --- parse-failure guard: a README with no parseable rows is a loud single problem ---
     none = P("nothing here\n", GOOD)
@@ -93,8 +111,9 @@ def main():
             print(f"  {f}")
         print(f"\n{len(failures)} expectation(s) failed.")
         return 1
-    print("test-command-adapters: OK — every available row demands a pointing adapter, orphans "
-          "and non-pointers are caught, planned rows are exempt, and the live tree is in lockstep.")
+    print("test-command-adapters: OK — every available row demands a pointing adapter, live alias "
+          "adapters must point at their target, orphans/non-pointers/early-planned are caught, "
+          "and the live tree is in lockstep.")
     return 0
 
 

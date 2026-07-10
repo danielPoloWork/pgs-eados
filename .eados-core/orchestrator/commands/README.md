@@ -72,9 +72,11 @@ additive no-clobber posture is unchanged).
 
 **Enforced.** The `command-adapters` self-lint keeps this table and the adapters in lockstep,
 symmetrically: every **available** row must ship an adapter that points at that row's own
-procedure file, and an adapter with no available row (a planned command shipping early, a deleted
-row) is an orphan failure — a new command cannot ship undiscoverable, and a planned one cannot
-jump the queue.
+procedure file; a **live alias-table verb** may optionally ship an **alias adapter** that must
+point at its *target's* procedure (e.g. `/eados:security` → `audit.md`, #241 — an alias routes,
+never adds behavior); and an adapter matching neither (a planned command/alias shipping early, a
+deleted row) is an orphan failure — a new command cannot ship undiscoverable, and a planned one
+cannot jump the queue.
 
 ## Command classes & the canonical alias table (ADR-0019)
 
@@ -111,9 +113,10 @@ no command run).
 
 A planned command keeps its `· planned` marker here until it ships; shipping adds its row to the
 command table at the top **and** its host adapter (#239). This alias table is the **canonical
-verb → command mapping**; what the `command-adapters` check (#239) enforces is the **command
-table above**: every `**available**` row must ship its pointer adapter, and a planned command
-(no available row yet) must ship none.
+verb → command mapping**, and the `command-adapters` check (#239) reads both tables: every
+`**available**` command row must ship its pointer adapter; a **live** alias verb here *may* ship
+an optional alias adapter that must point at its target's procedure (#241 — `security` is the
+first); and a planned command or alias must ship none.
 
 ## The phase runner
 

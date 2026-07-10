@@ -22,6 +22,7 @@ blast_radius_threshold: # distinct top-level areas at/above which the wide-blast
 score_thresholds:       # cumulative-points cutoffs mapping points -> levels (len == len(levels) - 1)
 mandatory_gate_level:   # at/above this level the security-auditor gate is REQUIRED (default)
 domain_overrides:       # per-domain overrides of any key above (weights shallow-merged) + mandatory_gate_level
+threat_model:           # the audit threat-modeling sub-mode (#241): { artifact, method, owner_role }
 ```
 
 ## Item shapes & scoring
@@ -49,6 +50,14 @@ via **`score_thresholds`**:
 base (a domain can tune a single factor); the other tunables (`score_thresholds`,
 `blast_radius_threshold`, `size_buckets`, `mandatory_gate_level`, `levels`, `security_globs`) are
 **replaced** when present. A domain that omits a key inherits the base value.
+
+## Threat-modeling sub-mode (#241)
+
+**`threat_model`** — `{ artifact, method, owner_role }`: the generated-repo path of the
+threat-model artifact (`docs/security/threat-model.md`, scaffolded by the templates), the analysis
+method (`STRIDE`), and the owning role (`security-auditor`, a declared `authority.yaml` role that
+also holds the `docs/security/**` ownership-map entry). The audit sub-mode (`/eados security` →
+`commands/audit.md`) reads this block; the scorer ignores it (deterministic scoring unchanged).
 
 ## Invariants
 
