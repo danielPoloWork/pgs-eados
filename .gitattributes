@@ -21,7 +21,9 @@
 #   * LICENSE — kept on purpose: render.py reads it as the source for every generated
 #     project's LICENSE, so removing it would yield license-less projects.
 #
-# Produce a bundle:  git archive --format=tar.gz --prefix=pgs-eados/ -o pgs-eados-bundle.tar.gz HEAD
+# Produce a bundle:  git archive --format=tar.gz -o pgs-eados-bundle.tar.gz HEAD
+# (PREFIX-LESS, matching release.yml — the installers match top-level entries like
+# `.eados-core/…` and `.claude/…`, so a --prefix bundle would defeat their path checks.)
 # See .eados-core/docs/USAGE.md "Distribution bundle" for the full recipe.
 #
 # NOTE: patterns are anchored with a leading slash so they match only the intended

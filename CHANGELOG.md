@@ -11,6 +11,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Host adapters — `/eados <cmd>` is a discoverable slash command (#239, M15 Wave 1;
+  ADR-0019 class 4).** The eight commands existed only as portable markdown procedures; on a
+  fresh install, typing `/eados init` in Claude Code resolved to nothing. Each **available** row
+  of `orchestrator/commands/README.md` now ships a **thin pointer adapter** at
+  `.claude/commands/eados/<name>.md` (surfacing as `/eados:<name>`): it names the owning role and
+  defers to the canonical procedure — no procedure body, so the file under `orchestrator/commands/`
+  stays the single source of truth, exactly as `CLAUDE.md` points at `AGENTS.md`. The
+  commands-vs-skills split is resolved and recorded: **`.claude/commands/`** (a human-invoked,
+  deterministic entry point), not `.claude/skills/` (model-triggered description matching — the
+  fuzzy-intent routing RFC-0001 D2 rejects). The adapters travel **inside the release bundle**
+  (tracked at the repo root, so `git archive` ships them), and the guided installers place them
+  **opt-in**: interactive runs ask (default yes); scripted runs need `--with-adapters` /
+  `-WithAdapters` (`--no-adapters` / `-NoAdapters` declines — a declined install neither scans nor
+  extracts `.claude/**`, so a pre-existing user file there never aborts nor gets touched; the
+  additive no-clobber posture is unchanged). Codex / Gemini Antigravity equivalents are documented
+  (each host's contract file points at the same one-line pointer pattern). A new
+  **`command-adapters` self-lint** keeps the table and the adapters in lockstep symmetrically —
+  every available row must ship an adapter pointing at that row's own procedure file, and an
+  orphan adapter (a planned command shipping early) fails — so a new command cannot ship
+  undiscoverable; `.claude/commands/**` is registered under the `gate-coverage` meta-gate.
+  Factory-checkout-only (the `.eados-dev` sentinel): a consumer who declined the adapters never
+  fails their own self-lint. Covered by `test_command_adapters.py` and the extended
+  `test_setup_sh.py` / `test_setup_ps1.py` (opt-in default, `--with-adapters`, declined-collision
+  safety, flag conflict, the new interactive question).
+
 - **ROADMAP.md backfilled through M14 + a `roadmap-freshness` self-lint (#237, M15 Wave 0).**
   `ROADMAP.md` declares itself the single source of truth for EADOS's own delivery plan, but its
   status table and milestone sections stopped at **M9 / v2.3.0** while the CHANGELOG and four

@@ -25,6 +25,10 @@ truth.**
 
 ## Claude Code specifics
 
+- The `/eados` palette is native here: **`/eados:<name>`** slash commands, one thin pointer
+  adapter per available command under [`.claude/commands/eados/`](.claude/commands/eados/) —
+  each defers to its canonical procedure in
+  [`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md) (#239, ADR-0019 class 4).
 - Use `TaskCreate` / `TaskUpdate` to track a generation run as multi-step work.
 - Before rendering, always show the maintainer `orchestrator/project.yaml` and wait for
   confirmation.

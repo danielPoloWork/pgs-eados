@@ -25,6 +25,8 @@ param(
   [string]$SumsFile = '',
   [switch]$NoVerify,
   [switch]$NoGh,
+  [switch]$WithAdapters,
+  [switch]$NoAdapters,
   [switch]$PrintPlan,
   [switch]$DryRun,
   [switch]$Interactive,
@@ -83,6 +85,11 @@ INTEGRITY (fail-closed: refuses to extract an unverified bundle)
   -SumsFile FILE       verify against a local SHA256SUMS file (skip the download; air-gapped)
   -NoVerify            skip checksum verification (loudly; not recommended)
 
+HOST ADAPTERS (opt-in; ADR-0019 class 4)
+  -WithAdapters        also place the /eados slash-command adapters for Claude Code
+                       (.claude/commands/eados/ from the bundle); interactive runs ask (default yes)
+  -NoAdapters          never place the adapters (also silences the interactive question)
+
 OTHER
   -Interactive         force the prompts even when parameters are given
   -NonInteractive      never prompt (use parameters / defaults)
@@ -96,6 +103,11 @@ The bundle is extracted ADDITIVELY: it refuses to overwrite any existing file.
 }
 
 if ($Help) { Show-Usage; exit 0 }
+
+if ($WithAdapters -and $NoAdapters) { Die '-WithAdapters conflicts with -NoAdapters' }
+# $null = undecided: interactive runs ask (default yes); scripted stays opt-in (resolved to $false).
+$wantAdapters = $null
+if ($WithAdapters) { $wantAdapters = $true } elseif ($NoAdapters) { $wantAdapters = $false }
 
 # Interactive when run bare (double-click) or asked for; never when -NonInteractive / -PrintPlan.
 $wantInteractive = $false
@@ -128,7 +140,14 @@ if ($wantInteractive) {
   else {
     $Path = Ask 'Path to the existing repo' '.'
   }
+  if ($null -eq $wantAdapters) {
+    $a = Ask 'Also install the /eados slash-command adapters for Claude Code (.claude/commands/eados)? (y/n)' 'y'
+    $wantAdapters = ($a.Trim() -match '^(y|yes)$')
+  }
 }
+
+# Scripted default: the adapters are opt-in (-WithAdapters); undecided means no.
+if ($null -eq $wantAdapters) { $wantAdapters = $false }
 
 if ($Mode -eq 'new' -and -not $RepoName) { Die '-Mode new requires -RepoName' }
 
@@ -162,6 +181,12 @@ function Write-Plan {
   if (-not $From -and -not $BundleUrl) { Info "  repo:       $Repo"; Info "  ref:        $Ref" }
   Info "  checksum:   $VerifyDesc"
   Info '  extract:    additive (refuses to overwrite an existing file)'
+  if ($wantAdapters) {
+    Info '  adapters:   /eados slash commands for Claude Code (.claude/commands/eados) - yes'
+  }
+  else {
+    Info '  adapters:   no (opt-in: -WithAdapters)'
+  }
 }
 
 if ($PrintPlan) { Write-Plan; exit 0 }
@@ -255,17 +280,28 @@ try {
   $links = (& tar -tzvf $bundle 2>$null) | Where-Object { $_ -match '^[lh]' }
   if ($links) { Die ("refusing to extract - the archive contains symlink/hardlink entries:`n" + ($links -join "`n")) }
 
-  # Additive: refuse to overwrite any existing FILE (directories may coexist).
+  # Additive: refuse to overwrite any existing FILE (directories may coexist). When the adapters
+  # are declined, `.claude/**` entries are neither scanned nor extracted - a pre-existing user
+  # file there must not abort an install that will never touch it. (The skip is anchored to the
+  # bundle's top-level `.claude/`; the bundle ships no nested `.claude` paths.)
   $clobber = @()
   foreach ($entry in $listing) {
     if ($entry.EndsWith('/')) { continue }
+    if (-not $wantAdapters -and $entry.StartsWith('.claude/')) { continue }
     $dest = "$Target/$entry"
     if ((Test-Path -LiteralPath $dest) -and -not (Test-Path -LiteralPath $dest -PathType Container)) { $clobber += $entry }
   }
   if ($clobber.Count -gt 0) { Die ("refusing to overwrite existing files under $Target (install is additive):`n  " + ($clobber -join "`n  ")) }
 
-  # Place it.
-  & tar -xzf $bundle -C $Target
+  # Place it. Declined adapters are excluded AT EXTRACTION (tar.exe is bsdtar; --exclude prunes
+  # the whole `.claude` subtree) - a post-extract delete would already have clobbered a colliding
+  # user file.
+  if ($wantAdapters) {
+    & tar -xzf $bundle -C $Target
+  }
+  else {
+    & tar -xzf $bundle -C $Target --exclude '.claude'
+  }
   if ($LASTEXITCODE -ne 0) { Die 'extraction failed' }
 }
 finally {
@@ -295,6 +331,12 @@ if ($Mode -eq 'new') {
 
 Info ''
 Info 'Done. Next:'
+if ($wantAdapters) {
+  Info '  adapters: /eados slash commands installed (.claude/commands/eados) - in Claude Code try /eados:init'
+}
+else {
+  Info '  adapters: not installed (re-run with -WithAdapters, or copy .claude/ out of the bundle)'
+}
 Info "  cd `"$Target`""
 Info '  open the repo with an AI agent (it auto-loads AGENTS.md), or render deterministically:'
 Info '  python .eados-core/tools/render.py .eados-core/orchestrator/project.yaml --in-place'

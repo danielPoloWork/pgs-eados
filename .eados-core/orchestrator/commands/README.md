@@ -45,9 +45,36 @@ is a **read-only doctor** (current phase, legal moves, traceability coverage at 
 6.4); `/eados review` evaluates an **inbound PR** against the contribution policy and drafts a
 recommended disposition (M8) — it **recommends, never merges**.
 
-**Portable.** The canonical procedure is the markdown here; a host wraps it with its own skill
-mechanism (Claude Code `.claude/skills/`, a Codex/Gemini agent registry). The adapter is thin — it
-points at the procedure, exactly as `CLAUDE.md` / `GEMINI.md` point at `AGENTS.md`.
+## Host adapters — `/eados <cmd>` as a discoverable slash command (#239, ADR-0019 class 4)
+
+The canonical procedure is the markdown here; a **host adapter** surfaces it as a native command.
+An adapter is a **pointer, never a copy** — it names the owning role and instructs the agent to
+read and follow the canonical procedure file, exactly as `CLAUDE.md` / `GEMINI.md` point at
+`AGENTS.md`. It carries no procedure body, so the file here stays the single source of truth.
+
+- **Claude Code** (shipped): one adapter per available table row at
+  **`.claude/commands/eados/<name>.md`** (repo root; in the bundle), surfacing as
+  **`/eados:<name>`**. *Resolution of the commands-vs-skills split:* these are
+  **`.claude/commands/`** slash commands, not `.claude/skills/` — an EADOS command is a
+  **human-invoked, deterministic entry point**, which is exactly what a slash command is; a skill
+  is model-triggered by description-matching, the fuzzy-intent routing RFC-0001 D2 rejects.
+- **Codex** (documented): Codex auto-loads `AGENTS.md`, which points here — invoke a command by
+  asking for it by name (`run /eados init`); a custom prompt registered in `~/.codex/prompts`
+  may wrap the same one-line pointer.
+- **Gemini Antigravity** (documented): `GEMINI.md` points at `AGENTS.md` → here; a project
+  `.gemini/commands/` TOML entry may wrap the same pointer.
+
+**Delivery.** The adapters travel **inside the release bundle** (tracked at the factory's repo
+root, so `git archive` ships them). The guided installers place them **opt-in**: interactive runs
+ask (default yes); scripted runs need `--with-adapters` / `-WithAdapters` (`--no-adapters` /
+`-NoAdapters` declines, and a declined install neither scans nor touches `.claude/**` — the
+additive no-clobber posture is unchanged).
+
+**Enforced.** The `command-adapters` self-lint keeps this table and the adapters in lockstep,
+symmetrically: every **available** row must ship an adapter that points at that row's own
+procedure file, and an adapter with no available row (a planned command shipping early, a deleted
+row) is an orphan failure — a new command cannot ship undiscoverable, and a planned one cannot
+jump the queue.
 
 ## Command classes & the canonical alias table (ADR-0019)
 
@@ -84,8 +111,9 @@ no command run).
 
 A planned command keeps its `· planned` marker here until it ships; shipping adds its row to the
 command table at the top **and** its host adapter (#239). This alias table is the **canonical
-registry**: the adapter-coverage check (#239) requires an adapter for every shipped target and
-skips `· planned` rows.
+verb → command mapping**; what the `command-adapters` check (#239) enforces is the **command
+table above**: every `**available**` row must ship its pointer adapter, and a planned command
+(no available row yet) must ship none.
 
 ## The phase runner
 

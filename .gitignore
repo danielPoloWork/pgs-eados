@@ -9,6 +9,12 @@ venv/
 # it is transient working state and must not be version-controlled in the factory.
 /.eados-core/orchestrator/project.yaml
 
+# Claude Code personal settings — .claude/ is partially TRACKED since #239 (the command
+# adapters), so this must be ignored here, not left to a machine's global ignore: a stray
+# `git add .claude` would otherwise stage private settings straight into the release bundle.
+# (The generated repos' gitignore template already carries the same line.)
+.claude/settings.local.json
+
 # OS / editor noise
 .DS_Store
 Thumbs.db
