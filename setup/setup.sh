@@ -49,6 +49,11 @@ INTEGRITY (fail-closed: refuses to extract an unverified bundle)
   --sums-file FILE      verify against a local SHA256SUMS file (skip the download; air-gapped)
   --no-verify           skip checksum verification (loudly; not recommended)
 
+HOST ADAPTERS (opt-in; ADR-0019 class 4)
+  --with-adapters       also place the /eados slash-command adapters for Claude Code
+                        (.claude/commands/eados/ from the bundle); interactive runs ask (default yes)
+  --no-adapters         never place the adapters (also silences the interactive question)
+
 OTHER
   --interactive         force the prompts even when flags are given
   --non-interactive     never prompt (use flags / defaults)
@@ -114,6 +119,7 @@ dry_run=0
 no_gh=0
 interactive=0
 non_interactive=0
+with_adapters=          # empty = undecided: interactive runs ask (default yes); scripted = opt-in (0)
 
 argc=$#   # capture before parsing: bare invocation (no args) implies interactive
 
@@ -131,6 +137,8 @@ while [ $# -gt 0 ]; do
     --sha256)         shift; [ $# -ge 1 ] || die "--sha256 requires a value";      expected_sha=$1;        shift ;;
     --sums-file)      shift; [ $# -ge 1 ] || die "--sums-file requires a value";   sums_file=$1;           shift ;;
     --no-verify)      no_verify=1; shift ;;
+    --with-adapters)  [ "$with_adapters" != 0 ] || die "--with-adapters conflicts with --no-adapters"; with_adapters=1; shift ;;
+    --no-adapters)    [ "$with_adapters" != 1 ] || die "--no-adapters conflicts with --with-adapters"; with_adapters=0; shift ;;
     --interactive)    interactive=1; shift ;;
     --non-interactive) non_interactive=1; shift ;;
     --no-gh)          no_gh=1; shift ;;
@@ -170,7 +178,14 @@ if [ "$want_interactive" = 1 ]; then
     ask "Path to the existing repo" "."
     path=$ANSWER
   fi
+  if [ -z "$with_adapters" ]; then
+    ask "Also install the /eados slash-command adapters for Claude Code (.claude/commands/eados)? (y/n)" "y"
+    case "$ANSWER" in [yY]|[yY][eE][sS]) with_adapters=1 ;; *) with_adapters=0 ;; esac
+  fi
 fi
+
+# Scripted default: the adapters are opt-in (--with-adapters); undecided means no.
+[ -n "$with_adapters" ] || with_adapters=0
 
 # --- validate (argument shape only) ----------------------------------------
 case "$mode" in
@@ -229,6 +244,11 @@ print_the_plan() {
   fi
   info "  checksum:   $verify_desc"
   info "  extract:    additive (refuses to overwrite an existing file)"
+  if [ "$with_adapters" = 1 ]; then
+    info "  adapters:   /eados slash commands for Claude Code (.claude/commands/eados) — yes"
+  else
+    info "  adapters:   no (opt-in: --with-adapters)"
+  fi
   if [ "$mode" = new ]; then info "  git init:   $target (a fresh repository)"; fi
 }
 
@@ -318,10 +338,16 @@ if [ -n "$links" ]; then
 $links"
 fi
 
-# Additive: refuse to overwrite any existing FILE (directories may coexist).
+# Additive: refuse to overwrite any existing FILE (directories may coexist). When the adapters
+# are declined, `.claude/**` entries are neither scanned nor extracted — a pre-existing user file
+# there must not abort an install that will never touch it. (The skip is anchored to the bundle's
+# top-level `.claude/`; the bundle ships no nested `.claude` paths.)
 clobber=
 while IFS= read -r entry; do
   case "$entry" in */) continue ;; esac        # skip directory entries
+  if [ "$with_adapters" = 0 ]; then
+    case "$entry" in .claude/*) continue ;; esac
+  fi
   if [ -e "$target/$entry" ] && [ ! -d "$target/$entry" ]; then
     clobber="$clobber  $entry
 "
@@ -332,8 +358,13 @@ if [ -n "$clobber" ]; then
 $clobber"
 fi
 
-# Place it.
-tar xzf "$bundle" -C "$target" || die "extraction failed"
+# Place it. Declined adapters are excluded AT EXTRACTION (GNU tar and bsdtar both prune the whole
+# `.claude` subtree) — a post-extract delete would already have clobbered a colliding user file.
+if [ "$with_adapters" = 0 ]; then
+  tar -x -z -f "$bundle" -C "$target" --exclude '.claude' || die "extraction failed"
+else
+  tar xzf "$bundle" -C "$target" || die "extraction failed"
+fi
 
 # git init for a new repo (the lifecycle the engine defers to the interactive layer).
 if [ "$mode" = new ]; then
@@ -356,6 +387,11 @@ fi
 
 info ""
 info "Done. EADOS installed into: $target"
+if [ "$with_adapters" = 1 ]; then
+  info "  adapters: /eados slash commands installed (.claude/commands/eados) — in Claude Code try /eados:init"
+else
+  info "  adapters: not installed (re-run with --with-adapters, or copy .claude/ out of the bundle)"
+fi
 info "  next:  cd \"$target\" && ls .eados-core      # orchestrator/ templates/ tools/ …"
 info "  then:  open the repo with an AI agent (it auto-loads AGENTS.md), or render deterministically:"
 info "         python .eados-core/tools/render.py .eados-core/orchestrator/project.yaml --in-place"

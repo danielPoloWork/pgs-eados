@@ -44,10 +44,12 @@ def run(*args, cwd=None, stdin=""):
 
 
 def make_bundle(path):
-    """Write a tiny prefix-less .tar.gz fixture (agent contract + a factory file); return sha256 hex."""
+    """Write a tiny prefix-less .tar.gz fixture (agent contract + a factory file + a Claude Code
+    command adapter, mirroring the real bundle's layout since #239); return sha256 hex."""
     with tarfile.open(path, "w:gz") as tar:
         for name, body in (("AGENTS.md", b"# agent contract\n"),
-                           (".eados-core/tools/render.py", b"# render\n")):
+                           (".eados-core/tools/render.py", b"# render\n"),
+                           (".claude/commands/eados/init.md", b"# adapter fixture\n")):
             entry = tarfile.TarInfo(name)
             entry.size = len(body)
             tar.addfile(entry, io.BytesIO(body))
@@ -190,29 +192,70 @@ def main():
                        "-Path", tgt, "-NonInteractive", cwd=tmp)
         check("the symlink guard runs even under -NoVerify", rc != 0, failures)
 
+        # --- host adapters (#239): scripted default is opt-in; -WithAdapters places them;
+        #     declined adapters neither block on nor touch a colliding user file ---
+        adapter_rel = os.path.join(".claude", "commands", "eados", "init.md")
+        tgt = fresh_target()
+        rc, _, _ = run("-From", "bundle.tar.gz", "-Sha256", good_sha, "-Mode", "existing",
+                       "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("scripted default omits the adapters (opt-in)",
+              rc == 0 and not os.path.exists(os.path.join(tmp, tgt, ".claude")), failures)
+
+        tgt = fresh_target()
+        rc, _, _ = run("-From", "bundle.tar.gz", "-Sha256", good_sha, "-WithAdapters",
+                       "-Mode", "existing", "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("-WithAdapters places the Claude Code adapters",
+              rc == 0 and os.path.exists(os.path.join(tmp, tgt, adapter_rel)), failures)
+
+        tgt = fresh_target()
+        os.makedirs(os.path.join(tmp, tgt, ".claude", "commands", "eados"))
+        with open(os.path.join(tmp, tgt, adapter_rel), "w", encoding="utf-8") as fh:
+            fh.write("USER FILE")
+        rc, _, _ = run("-From", "bundle.tar.gz", "-Sha256", good_sha, "-Mode", "existing",
+                       "-Path", tgt, "-NonInteractive", cwd=tmp)
+        with open(os.path.join(tmp, tgt, adapter_rel), encoding="utf-8") as fh:
+            intact = fh.read() == "USER FILE"
+        check("declined adapters ignore a colliding user file (install proceeds, file intact)",
+              rc == 0 and intact
+              and os.path.exists(os.path.join(tmp, tgt, "AGENTS.md")), failures)
+        rc2, out2, err2 = run("-From", "bundle.tar.gz", "-NoVerify", "-WithAdapters",
+                              "-Mode", "existing", "-Path", tgt, "-NonInteractive", cwd=tmp)
+        check("-WithAdapters still refuses to clobber a user adapter file",
+              rc2 != 0 and "init.md" in (out2 + err2), failures)
+
+        rc, out, err = run("-WithAdapters", "-NoAdapters", "-PrintPlan")
+        check("-WithAdapters conflicts with -NoAdapters", rc != 0, failures)
+        rc, out, _ = run("-PrintPlan")
+        check("the plan states the adapters decision", "adapters:" in out, failures)
+
         # interactive NEW (offline): extract AND git-init
+        # stdin sequences: mode, path(/name), the #239 adapters question, then the confirm
         rc, out, err = run("-Interactive", "-NoGh", "-From", "bundle.tar.gz", "-NoVerify",
-                           cwd=tmp, stdin="1\nsub\nproj\ny\n")
+                           cwd=tmp, stdin="1\nsub\nproj\ny\ny\n")
         target = os.path.join(tmp, "sub", "proj")
         check("interactive new install exits 0", rc == 0, failures)
         check("…extracted the bundle into <parent>/<name>",
               os.path.exists(os.path.join(target, "AGENTS.md")), failures)
+        check("…and the adapters (answered yes)",
+              os.path.exists(os.path.join(target, adapter_rel)), failures)
         if HAVE_GIT:
             check("…and git-inited the new repo", os.path.isdir(os.path.join(target, ".git")),
                   failures)
 
-        # interactive EXISTING (offline): extract, NO git init
+        # interactive EXISTING (offline): extract, NO git init, adapters declined
         os.mkdir(os.path.join(tmp, "ex"))
         rc, out, err = run("-Interactive", "-NoGh", "-From", "bundle.tar.gz", "-NoVerify",
-                           cwd=tmp, stdin="2\nex\ny\n")
+                           cwd=tmp, stdin="2\nex\nn\ny\n")
         check("interactive existing install exits 0", rc == 0, failures)
         check("…extracted the bundle into the existing dir",
               os.path.exists(os.path.join(tmp, "ex", "AGENTS.md")), failures)
+        check("…without the adapters (answered no)",
+              not os.path.exists(os.path.join(tmp, "ex", ".claude")), failures)
         check("…and did NOT git-init an existing repo",
               not os.path.isdir(os.path.join(tmp, "ex", ".git")), failures)
 
         # interactive abort: answering no writes nothing
-        rc, out, err = run("-Interactive", "-DryRun", cwd=tmp, stdin="2\n.\nn\n")
+        rc, out, err = run("-Interactive", "-DryRun", cwd=tmp, stdin="2\n.\nn\nn\n")
         check("answering 'n' at the confirm aborts (exit 0)", rc == 0, failures)
         check("…with an 'aborted' message", "abort" in (out + err).lower(), failures)
 

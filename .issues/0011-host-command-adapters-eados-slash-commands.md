@@ -1,5 +1,13 @@
 # [FEATURE] Ship host adapters so `/eados <cmd>` is a discoverable slash command
 
+> **✅ Delivered** (2026-07-10, closes [#239](https://github.com/danielPoloWork/pgs-eados/issues/239)).
+> Eight pointer adapters at `.claude/commands/eados/<name>.md` (→ `/eados:<name>`), shipped inside
+> the bundle; installers place them opt-in (`--with-adapters` / `-WithAdapters`, interactive
+> default yes); commands-vs-skills split resolved to `.claude/commands/` (recorded in the
+> commands/README host-adapters section, with the Codex/Gemini equivalents); `command-adapters`
+> self-lint keeps table ↔ adapters in lockstep (guarded by `test_command_adapters.py` +
+> the extended installer smokes).
+
 **Labels:** `enhancement`, `severity:high`, `area:commands`, `dx`
 **Component:** `.claude/commands/`, `setup/`, `.eados-core/orchestrator/commands/`
 

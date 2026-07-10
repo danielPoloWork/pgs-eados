@@ -937,6 +937,7 @@ GATE_COVERAGE = [
     ("setup/*.sh",                                        "installer-smoke (test_setup_sh.py) + shellcheck (CI)"),
     ("setup/*.command",                                   "installer-smoke (test_setup_sh.py) + shellcheck (CI)"),
     ("setup/*.ps1",                                       "installer-smoke (test_setup_ps1.py) + PowerShell parse-check (CI)"),
+    (".claude/commands/**",                               "command-adapters (every available command row ships its pointer adapter)"),
 ]
 # Intentionally NOT machine-validated — prose/config under human review. Each needs a reason; this
 # is the conscious record of "we looked and chose not to gate this", not a blind skip.
@@ -1346,6 +1347,82 @@ def check_safe_write(fail):
             fail(name, f"safe-write allow-list entry no longer needed (no direct write): '{fname}'")
 
 
+# ---------------------------------------------------------------------------
+# 20. Command adapters (#239, ADR-0019 class 4) — every AVAILABLE row of the canonical command
+#     table (orchestrator/commands/README.md) must ship its Claude Code adapter at
+#     .claude/commands/eados/<name>.md, and every adapter must be a genuine POINTER at the row's
+#     own procedure file (it carries the canonical path; the procedure stays the single source of
+#     truth). Symmetric, like agent-registry: an orphan adapter with no available row is stale
+#     (a planned command must not ship an adapter before its row flips to available). Runs only
+#     in the factory checkout (the `.eados-dev` sentinel): a consumer who installed the bundle
+#     and declined the adapters must not fail their own self-lint.
+# ---------------------------------------------------------------------------
+_COMMAND_ROW_RE = re.compile(
+    r"^\|\s*`/eados (\w+)`\s*\|[^|]*\|[^|]*\*\*available\*\*[^|]*\|\s*\[[^\]]+\]\(([^)]+)\)",
+    re.MULTILINE)
+
+
+def _canonical_procedure(link):
+    """Resolve a commands/README.md Procedure-cell link (relative to orchestrator/commands/) to
+    the repo-relative path an adapter must point at, e.g. `init.md` ->
+    `.eados-core/orchestrator/commands/init.md`, `../generate.md` ->
+    `.eados-core/orchestrator/generate.md`."""
+    parts = [".eados-core", "orchestrator", "commands"] + link.split("/")
+    out = []
+    for p in parts:
+        if p == "..":
+            out.pop()
+        elif p not in ("", "."):
+            out.append(p)
+    return "/".join(out)
+
+
+def command_adapter_problems(readme_text, adapters):
+    """Pure check. `readme_text`: orchestrator/commands/README.md; `adapters`: {name: file text}
+    for .claude/commands/eados/*.md. Every available `/eados <name>` row needs an adapter whose
+    text carries the row's own canonical procedure path (the pointer contract); every adapter
+    needs an available row (no orphans). Returns problem strings (empty == covered)."""
+    rows = _COMMAND_ROW_RE.findall(readme_text)
+    if not rows:
+        return ["could not parse any available `/eados <name>` rows from commands/README.md — "
+                "the adapter-coverage contract has nothing to check against"]
+    problems = []
+    available = {}
+    for cmd, link in rows:
+        available[cmd] = _canonical_procedure(link)
+    for cmd, proc in sorted(available.items()):
+        if cmd not in adapters:
+            problems.append(f".claude/commands/eados/{cmd}.md is missing — every available "
+                            f"`/eados {cmd}` row must ship its Claude Code adapter (#239)")
+        elif proc not in adapters[cmd]:
+            problems.append(f".claude/commands/eados/{cmd}.md does not point at its canonical "
+                            f"procedure `{proc}` — an adapter is a pointer, never a copy "
+                            "(ADR-0019 class 4)")
+    for cmd in sorted(adapters):
+        if cmd not in available:
+            problems.append(f".claude/commands/eados/{cmd}.md has no available `/eados {cmd}` row "
+                            "in commands/README.md — a planned command must not ship an adapter "
+                            "before its row flips to available (orphan adapter)")
+    return problems
+
+
+def check_command_adapters(fail):
+    name = "command-adapters"
+    if not os.path.exists(os.path.join(REPO_ROOT, ".eados-dev")):
+        return  # a consumer install (bundle), where the adapters are opt-in — factory-only check
+    readme_path = os.path.join(ROOT, "orchestrator", "commands", "README.md")
+    if not os.path.exists(readme_path):
+        return  # a partial checkout without the command surface
+    adapters = {}
+    adapter_dir = os.path.join(REPO_ROOT, ".claude", "commands", "eados")
+    if os.path.isdir(adapter_dir):
+        for fn in sorted(os.listdir(adapter_dir)):
+            if fn.endswith(".md"):
+                adapters[fn[:-3]] = read(os.path.join(adapter_dir, fn))
+    for problem in command_adapter_problems(read(readme_path), adapters):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1368,6 +1445,7 @@ CHECKS = [
     check_gate_executability,
     check_examples,
     check_safe_write,
+    check_command_adapters,
 ]
 
 

@@ -27,6 +27,9 @@ truth.**
   generated repo's `ROADMAP.md`.
 - Before rendering, always show the maintainer `orchestrator/project.yaml` and wait for
   confirmation.
+- The `/eados <cmd>` surface: canonical procedures live in
+  [`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md) (see its host-adapters
+  section, #239); a project `.gemini/commands/` entry may wrap the same one-line pointer.
 - Project-scoped configuration lives under `.gemini/` if added.
 
 For anything not covered here, defer to [`AGENTS.md`](AGENTS.md).

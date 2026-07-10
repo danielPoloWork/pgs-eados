@@ -142,9 +142,12 @@ A guided installer (published in each release as `setup.{sh,command,ps1,bat}`) d
 **verifies its SHA256** (fail-closed — it refuses to extract an unverified bundle unless
 `--no-verify`), and extracts it **additively** (never overwriting an existing file — the
 [ADR-0007](adr/0007-renderer-write-guards-and-validation-independence.md) no-clobber principle) into a
-target repo. Run **bare** it is **interactive** (asks new-vs-existing repo, the path, and — for a new
-repo — the name; on a new repo it `git init`s and offers `gh repo create`); with flags it is fully
-**scriptable**.
+target repo. Run **bare** it is **interactive** (asks new-vs-existing repo, the path — for a new
+repo, the name — and whether to also install the **`/eados` slash-command adapters** for Claude Code,
+default yes; on a new repo it `git init`s and offers `gh repo create`); with flags it is fully
+**scriptable** — the adapters are then **opt-in** via `--with-adapters` / `-WithAdapters`
+(`--no-adapters` / `-NoAdapters` declines; see the
+[host-adapters section](../orchestrator/commands/README.md) of the command surface, ADR-0019 class 4).
 
 **Which file do I grab?** Each is at
 `https://github.com/danielPoloWork/pgs-eados/releases/latest/download/<name>`:
