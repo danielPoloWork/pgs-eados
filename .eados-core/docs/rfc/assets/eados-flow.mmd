@@ -21,5 +21,5 @@ flowchart LR
   DESIGN -->|"rfc-approved · H"| PLAN["plan · roadmap<br/><i>producer</i>"]:::phase
   PLAN -->|"roadmap-covers-rfcs · H"| SCAFFOLD["scaffold · generate<br/><i>architect</i>"]:::phase
   SCAFFOLD -->|"consistency-lint + self-review"| AUDIT["audit · risk<br/><i>security-auditor</i>"]:::phase
-  AUDIT -->|"risk-register · H"| REFACTOR["refactor · brownfield<br/><i>architect</i>"]:::phase
+  AUDIT -->|"risk-register · H"| MIGRATE["migrate · brownfield<br/><i>architect</i>"]:::phase
   PLAN -. resumable .-> DESIGN

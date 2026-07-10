@@ -33,9 +33,9 @@ Owned by the **security-auditor** (with the **reviewer** for structured findings
    impact, and a concrete mitigation. A confirmed defect → the bug ledger; a vulnerability → a
    **draft** advisory (the human publishes).
 5. **Record & hand off** — note the audit in `delivery_state`; if a migration is needed, propose
-   the human-gated `audit → refactor`:
+   the human-gated `audit → migrate`:
    ```bash
-   python .eados-core/tools/phase_runner.py <manifest> --propose refactor
+   python .eados-core/tools/phase_runner.py <manifest> --propose migrate
    ```
    Otherwise the audit is the standing gate before a release.
 

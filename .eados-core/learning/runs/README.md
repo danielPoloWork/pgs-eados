@@ -49,9 +49,9 @@ failures: []           # on a failed run: [{gate: ci-bootstrap, message: "..."}]
 rubric: {}             # eval/rubric.md dimensions scored 0-2, e.g. spec_measurability: 2
 ```
 
-The **`refactor` phase** — the riskiest surface, since it modifies real user code — records incidents
-through the same channel: `record_run.py <manifest> --phase refactor --outcome failed --failure
-migration-gate="<one-line summary>"`. `lesson_audit`'s regression detection then covers refactor, not
+The **`migrate` phase** — the riskiest surface, since it modifies real user code — records incidents
+through the same channel: `record_run.py <manifest> --phase migrate --outcome failed --failure
+migration-gate="<one-line summary>"`. `lesson_audit`'s regression detection then covers migrate, not
 just generation (#215). A record with no `phase:` is treated as `scaffold` (legacy, backward-compatible).
 
 Records are facts about past runs — never edited after the fact (`record_run.py` never overwrites

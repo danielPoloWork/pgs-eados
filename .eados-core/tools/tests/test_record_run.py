@@ -150,10 +150,10 @@ def main():
     check("provenance_gaps is empty (no warning) when there is no provenance block",
           rr.provenance_gaps({"identity": {}}) == [], failures)
 
-    # --- #215: a record is phase-tagged (default scaffold; refactor/audit for real-user-code work),
+    # --- #215: a record is phase-tagged (default scaffold; migrate/audit for real-user-code work),
     #     and a sensitive override key redacts its chosen value before it hits the committed ledger ---
-    rec_r, probs_r = rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05", phase="refactor")
-    check("build_run_record tags the phase", rec_r.get("phase") == "refactor" and probs_r == [],
+    rec_r, probs_r = rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05", phase="migrate")
+    check("build_run_record tags the phase", rec_r.get("phase") == "migrate" and probs_r == [],
           failures)
     check("the default phase is scaffold",
           rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05")[0]["phase"] == "scaffold",

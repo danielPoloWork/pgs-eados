@@ -49,7 +49,7 @@ project's §2 and is itself a rule the generated `AGENTS.md` re-imposes downstre
 ## 3. What EADOS is
 
 EADOS is a **phase-based agentic delivery operating system**: an opt-in pipeline —
-`init → design → plan → scaffold → audit → refactor` — that governs an enterprise project across
+`init → design → plan → scaffold → audit → migrate` — that governs an enterprise project across
 its lifecycle. It is *declarative, gate-enforced, and human-gated* (not a runtime kernel); the
 design is [RFC-0001](.eados-core/docs/rfc/0001-eados-delivery-os.md), the phases are
 [`orchestrator/commands/`](.eados-core/orchestrator/commands/README.md), and the machine-readable

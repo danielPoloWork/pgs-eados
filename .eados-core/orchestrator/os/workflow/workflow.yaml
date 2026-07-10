@@ -20,7 +20,7 @@ states:
   - id: audit
     role: security-auditor
     produces: [risk-register]
-  - id: refactor
+  - id: migrate
     role: enterprise-architect
     produces: [migration-prs]
 
@@ -44,7 +44,7 @@ transitions:
     entry_gates: [consistency-lint, self-review]
     human_gate: false
   - from: audit
-    to: refactor
+    to: migrate
     entry_gates: [risk-register-present]
     human_gate: true
   # design is resumable: a new RFC can re-open planning without restarting the project.
@@ -95,7 +95,7 @@ gates:
     runs: "manual:security-auditor produced a risk register"
     wired: external
     blocking: true
-    required_for: [refactor]
+    required_for: [migrate]
   # Cross-cutting CI gate (NOT a phase-transition gate): it runs on every PR / in `audit`, not as a
   # precondition for one transition — hence `required_for: []`. Registered here so it is the single
   # source of gate ids; referenced by git.yaml's `traceability.gate` and validated by eados_lint's

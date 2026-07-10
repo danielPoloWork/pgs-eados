@@ -37,8 +37,8 @@ SPEC_FLOOR = {
 # The canonical pipeline hops (from, to, human_gated) — used to synthesize the legal checkpoint
 # chain #199 now requires: a manifest at a non-init phase must record how it got there.
 _PIPELINE = [("init", "design", True), ("design", "plan", True), ("plan", "scaffold", True),
-             ("scaffold", "audit", False), ("audit", "refactor", True)]
-_ORDER = ["init", "design", "plan", "scaffold", "audit", "refactor"]
+             ("scaffold", "audit", False), ("audit", "migrate", True)]
+_ORDER = ["init", "design", "plan", "scaffold", "audit", "migrate"]
 
 
 def _chain_to(phase):

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """EADOS single-artifact render (roadmap 6.3 / G2) — render ONE template and place it via the
-refactor sandbox.
+migrate sandbox.
 
-`render.py` renders the *whole* repo from a manifest. The brownfield `refactor` procedure
-([`commands/refactor.md`](../orchestrator/commands/refactor.md)) instead adds **one missing
+`render.py` renders the *whole* repo from a manifest. The brownfield `migrate` procedure
+([`commands/migrate.md`](../orchestrator/commands/migrate.md)) instead adds **one missing
 artifact at a time** — "render the missing artifact → `sandbox.safe_write`" — but no tool performed
 that single-artifact step. This is it: it renders one template with the manifest context (reusing
 `render.py`'s engine and the same `placeholders` + `validate_manifest` gates, so a single artifact
@@ -23,7 +23,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import render   # noqa: E402  — the rendering engine + manifest gates (one source of truth)
-import sandbox  # noqa: E402  — the refactor write-containment guard (ADR-0007 principle)
+import sandbox  # noqa: E402  — the migrate write-containment guard (ADR-0007 principle)
 
 
 def template_abspath(template_rel):
@@ -71,7 +71,7 @@ def main(argv=None):
     import argparse
     ap = argparse.ArgumentParser(
         description="Render ONE EADOS template with a manifest and place it into a target repo "
-                    "via the refactor sandbox.")
+                    "via the migrate sandbox.")
     ap.add_argument("template", help="template path under templates/ (e.g. AGENTS.md.tmpl)")
     ap.add_argument("manifest", help="path to a filled project.yaml")
     ap.add_argument("target", help="the target repository root to write the artifact into")

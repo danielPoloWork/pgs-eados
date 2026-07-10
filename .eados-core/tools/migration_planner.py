@@ -4,7 +4,7 @@
 From the brownfield reader's gaps, produces an **ordered plan** of incremental migration steps —
 **one logical change each** (one PR), lowest-risk / most-foundational first. It *proposes*; it does
 **not** write. The actual edits happen one PR at a time inside the **write-contained sandbox** of
-the `refactor` phase (M5-C), each its own reviewable, gated change. Dependency-free.
+the `migrate` phase (M5-C), each its own reviewable, gated change. Dependency-free.
 
     python .eados-core/tools/migration_planner.py <repo-path>
 """
@@ -64,7 +64,7 @@ def main(argv=None):
     print(f"migration plan for {repo}  ({len(steps)} step(s), one PR each, low-risk first):")
     for s in steps:
         print(f"  {s['step']}. [{s['risk']:>6}] {s['action']}")
-    print("\nproposal only — edits happen one gated PR at a time in the refactor sandbox (M5-C).")
+    print("\nproposal only — edits happen one gated PR at a time in the migrate sandbox (M5-C).")
     return 0
 
 

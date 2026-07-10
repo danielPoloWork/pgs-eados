@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EADOS refactor sandbox (roadmap 5.3) — write containment for the brownfield `refactor` phase.
+"""EADOS migrate sandbox (roadmap 5.3) — write containment for the brownfield `migrate` phase.
 
 The migration's edits are the only place EADOS touches *real user code*, so every write goes
 through here. Defense-in-depth, on the same principle as the renderer's write guard
@@ -69,8 +69,8 @@ def main(argv=None):
     for _stream in (sys.stdout, sys.stderr):
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
-    # This module is a library used by the refactor phase; there is no standalone action to run.
-    print("sandbox.py is a write-containment library for the refactor phase (no CLI action).",
+    # This module is a library used by the migrate phase; there is no standalone action to run.
+    print("sandbox.py is a write-containment library for the migrate phase (no CLI action).",
           file=sys.stderr)
     return 0
 

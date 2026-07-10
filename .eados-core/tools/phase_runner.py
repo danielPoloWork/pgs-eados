@@ -73,11 +73,47 @@ def state_ids(workflow):
     return [s.get("id") for s in (workflow.get("states") or []) if isinstance(s, dict)]
 
 
+# Back-compat: the brownfield phase was renamed `refactor` -> `migrate` (ADR-0020, #236), which
+# freed `refactor` for the code-quality command (#243). An existing manifest that still records
+# `delivery_state.phase: refactor` (or a checkpoint into it) is mapped to the canonical name for
+# one minor version, with a deprecation warning at the CLI boundary — so old manifests keep working.
+PHASE_ALIASES = {"refactor": "migrate"}
+
+
+def canonical_phase(phase):
+    """Map a deprecated phase alias to its canonical name (`refactor` -> `migrate`, #236); any other
+    value (including None) passes through unchanged. Pure."""
+    return PHASE_ALIASES.get(phase, phase)
+
+
 def current_phase(manifest):
-    """The manifest's current phase; defaults to `init` when there is no delivery_state yet
-    (a legacy / freshly-initialized manifest)."""
+    """The manifest's current phase (canonicalized through PHASE_ALIASES); defaults to `init` when
+    there is no delivery_state yet (a legacy / freshly-initialized manifest)."""
     ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
-    return ds.get("phase", "init") if isinstance(ds, dict) else "init"
+    return canonical_phase(ds.get("phase", "init")) if isinstance(ds, dict) else "init"
+
+
+def legacy_phase_aliases(manifest):
+    """The deprecated phase aliases actually present in a manifest's delivery_state (its `phase` and
+    every checkpoint `from`/`to`) — the input to the one-time deprecation warning. Empty when the
+    manifest is already canonical. Pure — no I/O."""
+    ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
+    if not isinstance(ds, dict):
+        return []
+    raw = [ds.get("phase")]
+    for cp in (ds.get("checkpoints") or []):
+        if isinstance(cp, dict):
+            raw += [cp.get("from"), cp.get("to")]
+    return sorted({p for p in raw if p in PHASE_ALIASES})
+
+
+def warn_legacy_phases(manifest, out=sys.stderr):
+    """Emit a deprecation line for each legacy phase alias the manifest still uses (ADR-0020, #236).
+    Thin I/O over legacy_phase_aliases; called at the CLI boundary (report / report_propose)."""
+    for alias in legacy_phase_aliases(manifest):
+        print(f"DEPRECATION: delivery_state uses phase '{alias}', renamed to "
+              f"'{PHASE_ALIASES[alias]}' (ADR-0020, #236); accepted for one minor version — update "
+              f"the manifest to '{PHASE_ALIASES[alias]}'.", file=out)
 
 
 def legal_transitions(workflow, phase):
@@ -230,6 +266,7 @@ def _emit_regrounding(out, workflow, authority, git, manifest, phase, transition
 def report(manifest_path, out=sys.stdout):
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
+    warn_legacy_phases(manifest)
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
     authority, git = load_authority(), load_git()
     states = state_ids(workflow)
@@ -302,7 +339,7 @@ def checkpoint_chain_problems(manifest, workflow):
     ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
     if not isinstance(ds, dict):
         return []                                # no delivery_state — nothing to enforce (legacy)
-    phase = ds.get("phase", "init")
+    phase = canonical_phase(ds.get("phase", "init"))
     checkpoints = ds.get("checkpoints")
     if checkpoints is None:
         checkpoints = []
@@ -314,7 +351,7 @@ def checkpoint_chain_problems(manifest, workflow):
         if not isinstance(cp, dict):
             problems.append(f"delivery_state.checkpoints[{i}] must be a {{from, to}} mapping")
             continue
-        frm, to = cp.get("from"), cp.get("to")
+        frm, to = canonical_phase(cp.get("from")), canonical_phase(cp.get("to"))
         if frm != prev_to:
             problems.append(f"delivery_state.checkpoints[{i}] starts at '{frm}' but the previous "
                             f"state is '{prev_to}' — the checkpoint chain is not contiguous")
@@ -358,6 +395,7 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
     has moved since (another session wrote), so a parallel edit fails loud instead of clobbering."""
     with open(manifest_path, encoding="utf-8") as handle:
         manifest = render.load_yaml(handle.read())
+    warn_legacy_phases(manifest)
     rev = manifest_rev(manifest)
     if expect_rev is not None and expect_rev != rev:
         print(f"CONFLICT: manifest_rev is {rev}, but you expected {expect_rev} — another session "

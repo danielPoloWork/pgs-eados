@@ -49,8 +49,8 @@ def main():
     check("scaffold -> audit, not human-gated",
           sc and sc[0].get("to") == "audit" and not sc[0].get("human_gate"), failures)
 
-    # --- refactor is terminal ---
-    check("refactor is terminal", pr.legal_transitions(wf, "refactor") == [], failures)
+    # --- migrate is terminal (renamed from refactor, ADR-0020 / #236) ---
+    check("migrate is terminal", pr.legal_transitions(wf, "migrate") == [], failures)
 
     # --- an unknown phase yields no transitions (report() flags it; the function is total) ---
     check("unknown phase -> no transitions", pr.legal_transitions(wf, "bogus") == [], failures)
@@ -155,6 +155,29 @@ def main():
           any("may not be taken" in p for p in pr.checkpoint_chain_problems(
               ds("design", [{"from": "init", "to": "design", "confirmed_by": "o",
                              "gate_results": {"manifest-valid": "FAIL"}}]), wf)), failures)
+
+    # --- ADR-0020 / #236: `refactor` is a deprecated alias of the renamed `migrate` phase. A legacy
+    #     manifest still recording it keeps working — canonicalized in current_phase and the chain
+    #     check, and surfaced by legacy_phase_aliases for the CLI deprecation warning. ---
+    check("canonical_phase maps the deprecated refactor alias to migrate",
+          pr.canonical_phase("refactor") == "migrate", failures)
+    check("canonical_phase leaves a canonical phase unchanged",
+          pr.canonical_phase("audit") == "audit", failures)
+    check("current_phase canonicalizes a legacy refactor manifest to migrate",
+          pr.current_phase({"delivery_state": {"phase": "refactor"}}) == "migrate", failures)
+    legacy_migrate_chain = [{"from": "init", "to": "design", "confirmed_by": "o"},
+                            {"from": "design", "to": "plan", "confirmed_by": "o"},
+                            {"from": "plan", "to": "scaffold", "confirmed_by": "o"},
+                            {"from": "scaffold", "to": "audit"},
+                            {"from": "audit", "to": "refactor", "confirmed_by": "o"}]
+    check("a legacy chain into `refactor` validates against the renamed `migrate` state",
+          pr.checkpoint_chain_problems(ds("refactor", legacy_migrate_chain), wf) == [], failures)
+    check("legacy_phase_aliases surfaces the deprecated phase for a warning",
+          pr.legacy_phase_aliases(ds("refactor", legacy_migrate_chain)) == ["refactor"], failures)
+    canonical_migrate_chain = legacy_migrate_chain[:-1] + [
+        {"from": "audit", "to": "migrate", "confirmed_by": "o"}]
+    check("legacy_phase_aliases is empty for a canonical manifest",
+          pr.legacy_phase_aliases(ds("migrate", canonical_migrate_chain)) == [], failures)
 
     # --- #213: report_propose evaluates the transition's gates LIVE via an INJECTED evaluator
     #     (so the engine needs no eados import) and records the marks in the emitted checkpoint's

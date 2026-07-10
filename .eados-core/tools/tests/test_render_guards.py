@@ -180,7 +180,7 @@ def main():
 
     # --- write_file containment + no-clobber: a normal rel writes, an escaping rel raises, and a
     #     second write over an existing file is refused unless overwrite=True (#195: write_file now
-    #     delegates to sandbox.safe_write, so render and refactor share ONE containment/clobber path)
+    #     delegates to sandbox.safe_write, so render and migrate share ONE containment/clobber path)
     with tempfile.TemporaryDirectory() as out:
         render.write_file(out, "docs/ok.md", "hi")
         check("normal write lands inside out_dir",

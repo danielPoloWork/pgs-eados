@@ -1,8 +1,13 @@
-# `/eados refactor` — bring an existing repo up to the standard
+# `/eados migrate` — bring an existing repo up to the standard
 
-The `refactor` (brownfield) phase migrates an **existing** repository toward the EADOS standard via
+The `migrate` (brownfield) phase migrates an **existing** repository toward the EADOS standard via
 **incremental, gated, sandboxed** PRs. It is the only phase that edits real user code, so it is
 sequenced **last** and every write is write-contained. Owned by the **enterprise-architect**.
+
+> **Naming (ADR-0020, #236).** This phase was called `refactor` through v2.7.0; it was renamed
+> `migrate` to free `refactor` for the code-quality command (#243) and to name honestly what it
+> does (bring a repo up to the standard, not restructure code). A manifest that still records
+> `delivery_state.phase: refactor` is accepted as a deprecated alias for one minor version.
 
 > **Safety first.** Every write goes through [`tools/sandbox.py`](../../tools/sandbox.py)
 > `safe_write` (no escape, no `.git`, additive by default), each step is **one reviewable, gated
@@ -11,7 +16,7 @@ sequenced **last** and every write is write-contained. Owned by the **enterprise
 ## Preconditions
 
 - A target repository to migrate, and the `audit` phase's risk register
-  (`audit → refactor` is human-gated on `risk-register-present`).
+  (`audit → migrate` is human-gated on `risk-register-present`).
 
 ## Procedure
 
@@ -37,7 +42,7 @@ sequenced **last** and every write is write-contained. Owned by the **enterprise
    4. **draft the PR** — one logical change, with the `git` cross-links (RFC/milestone); the human
       reviews and merges.
    5. **confirm** — re-run `brownfield.py <repo>`: the step's gap is closed. Proceed to the next.
-4. **Done** — when `brownfield.py` reports no gaps, the repo meets the EADOS standard. `refactor`
+4. **Done** — when `brownfield.py` reports no gaps, the repo meets the EADOS standard. `migrate`
    is the terminal phase; from here the repo governs itself under its rendered `AGENTS.md`.
 
 ## Boundary

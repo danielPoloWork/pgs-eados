@@ -18,7 +18,7 @@
 ## 0. Summary
 
 EADOS turns a one-shot repository **factory** into a **phase-based delivery operating system**:
-an opt-in pipeline — `init → design → plan → scaffold → audit → refactor` — over the unchanged,
+an opt-in pipeline — `init → design → plan → scaffold → audit → migrate` — over the unchanged,
 data-driven core. Generation (`scaffold`) becomes one phase among several. The system is
 **state-driven** (a persistent, reference-based manifest is the state; a thin deterministic
 checker computes legal transitions), routing is **deterministic** (phase + ownership map, never
@@ -31,8 +31,8 @@ special case in code.
 The factory (formerly EAAO) interviews a maintainer, renders a governed repository, and hands
 off — "EADOS steps back" (`AGENTS.md` §3). That is excellent for day zero and nothing else. The
 owner wants to govern the **whole delivery lifecycle** of enterprise projects (for top-tier
-companies): design docs/RFCs, roadmaps from RFCs, scaffolding, ongoing audit/risk, and refactor
-of *existing* codebases — with agents that reason as distinct professional figures (Product /
+companies): design docs/RFCs, roadmaps from RFCs, scaffolding, ongoing audit/risk, and migration
+of *existing* codebases toward the standard — with agents that reason as distinct professional figures (Product /
 Engineering / Delivery, per the delivery-roles guide).
 
 Two tempting framings are both wrong:
@@ -94,7 +94,7 @@ flowchart LR
   DESIGN -->|"rfc-approved · H"| PLAN["plan · roadmap<br/><i>producer</i>"]:::phase
   PLAN -->|"roadmap-covers-rfcs · H"| SCAFFOLD["scaffold · generate<br/><i>architect</i>"]:::phase
   SCAFFOLD -->|"consistency-lint + self-review"| AUDIT["audit · risk<br/><i>security-auditor</i>"]:::phase
-  AUDIT -->|"risk-register · H"| REFACTOR["refactor · brownfield<br/><i>architect</i>"]:::phase
+  AUDIT -->|"risk-register · H"| MIGRATE["migrate · brownfield<br/><i>architect</i>"]:::phase
   PLAN -. resumable .-> DESIGN
 ```
 
@@ -200,7 +200,7 @@ The sections a Fortune-500 architecture board reads first.
 
 - **Security & trust boundary.** Agents touch Git/CI — a supply-chain surface (cf.
   [ADR-0007](../adr/0007-renderer-write-guards-and-validation-independence.md)). The authority map
-  bounds *what each role may write*; the `refactor` phase (which edits real user code) is sandboxed
+  bounds *what each role may write*; the `migrate` phase (which edits real user code) is sandboxed
   and sequenced last. No agent crosses a human gate or mutates a quality gate.
 - **Determinism & reproducibility.** The deterministic spine (the renderer, the render-smoke, the
   lints) survives the agentic phases; the workflow checker is a small, testable function over data,
@@ -232,7 +232,7 @@ concrete reason recorded above — not on taste.
 ## 12. Roadmap — M1 → M9
 
 The roadmap is maintained as a living, checkbox-driven file — the **single source of truth**:
-**[`ROADMAP.md`](ROADMAP.md)**. It sequences `init → design → plan → scaffold → audit → refactor`
+**[`ROADMAP.md`](ROADMAP.md)**. It sequences `init → design → plan → scaffold → audit → migrate`
 across its milestones (M1 foundation → M9 guided installer; the pipeline lands in M1–M5), each with deliverables, an
 acceptance gate, and dependencies. The factory keeps working throughout; every phase is opt-in.
 (This is the EADOS *self* roadmap — distinct from the `ROADMAP.md` template that generated

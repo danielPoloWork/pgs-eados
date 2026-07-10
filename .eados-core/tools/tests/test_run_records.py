@@ -61,7 +61,7 @@ def main():
     check("a malformed date is flagged",
           any("YYYY-MM-DD" in p for p in _problems(lambda r: r.update(date="July 5"))), failures)
     # #215: `phase` is an optional tag — a known phase passes, absence passes (legacy), a bogus one bites.
-    check("a valid phase passes", _problems(lambda r: r.update(phase="refactor")) == [], failures)
+    check("a valid phase passes", _problems(lambda r: r.update(phase="migrate")) == [], failures)
     check("no phase passes (legacy record)", _problems(lambda r: r.pop("phase", None)) == [], failures)
     check("a bogus phase is flagged",
           any("phase" in p for p in _problems(lambda r: r.update(phase="bogus"))), failures)

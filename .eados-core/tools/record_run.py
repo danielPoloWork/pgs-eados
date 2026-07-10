@@ -7,7 +7,7 @@ with one command: the `overrides:` list is derived MECHANICALLY from the manifes
 `interview:` provenance block (#169) against the built-in defaults in
 orchestrator/project.yaml.template, and the failure/rubric/lesson channels arrive as flags.
 
-Records default to the scaffold phase (Step 9) but tag any phase via `--phase` — a refactor/audit
+Records default to the scaffold phase (Step 9) but tag any phase via `--phase` — a migrate/audit
 incident, the riskiest surface, records with the same `--failure` channel (#215) so lesson_audit's
 regression detection covers real-user-code work, not just generation. A sensitive override value
 (a key naming a host/url/registry/token/…) is recorded as <redacted>, keeping the ledger safe to
@@ -47,9 +47,9 @@ RUNS_DIR = os.path.join(ROOT, "learning", "runs")
 
 OUTCOMES = ("ok", "failed")
 # The delivery phases a run can be recorded for (mirrors eados.PHASES / workflow.yaml states).
-# `scaffold` is the default (generate.md Step 9); a refactor/audit incident records with --phase so
+# `scaffold` is the default (generate.md Step 9); a migrate/audit incident records with --phase so
 # the record is phase-tagged and lesson_audit's regression detection covers real-user-code work (#215).
-PHASES = ("init", "design", "plan", "scaffold", "audit", "refactor")
+PHASES = ("init", "design", "plan", "scaffold", "audit", "migrate")
 # eval/rubric.md's ten dimensions, scored 0-2 (0 absent, 1 partial, 2 solid).
 RUBRIC_DIMENSIONS = (
     "spec_measurability", "spec_ci_traceability", "architecture_rationale",
@@ -131,7 +131,7 @@ def build_run_record(manifest, template, known_lessons, today, outcome="ok",
     """(record, problems): the record dict ready for emission, and every validation problem
     found (empty == valid). `failures` are 'GATE=MESSAGE' strings, `lessons` lesson ids,
     `rubric` 'DIM=SCORE' strings — exactly the CLI's repeatable flags. `phase` is the delivery
-    phase the record is for (#215: scaffold by default; refactor/audit for real-user-code work)."""
+    phase the record is for (#215: scaffold by default; migrate/audit for real-user-code work)."""
     problems = []
     if phase not in PHASES:
         problems.append(f"phase must be one of {'|'.join(PHASES)}, got {phase!r}")
@@ -327,7 +327,7 @@ def main(argv=None):
                          "--rubric spec_measurability=2")
     ap.add_argument("--phase", choices=PHASES, default="scaffold",
                     help="the delivery phase this record is for (default scaffold, generate.md "
-                         "Step 9); use e.g. --phase refactor to log a refactor-phase incident (#215)")
+                         "Step 9); use e.g. --phase migrate to log a migrate-phase incident (#215)")
     ap.add_argument("--date", help="record date YYYY-MM-DD (default: today)")
     ap.add_argument("--dry-run", action="store_true", help="print the record; write nothing")
     args = ap.parse_args(argv)
