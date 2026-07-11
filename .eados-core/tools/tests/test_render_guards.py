@@ -156,8 +156,15 @@ def main():
               "no checkpoints"), failures)
     check("a legal checkpoint chain ending at the current phase passes",
           _problems(VALID + "\ndelivery_state:\n  phase: plan\n  checkpoints:\n"
-                    "    - { from: init, to: design, confirmed_by: owner }\n"
-                    "    - { from: design, to: plan, confirmed_by: owner }\n") == [], failures)
+                    "    - from: init\n      to: design\n      confirmed_by: owner\n"
+                    "      gate_results: { manifest-valid: OK }\n"
+                    "    - from: design\n      to: plan\n      confirmed_by: owner\n"
+                    "      gate_results: { rfc-approved: OK }\n") == [], failures)
+    # #250: the honor-system closure — a human-gated move recorded WITHOUT its gate marks fails
+    check("a human-gated move recorded without gate_results is rejected (#250)",
+          has(VALID + "\ndelivery_state:\n  phase: design\n  checkpoints:\n"
+              "    - { from: init, to: design, confirmed_by: owner }\n",
+              "must record gate_results"), failures)
     check("a human-gated move recorded without confirmed_by is rejected",
           has(VALID + "\ndelivery_state:\n  phase: design\n  checkpoints:\n"
               "    - { from: init, to: design }\n", "confirmed_by"), failures)

@@ -34,23 +34,29 @@ SPEC_FLOOR = {
                     "items": ["2.1 freeze the API"]}],
 }
 
-# The canonical pipeline hops (from, to, human_gated) — used to synthesize the legal checkpoint
-# chain #199 now requires: a manifest at a non-init phase must record how it got there.
-_PIPELINE = [("init", "design", True), ("design", "plan", True), ("plan", "scaffold", True),
-             ("scaffold", "audit", False), ("audit", "migrate", True)]
+# The canonical pipeline hops (from, to, human_gated, entry_gates) — used to synthesize the legal
+# checkpoint chain #199 requires (a manifest at a non-init phase must record how it got there),
+# with the gate marks #250 requires on every human-gated hop (recorded evidence, not honor).
+_PIPELINE = [("init", "design", True, ("manifest-valid",)),
+             ("design", "plan", True, ("rfc-approved",)),
+             ("plan", "scaffold", True, ("roadmap-covers-rfcs",)),
+             ("scaffold", "audit", False, ()),
+             ("audit", "migrate", True, ("risk-register-present", "traceability-lint"))]
 _ORDER = ["init", "design", "plan", "scaffold", "audit", "migrate"]
 
 
 def _chain_to(phase):
     """A legal, contiguous checkpoint chain from init up to `phase` (empty at init), with a
-    `confirmed_by` on every human-gated hop — the evidence delivery-state-consistency (#199) wants."""
+    `confirmed_by` AND recorded `gate_results` on every human-gated hop — the evidence
+    delivery-state-consistency (#199) and the #250 honor-system closure want."""
     chain = []
-    for frm, to, human in _PIPELINE:
+    for frm, to, human, gates in _PIPELINE:
         if _ORDER.index(to) > _ORDER.index(phase):
             break
         cp = {"from": frm, "to": to, "at": "2026-07-01"}
         if human:
             cp["confirmed_by"] = "owner"
+            cp["gate_results"] = {g: "OK" for g in gates}
         chain.append(cp)
     return chain
 
@@ -76,8 +82,15 @@ def manifest_yaml(phase, domain=None, budgets=None):
     if chain:
         lines.append("  checkpoints:")
         for cp in chain:
-            conf = f", confirmed_by: {cp['confirmed_by']}" if "confirmed_by" in cp else ""
-            lines.append(f'    - {{ from: {cp["from"]}, to: {cp["to"]}, at: "{cp["at"]}"{conf} }}')
+            # block style for readability (the flow form report_propose emits parses equally —
+            # yamlmini's flow parser is depth-aware; #250)
+            lines.append(f'    - from: {cp["from"]}')
+            lines.append(f'      to: {cp["to"]}')
+            lines.append(f'      at: "{cp["at"]}"')
+            if "confirmed_by" in cp:
+                lines.append(f'      confirmed_by: {cp["confirmed_by"]}')
+                marks = ", ".join(f"{g}: OK" for g in cp["gate_results"])
+                lines.append(f'      gate_results: {{ {marks} }}')
     lines += ["  refs:", "    rfcs:", "      - RFC-0001", "    milestones:", '      - "1"']
     if domain:
         lines.append(f"domain: {domain}")

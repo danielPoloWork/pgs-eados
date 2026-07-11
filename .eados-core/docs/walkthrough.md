@@ -159,11 +159,13 @@ $ python .eados-core/tools/phase_runner.py project.yaml --propose scaffold
 proposed transition: plan -> scaffold
   LEGAL — gates to satisfy: roadmap-covers-rfcs; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: plan, to: scaffold, gates: ['roadmap-covers-rfcs'], at: 2026-07-06, confirmed_by: <owner> }
+    - { from: plan, to: scaffold, gates: ['roadmap-covers-rfcs'], at: 2026-07-06, confirmed_by: <owner>, gate_results: { roadmap-covers-rfcs: OK } }
     phase: scaffold
 ```
 
-Confirm as before (write the checkpoint + `phase: scaffold`).
+Confirm as before (write the checkpoint + `phase: scaffold`). Since #250 the recorded
+`gate_results` are **required** on every human-gated checkpoint — a direction-changing move
+must carry the evidence of what its gates said, not just who confirmed it.
 
 ---
 
@@ -205,9 +207,9 @@ security-auditor gate: REQUIRED
 ```text
 $ python .eados-core/tools/phase_runner.py project.yaml --propose migrate
 proposed transition: audit -> migrate
-  LEGAL — gates to satisfy: risk-register-present; human-gated: yes
+  LEGAL — gates to satisfy: risk-register-present, traceability-lint; human-gated: yes
   emit — append to delivery_state.checkpoints, then set delivery_state.phase:
-    - { from: audit, to: migrate, gates: ['risk-register-present'], at: 2026-07-06, confirmed_by: <owner> }
+    - { from: audit, to: migrate, gates: ['risk-register-present', 'traceability-lint'], at: 2026-07-06, confirmed_by: <owner>, gate_results: { risk-register-present: manual, traceability-lint: OK } }
     phase: migrate
 ```
 

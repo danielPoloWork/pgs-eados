@@ -45,8 +45,8 @@ transitions:
     human_gate: false
   - from: audit
     to: migrate
-    entry_gates: [risk-register-present]
-    human_gate: true
+    entry_gates: [risk-register-present, traceability-lint]   # the audit procedure's step 1 is
+    human_gate: true                                          # now an entry gate too (#250)
   # design is resumable: a new RFC can re-open planning without restarting the project.
   - from: plan
     to: design
@@ -121,13 +121,27 @@ gates:
     wired: in-process
     blocking: true
     required_for: [audit, migrate]
-  # Cross-cutting CI gate (NOT a phase-transition gate): it runs on every PR / in `audit`, not as a
-  # precondition for one transition — hence `required_for: []`. Registered here so it is the single
-  # source of gate ids; referenced by git.yaml's `traceability.gate` and validated by eados_lint's
-  # cross-spec gate (roadmap 6.8).
+  # Cross-cutting CI gate that is ALSO, since #250, an entry gate of audit -> migrate (the audit
+  # procedure's step 1, now enforced at the transition). Registered here as the single source of
+  # gate ids; referenced by git.yaml's `traceability.gate` and validated by eados_lint's
+  # cross-spec gate (roadmap 6.8). Wired in-process since #250 (the documented gate finally has an
+  # evaluator): eados.py traces the graph when given --links; withheld links -> needs-input
+  # (fail-closed under --strict, #200).
   - id: traceability-lint
     kind: lint
     runs: "python .eados-core/tools/traceability.py <roadmap> <rfc-ids> --links <links>"
+    wired: in-process
+    blocking: true
+    required_for: [migrate]
+  # Git-policy gate (#250): branch naming, Conventional-Commit shape, one-PR-at-a-time — the
+  # os/git/git.yaml policy evaluated deterministically by git_check.py (PR *metadata* stays
+  # pr_metadata_check.py's job). Cross-cutting like traceability-lint (required_for: []): the
+  # agent runs it pre-PR (self_check front-runs the same policy as a checklist; this is the
+  # evaluator), CI may gate on it, `--advisory` reports without failing. `wired: external`
+  # because it reads git/gh state, not the manifest — its owner is the acting agent + CI.
+  - id: git-policy
+    kind: lint
+    runs: "python .eados-core/tools/git_check.py"
     wired: external
     blocking: true
     required_for: []

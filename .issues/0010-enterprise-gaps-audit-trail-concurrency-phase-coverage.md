@@ -2,6 +2,20 @@
 
 > **✅ Resolved — released in v2.7.0 (2026-07-07).** Epic delivered via its three children: audit trail [#216](https://github.com/danielPoloWork/pgs-eados/pull/216) (issue #213), manifest concurrency [#217](https://github.com/danielPoloWork/pgs-eados/pull/217) (issue #214, `manifest_rev`/`--expect-rev`), learning-loop coverage [#218](https://github.com/danielPoloWork/pgs-eados/pull/218) (issue #215 — refactor failure channel, corpus-scaled autotune floor, override redaction). Umbrella issue [#203](https://github.com/danielPoloWork/pgs-eados/issues/203) CLOSED. Guarded by `test_phase_runner.py`, `test_record_run.py`, `test_run_records.py`, `test_autotune.py`. See the [regression index](REGRESSION-INDEX.md) (#235). Kept as a historical record.
 
+> **✅ Residuals delivered** (2026-07-11, closes [#250](https://github.com/danielPoloWork/pgs-eados/issues/250) — M15 Wave 3, the milestone closer).
+> The enforcement whitespace this epic left is shut: **`git_check.py`** evaluates the
+> `os/git/git.yaml` policy (branch naming, Conventional-Commit shape, one-PR — the new
+> cross-cutting `git-policy` gate; `--advisory` for local pre-flight); a **human-gated
+> checkpoint must record `gate_results`** covering its entry gates, and the last checkpoint's
+> marks are **re-run for divergence** on the ctx-free gates (a recorded OK whose gate now FAILs
+> — or now skips because its subject was removed — is stale, not evidence); the documented
+> **`traceability-lint` gate finally evaluates in-process AND guards a real move** (the sixth
+> evaluator; `--links` threaded into the gate context; now an entry gate of `audit → migrate`,
+> the audit procedure's step 1 enforced at the transition); and
+> `design`/`plan`/`audit`/`migrate` each instruct the **uniform phase-tagged
+> `record_run --phase` step** — the homogeneous per-phase audit trail this epic's gap 1 asked
+> for. Guarded by `test_git_check.py` + `test_honor_hardening.py`.
+
 **Labels:** `epic`, `enhancement`, `severity:medium`, `agentic-governance`
 
 ## Context

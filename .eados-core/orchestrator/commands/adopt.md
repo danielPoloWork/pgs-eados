@@ -74,7 +74,9 @@ is an **intake, not a phase** (ADR-0019 §1): the state set is unchanged and the
    ```
    Every adoption edge is gated on `manifest-valid` + `adoption-recorded` (evaluated in-process —
    a malformed block is NOT READY, never silently `manual`) and is **human-gated**: the agent
-   writes the emitted checkpoint (with `confirmed_by:`) **after** the maintainer confirms.
+   writes the emitted checkpoint (with `confirmed_by:` **and** the emitted `gate_results` — a
+   human-gated checkpoint must record what its gates said, #250) **after** the maintainer
+   confirms.
 6. **Hand off** — to the routed phase's own procedure (`design.md` / `audit.md` / `migrate.md` /
    `debug.md`). From there the ordinary machine governs; adoption is spent — the block stays in
    the manifest as the record of how this repository entered.
@@ -96,7 +98,8 @@ installed via `setup.sh --mode existing`):
 5. **Route** — targets are `migrate` (governance-docs) and `audit`; the earliest in pipeline
    order is **`audit`** → `--propose audit` reports LEGAL (gates: `manifest-valid` OK,
    `adoption-recorded` OK; human-gated). The maintainer confirms; the checkpoint
-   `{from: init, to: audit, confirmed_by: <owner>}` is recorded. After the audit's risk register,
+   `{from: init, to: audit, confirmed_by: <owner>, gate_results: {manifest-valid: OK,
+   adoption-recorded: OK}}` is recorded. After the audit's risk register,
    `audit → migrate` (the ordinary edge) reaches the `governance-docs` goal — the migrate plan
    orders the six gaps lowest-risk-first, one PR each.
 

@@ -317,6 +317,42 @@ def emit_checkpoint(from_phase, transition, at=None, confirmed_by=None, gate_res
 
 _CHECKPOINT_OK_MARKS = ("OK", "manual")
 
+# Gates that are PURE FUNCTIONS of the manifest (no ctx files) — re-runnable at validation time
+# to flag divergence (#250). manifest-valid is deliberately absent: its evaluator CALLS
+# checkpoint_chain_problems (via validate_manifest), so re-running it here would recurse.
+_CTX_FREE_GATES = ("adoption-recorded", "nfr-budgets")
+
+
+def _gate_results_divergence(manifest, results):
+    """Re-run the ctx-free in-process gates recorded in `results` against the CURRENT manifest
+    and flag divergence (#250): a mark recorded OK whose gate now FAILs means the manifest
+    changed after the transition was recorded — the record is stale, not evidence. Lazy eados
+    import: eados imports phase_runner at module level, so importing it here (at call time,
+    never during module load) resolves from sys.modules in every eados-driven flow."""
+    try:
+        import eados  # noqa: E402 — lazy: breaks the phase_runner<->eados import cycle
+    except Exception:
+        return []      # a partial checkout without the orchestrator CLI — divergence unchecked
+    problems = []
+    for gate in _CTX_FREE_GATES:
+        recorded = str(results.get(gate) or "").strip()
+        evaluator = eados.GATE_EVALUATORS.get(gate)
+        if recorded not in _CHECKPOINT_OK_MARKS or evaluator is None:
+            continue
+        mark, detail = evaluator(manifest, {})
+        if mark == "FAIL":
+            problems.append(f"delivery_state.checkpoints[-1] records gate '{gate}' as "
+                            f"'{recorded}' but it now FAILs ({detail}) — the manifest changed "
+                            "after the transition was recorded; re-run the propose (#250)")
+        elif mark == "skipped" and recorded == "OK":
+            # An OK was recorded, so the gate's subject EXISTED at transition time; `skipped`
+            # now means it was removed (the adoption block, the domain) — the strongest tamper,
+            # flagged exactly like a FAIL (#250).
+            problems.append(f"delivery_state.checkpoints[-1] records gate '{gate}' as 'OK' but "
+                            f"it is now skipped ({detail}) — what the gate checked was removed "
+                            "after the transition was recorded (#250)")
+    return problems
+
 
 def checkpoint_chain_problems(manifest, workflow):
     """Validate `delivery_state.checkpoints` as a legal, contiguous transition chain through the
@@ -330,12 +366,17 @@ def checkpoint_chain_problems(manifest, workflow):
         checkpoint's `to` (the chain is contiguous, rooted at `init`);
       * a human-gated transition (`human_gate: true`) must carry a `confirmed_by:` — mechanical
         evidence a human approved it, not the agent's narrative;
+      * a human-gated transition must also RECORD `gate_results` covering its entry gates (#250)
+        — an unrecorded gate outcome on a direction-changing move is the honor system;
       * a recorded `gate_results` (when present) must be all `OK`/`manual` — a transition taken over
         a failing gate is illegal;
+      * the LAST checkpoint's recorded marks must still hold for the ctx-free gates (#250):
+        a mark recorded OK whose gate now FAILs is stale, not evidence (divergence);
       * the last checkpoint's `to` must equal the current `phase`; with no checkpoints the phase
         must still be `init`.
 
-    Pure — no I/O. Returns a list of problem strings (empty == consistent)."""
+    No writes; the divergence re-run reads the domain profile the gate evaluator needs.
+    Returns a list of problem strings (empty == consistent)."""
     ds = manifest.get("delivery_state") if isinstance(manifest, dict) else None
     if not isinstance(ds, dict):
         return []                                # no delivery_state — nothing to enforce (legacy)
@@ -364,6 +405,16 @@ def checkpoint_chain_problems(manifest, workflow):
                 problems.append(f"delivery_state.checkpoints[{i}] '{frm} -> {to}' is human-gated "
                                 "and needs a 'confirmed_by:' entry (who approved the move)")
             results = cp.get("gate_results")
+            if transition.get("human_gate"):
+                # #250: a direction-changing move must RECORD what its gates said — an absent
+                # gate_results block was the honor system (`--propose` evaluates live and emits
+                # the marks; recording the checkpoint without them drops the evidence).
+                recorded = results if isinstance(results, dict) else {}
+                missing = [g for g in (transition.get("entry_gates") or []) if g not in recorded]
+                if missing:
+                    problems.append(f"delivery_state.checkpoints[{i}] '{frm} -> {to}' is "
+                                    "human-gated and must record gate_results for its entry "
+                                    f"gates — missing: {', '.join(missing)} (#250)")
             if isinstance(results, dict):
                 for gate, mark in results.items():
                     if str(mark).strip() not in _CHECKPOINT_OK_MARKS:
@@ -376,6 +427,13 @@ def checkpoint_chain_problems(manifest, workflow):
         if prev_to != phase:
             problems.append(f"delivery_state.phase is '{phase}' but the checkpoint chain ends at "
                             f"'{prev_to}' — the current phase must be the last transition's target")
+        # #250: divergence — only the LAST checkpoint is re-checked (earlier marks legitimately
+        # reflect earlier manifest states), and only when the chain is otherwise clean (one
+        # problem class at a time keeps the report actionable).
+        if not problems and isinstance(checkpoints[-1], dict):
+            results = checkpoints[-1].get("gate_results")
+            if isinstance(results, dict):
+                problems += _gate_results_divergence(manifest, results)
     elif phase != "init":
         problems.append(f"delivery_state.phase is '{phase}' but there are no checkpoints — a "
                         "non-init phase must record the transitions that reached it (no phase-skip)")
