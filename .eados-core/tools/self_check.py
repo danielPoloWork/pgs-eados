@@ -12,7 +12,8 @@ Three neighbours, three jobs — this is the one that had no home:
                       this just front-runs it so the miss is caught before the PR, not after.
 
 Every item is DERIVED from a spec — `authority.ownership_map`, `git.commit`, `git.pr.metadata`,
-`git.pr.required_crosslinks` — so the checklist can never rot away from the rules it front-runs (a
+`git.pr.required_crosslinks`, and (M17 17.4, #280) the `interaction` policy's operative blocks —
+so the checklist can never rot away from the rules it front-runs (a
 metadata field added to `git.yaml` shows up here automatically, proven in the tests). English-on-disk
 and the precedence order are the two invariants with no single machine-readable field; they are cited
 to `AGENTS.md` §2 and the `os/` README *Precedence* section, the way every file in the tree cites its
@@ -33,6 +34,7 @@ import render  # noqa: E402  — the hand-rolled, dependency-free YAML loader (s
 
 AUTHORITY = os.path.join(ROOT, "orchestrator", "os", "authority", "authority.yaml")
 GIT = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+INTERACTION = os.path.join(ROOT, "orchestrator", "os", "interaction", "interaction.yaml")
 
 
 def _load(path):
@@ -45,9 +47,12 @@ def _load(path):
         return {}
 
 
-def preflight_checklist(authority, git):
+def preflight_checklist(authority, git, interaction=None):
     """The pre-PR self-check as a list of `(question, source)` pairs, each DERIVED from a spec field —
-    or cited, for the two invariants with no machine-readable field. Pure (no I/O)."""
+    or cited, for the two invariants with no machine-readable field. Pure (no I/O). When `interaction`
+    is present (M17 17.4, #280), the checklist also front-runs the interaction contract's operative
+    rules — the *how you communicate* half of the contract, sourced from the blocks the policy
+    actually declares so a renamed block surfaces here rather than rotting."""
     commit = git.get("commit") or {}
     prpol = git.get("pr") or {}
     meta = prpol.get("metadata") or {}
@@ -75,6 +80,14 @@ def preflight_checklist(authority, git):
         items.append((
             "have I stopped at the draft/PR boundary — the human opens and merges, not me?",
             "git: pr.opened_by / pr.merged_by = human; AGENTS.md §6"))
+    if interaction:
+        blocks = ", ".join(k for k in ("confidence", "sycophancy", "dissent", "pushback")
+                           if interaction.get(k)) or "the contract"
+        items.append((
+            "does the reply I am about to send calibrate — load-bearing claims confidence-tagged by "
+            "evidence, no courtesy opener, and the dissent template (position/alternative/risk) when "
+            "I disagree?",
+            f"interaction: {blocks}; AGENTS.md §10"))
     items.append((
         "is every value I wrote on disk English?",
         "AGENTS.md §2"))
@@ -104,7 +117,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(
         description="EADOS pre-flight self-check - the agent-facing checklist to run before a PR.")
     ap.parse_args(argv)
-    for line in format_checklist(preflight_checklist(_load(AUTHORITY), _load(GIT))):
+    for line in format_checklist(preflight_checklist(_load(AUTHORITY), _load(GIT), _load(INTERACTION))):
         print(line)
     return 0
 

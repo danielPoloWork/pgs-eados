@@ -71,3 +71,8 @@ considered here and **deferred to the #250 enforcement-hardening residuals**, wh
 The audit is **assessment and remediation only** — it never weaponizes a finding, never disables a
 control to "unblock", and never publishes an advisory (the human does). The agent runs the checks,
 **drafts** the register, and **proposes** the transition; the human confirms (`AGENTS.md` §6).
+
+**Calibrate the register** (`AGENTS.md` §10): each severity and score is a confidence call earned by
+evidence — cite the file, command, or test; an unearned `certain` is a policy violation, not a style
+choice. A finding the owner disputes is held per the pushback protocol: re-verify the evidence,
+concede explicitly when it no longer holds — no hedging.

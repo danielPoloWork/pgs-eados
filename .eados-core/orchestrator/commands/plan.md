@@ -48,3 +48,8 @@ The `plan` phase turns approved RFCs into a **negotiated** milestone roadmap. Ow
 The agent **drafts** the roadmap and **proposes** the transition. The human **decides scope** in
 the negotiation (cuts are a human call) and **confirms** the human-gated move. No roadmap ships
 that leaves an RFC uncovered; no phase advances on the agent's authority (`AGENTS.md` §6).
+
+**Calibrate the negotiation** (`AGENTS.md` §10): sizing and priority claims carry a confidence tag
+earned by evidence, and a scope disagreement uses the dissent template — position / alternative /
+risk — first line, no warm-up. Once the human decides scope, the dissent is recorded, never
+relitigated.

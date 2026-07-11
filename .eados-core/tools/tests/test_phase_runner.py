@@ -287,6 +287,22 @@ def main():
           any("council-of-elders" in ln
               for ln in pr.phase_invariants(wf, fake_auth, gitspec, "design", t_hd)), failures)
 
+    # --- #280: the re-grounding preamble re-reads the interaction contract (the ADR-0022 *re-ground*
+    #     tier), DERIVED — the confidence vocabulary comes from the spec, never a hardcoded string. ---
+    interaction = pr.load_interaction()
+    inv_ix = pr.phase_invariants(wf, authority, gitspec, "design", t_hd, interaction)
+    check("with the interaction spec, the preamble re-reads the interaction contract (AGENTS.md §10)",
+          any("interaction contract" in ln and "AGENTS.md §10" in ln for ln in inv_ix), failures)
+    check("the interaction line carries the confidence tags DERIVED from the spec",
+          any("certain" in ln and "guessing" in ln
+              for ln in inv_ix if "interaction contract" in ln), failures)
+    check("without the interaction spec, the interaction line is dropped (degrades, never crashes)",
+          not any("interaction contract" in ln for ln in inv), failures)
+    fake_ix = {"confidence": {"levels": ["sure", "hunch"]}}
+    check("the confidence vocabulary is DERIVED (a fake spec's levels flow through)",
+          any("sure/hunch" in ln
+              for ln in pr.phase_invariants(wf, authority, gitspec, "design", t_hd, fake_ix)), failures)
+
     # --- #221: the long-run reminder fires only past the checkpoint-depth threshold ---
     check("long_run_reminder is empty below the threshold",
           pr.long_run_reminder({"delivery_state": {"checkpoints": []}}, authority, gitspec) == [], failures)
@@ -308,10 +324,14 @@ def main():
         pr.report(mpath, out=rout)
         check("report() emits the runtime-invariants block, derived from the specs",
               "runtime invariants" in rout.getvalue() and "human-owner" in rout.getvalue(), failures)
+        check("report() re-reads the interaction contract in the preamble (#280)",
+              "interaction contract" in rout.getvalue() and "AGENTS.md §10" in rout.getvalue(), failures)
         pout = io.StringIO()
         pr.report_propose(mpath, "design", out=pout)
         check("report_propose() emits the re-grounding preamble for the proposed move",
               "runtime invariants" in pout.getvalue() and "tech-lead" in pout.getvalue(), failures)
+        check("report_propose() re-reads the interaction contract in the preamble (#280)",
+              "interaction contract" in pout.getvalue(), failures)
 
     if failures:
         print("test-phase-runner: FAIL\n")

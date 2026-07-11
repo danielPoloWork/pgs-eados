@@ -14,12 +14,17 @@ a pre-flight gate at the start of `init` (and before scaffold/bootstrap). Depend
 only) — the one check that must run in a minimal environment. Partial environments degrade to clear
 per-tool guidance, never a traceback.
 
+It also surfaces, **advisory**, whether the interaction contract (the *how you communicate* spec,
+ADR-0022) is present on disk — the section-presence half of the M17 17.4 runtime re-assertion
+(#280). That note never moves the exit code; the toolchain verdict is unchanged.
+
 Note: this is itself a *Python* tool, so it cannot help when Python is absent entirely — the guided
 installer (`setup/setup.sh` / `setup.ps1`) carries that non-Python bootstrap hint.
 
     python .eados-core/tools/preflight.py [--no-gh]
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -27,6 +32,14 @@ import sys
 # The tools are plain stdlib and target the CI's 3.12; keep the advertised floor generous so a
 # slightly older interpreter is a warning-with-a-hint, not a false alarm.
 PYTHON_FLOOR = (3, 8)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)                       # .eados-core/
+# The interaction contract's source of truth (ADR-0022). Preflight checks its PRESENCE only — the
+# *section-presence* half of the runtime re-assertion (#280); the operative rules live in AGENTS.md
+# §10 and self_check.py front-runs them. A plain os.path lookup keeps preflight dependency-free (it
+# never parses YAML — it is the one check that must run in a minimal environment).
+INTERACTION_SPEC = os.path.join("orchestrator", "os", "interaction", "interaction.yaml")
 
 # OS-specific install / auth hints. Keyed by check name, then normalised platform
 # (win32 / darwin / linux / other); "*" applies to every platform.
@@ -122,11 +135,31 @@ def check_gh_auth(run=None, platform=None):
                   hint_for("gh-auth", platform))
 
 
+def check_interaction_contract(root=None, exists=None):
+    """The interaction contract — how the agent communicates (calibrated confidence, no sycophancy,
+    structured dissent, evidence-first pushback) — is present on disk before the run starts. This is
+    the *section-presence* half of the runtime re-assertion (#280, ADR-0022 *re-ground* tier); the
+    operative rules live in AGENTS.md §10 and the pre-PR checklist front-runs them (self_check.py).
+    ADVISORY — never required: a run proceeds without it (older trees, the pure toolchain check), so
+    it is a `note`, never a MISSING that fails the verdict. Presence-only, so it stays dependency-free
+    (no YAML parse); `root`/`exists` are injectable for tests. Same `_check()` shape as the rest."""
+    root = root if root is not None else ROOT
+    exists = exists if exists is not None else os.path.exists
+    if exists(os.path.join(root, INTERACTION_SPEC)):
+        return _check("interaction-contract", True, False,
+                      "present — calibrated confidence, no sycophancy, structured dissent (AGENTS.md §10)",
+                      "")
+    return _check("interaction-contract", False, False,
+                  "not found — the how-you-communicate contract is absent (advisory)",
+                  "restore orchestrator/os/interaction/interaction.yaml (ADR-0022); AGENTS.md §10 renders from it")
+
+
 def preflight(*, require_gh=True, version_info=None, floor=PYTHON_FLOOR,
-              which=None, run=None, platform=None):
+              which=None, run=None, platform=None, root=None, exists=None):
     """Compose the checks. Returns (checks, healthy): `healthy` is False iff a *required* check
     failed. `gh` (and thus its auth) drops to advisory when `require_gh` is False — the pure
-    render path does not need it. All dependencies are injectable so the logic is unit-testable
+    render path does not need it. The interaction-contract presence check is always advisory (it
+    never moves `healthy`). All dependencies are injectable so the logic is unit-testable
     without touching the real environment."""
     which = which if which is not None else shutil.which
     platform = platform if platform is not None else sys.platform
@@ -144,6 +177,9 @@ def preflight(*, require_gh=True, version_info=None, floor=PYTHON_FLOOR,
     else:
         # Cannot probe auth without gh; record it as skipped (never required, never a crash).
         checks.append(_check("gh-auth", True, False, "skipped (gh not found)", "", skipped=True))
+
+    # #280: advisory presence of the interaction contract — a note, never a gate (required=False).
+    checks.append(check_interaction_contract(root=root, exists=exists))
 
     healthy = all(c["ok"] for c in checks if c["required"])
     return checks, healthy

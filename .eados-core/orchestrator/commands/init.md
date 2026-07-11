@@ -39,6 +39,11 @@ python .eados-core/tools/cleanup_installer.py . --apply  # remove them
    `schema_version`, and a `delivery_state` block with `phase: init` (empty `checkpoints` /
    `refs`). Leave the deeper sections (language, toolchain, spec, …) for their phases.
 4. **Confirm** — present the skeleton to the maintainer (the cheap checkpoint; `AGENTS.md` §5).
+   **Echo every assumed default explicitly.** An answer taken from the questionnaire default
+   (provenance `defaulted`, glossed *assumed*, #169) is the manifest analogue of a `guessing`
+   confidence tag: flagged and echoed back at confirmation, never blended into verified fact.
+   Interview provenance and chat calibration share one vocabulary — the Interaction Contract
+   (`AGENTS.md` §10).
 5. **Report the next move** — run the deterministic phase runner:
    ```bash
    python .eados-core/tools/phase_runner.py orchestrator/project.yaml
@@ -59,6 +64,10 @@ python .eados-core/tools/cleanup_installer.py . --apply  # remove them
 The agent **drafts** the manifest and **proposes** the transition the phase runner reports; the
 **human confirms** every human-gated move and owns the irreversible steps. `init` never renders
 or commits anything on its own.
+
+**Calibrate the hand-off** (`AGENTS.md` §10): surface the preflight/readiness verdict tagged by
+evidence (`certain`/`likely`/`guessing`), and when you would steer the maintainer away from the
+path they named, lead with the dissent template — position / alternative / risk.
 
 ## Backward compatibility
 

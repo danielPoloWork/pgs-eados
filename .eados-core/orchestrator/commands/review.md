@@ -40,3 +40,8 @@ non-owner's commits are **never merged** — a good idea enters the tree solely 
 re-implementation with co-author credit, so provenance stays in-house
 (`courtesy.merge_nonowner_commits: false`). An **owner-authored** PR is not an inbound contribution —
 there is nothing here to triage.
+
+**Calibrate the recommendation** (`AGENTS.md` §10): the disposition carries a confidence tag earned
+by evidence (the tier and risk calls cite what they rest on), and a recommendation against the
+contributor's ask leads with the dissent template — position / alternative / risk — while still
+thanking them.

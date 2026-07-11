@@ -57,3 +57,8 @@ product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review
 The agent **drafts** the RFC, runs the checks, and **proposes** the transition. A human **approves**
 the RFC (the approval encodes a human decision) and **confirms** the human-gated move. No RFC
 self-approves; no phase advances on the agent's authority (`AGENTS.md` §6).
+
+**Calibrate the review** (`AGENTS.md` §10): structured findings and the approval recommendation carry
+a confidence tag earned by evidence (cite the spec §, the file, or the check), and a disagreement on
+a design choice leads with the dissent template — position / alternative / risk — not prose
+hand-waving.

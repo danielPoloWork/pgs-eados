@@ -30,6 +30,7 @@ import render  # noqa: E402  — the hand-rolled, dependency-free YAML loader (s
 WORKFLOW = os.path.join(ROOT, "orchestrator", "os", "workflow", "workflow.yaml")
 AUTHORITY = os.path.join(ROOT, "orchestrator", "os", "authority", "authority.yaml")
 GIT = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+INTERACTION = os.path.join(ROOT, "orchestrator", "os", "interaction", "interaction.yaml")
 
 # #221: a project this many recorded transitions deep re-grounds the core non-negotiables — a
 # deterministic proxy for a "long run" (there is no session in a one-shot CLI). Data, not magic.
@@ -57,6 +58,13 @@ def load_authority(path=AUTHORITY):
 
 
 def load_git(path=GIT):
+    return _load_optional(path)
+
+
+def load_interaction(path=INTERACTION):
+    """The interaction policy, or `{}` when absent — the re-grounding preamble re-reads it (M17 17.4,
+    #280) to re-inject the how-you-communicate posture at each boundary. Optional like authority/git:
+    a project without the spec loses the interaction line, never the report."""
     return _load_optional(path)
 
 
@@ -196,10 +204,13 @@ def terminal_decider(authority):
     return last.get("decider")
 
 
-def phase_invariants(workflow, authority, git, phase, transition=None):
+def phase_invariants(workflow, authority, git, phase, transition=None, interaction=None):
     """The runtime non-negotiables for being AT `phase` — and, when `transition` is given, for TAKING
     that specific move — each line DERIVED from a spec field, never a hardcoded rule. Pure (no I/O).
-    Returns a list of one-line strings suitable for a re-grounding preamble."""
+    Returns a list of one-line strings suitable for a re-grounding preamble. When `interaction` is
+    given (the interaction policy, #280), the preamble also re-reads the how-you-communicate contract
+    — the *re-ground* tier of the ADR-0022 enforcement ceiling — so a long run cannot let the
+    calibrated-confidence / no-sycophancy / structured-dissent posture drift out of view."""
     lines = []
     role = phase_role(workflow, phase)
     if role:
@@ -222,6 +233,12 @@ def phase_invariants(workflow, authority, git, phase, transition=None):
         squash = "squash-" if prpol.get("merge_method") == "squash" else ""
         lines.append(f"one PR at a time; the {who} opens and {squash}merges it (never the agent) — and "
                      "never a push to the default branch")
+    if interaction:
+        # #280: re-read the interaction contract at the boundary. The confidence tags are pulled from
+        # the spec (not hardcoded) so the vocabulary can't rot; the operative rules live in §10.
+        levels = "/".join((interaction.get("confidence") or {}).get("levels") or []) or "by evidence"
+        lines.append(f"interaction contract: tag load-bearing claims ({levels}) by evidence, no "
+                     "courtesy opener, structured dissent — a human decision is layer 1 (AGENTS.md §10)")
     lines.append("on-disk values are English (AGENTS.md §2); the full contract is AGENTS.md")
     return lines
 
@@ -247,10 +264,12 @@ def long_run_reminder(manifest, authority, git, threshold=LONG_RUN_CHECKPOINTS):
     return out
 
 
-def _emit_regrounding(out, workflow, authority, git, manifest, phase, transition=None, indent=""):
+def _emit_regrounding(out, workflow, authority, git, manifest, phase, transition=None, indent="",
+                      interaction=None):
     """Print the re-grounding preamble (#221): the phase invariants, then the long-run reminder when a
-    project is deep enough to warrant it. Thin I/O over the pure builders above."""
-    invariants = phase_invariants(workflow, authority, git, phase, transition)
+    project is deep enough to warrant it. Thin I/O over the pure builders above. `interaction` (#280)
+    adds the how-you-communicate line when the policy is present."""
+    invariants = phase_invariants(workflow, authority, git, phase, transition, interaction)
     if invariants:
         print(f"{indent}runtime invariants (re-grounded at this boundary):", file=out)
         for line in invariants:
@@ -268,7 +287,7 @@ def report(manifest_path, out=sys.stdout):
         manifest = render.load_yaml(handle.read())
     warn_legacy_phases(manifest)
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
-    authority, git = load_authority(), load_git()
+    authority, git, interaction = load_authority(), load_git(), load_interaction()
     states = state_ids(workflow)
     phase = current_phase(manifest)
     print(f"current phase: {phase}  (manifest_rev {manifest_rev(manifest)})", file=out)
@@ -285,7 +304,7 @@ def report(manifest_path, out=sys.stdout):
             human = "  [human-gated — the owner confirms]" if t.get("human_gate") else ""
             print(f"  -> {t.get('to')}   (gates: {gates}){human}", file=out)
     # #221: re-ground the invariants for the current phase at this boundary (transition-agnostic).
-    _emit_regrounding(out, workflow, authority, git, manifest, phase)
+    _emit_regrounding(out, workflow, authority, git, manifest, phase, interaction=interaction)
     return 0
 
 
@@ -461,7 +480,7 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
               file=out)
         return 1
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
-    authority, git = load_authority(), load_git()
+    authority, git, interaction = load_authority(), load_git(), load_interaction()
     states = state_ids(workflow)
     frm = current_phase(manifest)
     print(f"proposed transition: {frm} -> {to_phase}  (read at manifest_rev {rev})", file=out)
@@ -479,7 +498,8 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
     print(f"  LEGAL — gates to satisfy: {gates}; "
           f"human-gated: {'yes' if t.get('human_gate') else 'no'}", file=out)
     # #221: re-ground the non-negotiables for THIS specific move before it is evaluated/recorded.
-    _emit_regrounding(out, workflow, authority, git, manifest, to_phase, transition=t, indent="  ")
+    _emit_regrounding(out, workflow, authority, git, manifest, to_phase, transition=t, indent="  ",
+                      interaction=interaction)
     gate_results = evaluate(entry_gates, manifest, ctx or {}) if evaluate else None
     if gate_results:
         print("  gate results (live): "
