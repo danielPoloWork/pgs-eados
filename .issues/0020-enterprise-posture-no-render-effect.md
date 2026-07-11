@@ -1,5 +1,17 @@
 # [ENHANCEMENT] `governance.posture: enterprise` has no effect on rendered output
 
+> **✅ Delivered** (2026-07-11, closes [#248](https://github.com/danielPoloWork/pgs-eados/issues/248); ADR-0015).
+> `{{POSTURE}}` (placeholders.md §2, default `standard`) + `{{#IF_ENTERPRISE}}` (§8) are defined
+> and wired in `render.py`. Templates consume the flag: `AGENTS.md.tmpl` gains the §3 posture
+> declaration, the §7 compliance-docs bullet + mandatory-ADR-for-security rule, and three §10
+> quality-bar rows; every enterprise repo scaffolds `docs/compliance/README.md` (controls →
+> evidence register, skipped for `standard` like `docs/benchmarks/`), listed in the docs index
+> under the posture. The generated `consistency_lint.py` learns a both-ways `posture` congruence
+> check (AGENTS.md declaration ⇔ register present). The `standard` render is byte-identical to
+> before (all clauses gated). Render-smoke variant + wiring pins land as `test_posture_render.py`.
+> Item deferred by ADR-0015 (hard enforcement via a workflow/risk rule keyed on the flag) remains
+> deferred — this delivers the advisory materialization the ADR specified.
+
 **Labels:** `enhancement`, `severity:medium`, `area:render`, `area:templates`
 **Component:** `orchestrator/placeholders.md`, `tools/render.py`, `templates/`
 

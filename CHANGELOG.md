@@ -11,6 +11,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **The enterprise governance posture now materializes in the rendered repo (#248, M15 Wave 3;
+  ADR-0015).** Q0.5 captured `governance.posture` and ADR-0015 promised a raised bar (mandatory
+  ADRs for security-relevant decisions, stricter review, a compliance-docs expectation) — but no
+  `{{POSTURE}}`/`{{#IF_ENTERPRISE}}` existed, so a considered `enterprise` answer and the
+  `standard` default produced **byte-identical** repos: the promise was prose-only. Now it is
+  data. **(1) the wiring** — `placeholders.md` gains `{{POSTURE}}` (§2, default `standard`) and
+  `{{#IF_ENTERPRISE}}` (§8, derived: `posture == enterprise`); `render.py` surfaces both. **(2)
+  the clauses** — `AGENTS.md.tmpl` gains `{{#IF_ENTERPRISE}}`-gated text: a §3 posture declaration,
+  a §7 compliance-docs bullet + mandatory-ADR-for-security rule, and three §10 quality-bar rows
+  (two approving reviews + security-auditor sign-off on security-relevant changes, a security-ADR
+  requirement, a current compliance register). **(3) the artifact** — every enterprise repo is
+  scaffolded with `docs/compliance/README.md` (a controls → evidence register), skipped for
+  `standard` exactly like `docs/benchmarks/`/`docs/api/`; the `docs/README.md` index lists it
+  under the posture. **(4) the congruence** — the generated `consistency_lint.py` learns a
+  `posture` check (both ways: an `AGENTS.md` posture declaration ⇔ the compliance register
+  present), so the posture can never silently drift back to prose. **The `standard` render is
+  byte-identical to before** (every clause is gated; the §3/§7/§10/docs-index insertions consume
+  their own newlines). Guarded by the new `test_posture_render.py` (standard omits every clause +
+  the register; enterprise materializes all of them; the wiring + the lint check are pinned).
+
 - **`/eados adopt` — the brownfield adoption intake ships; `init → audit`/`init → migrate`
   become legal by data (#247, M15 Wave 3; ADR-0021 — new).** The pieces for brownfield existed
   (the installers default to `--mode existing`; `migrate` maps gaps read-only and migrates via
