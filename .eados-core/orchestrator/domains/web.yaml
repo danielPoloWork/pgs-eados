@@ -16,9 +16,12 @@ artifacts:
   product_spec: PRD
   design_doc: RFC
   test_strategy: required
+# Hard axes are TYPED (#249): the `nfr-budgets` audit-overlay gate FAILs a hard axis with no
+# recorded budget in spec.nfr_budgets. `accessibility` is a LEVEL axis (`scale`, target drawn
+# from it); `core_web_vitals` is a composite (one budget entry per `metrics` name, each numeric).
 nfr_axes:
-  - { axis: accessibility,   hard_budget: true }    # WCAG 2.2 AA conformance — often a legal bar
-  - { axis: core_web_vitals, hard_budget: true }    # LCP / INP / CLS thresholds (Google budgets)
+  - { axis: accessibility,   hard_budget: true, unit: "WCAG 2.2 level", direction: min, scale: "A|AA|AAA", seed: AA }   # often a legal bar
+  - { axis: core_web_vitals, hard_budget: true, unit: "s / ms / score", direction: max, metrics: "LCP|INP|CLS", seed: "LCP 2.5 s - INP 200 ms - CLS 0.1" }
   - { axis: security,        hard_budget: false }   # OWASP web attack surface
   - { axis: latency,         hard_budget: false }   # server response / TTFB
 milestone_vocabulary: semver

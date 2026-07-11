@@ -9,7 +9,8 @@ artifacts:
   product_spec: ""               # PRD | GDD
   design_doc: RFC
   test_strategy: required
-nfr_axes: []                     # [{ axis: <name>, hard_budget: true|false }, …]
+nfr_axes: []                     # [{ axis, hard_budget, unit?, direction: min|max, seed?, scale?, metrics? }, …]
+                                 # a hard axis is TYPED (#249): unit + direction (+ seed) — never a bare boolean
 milestone_vocabulary: semver     # semver | alpha-beta-rc
 cross_discipline_deps: []        # [art, animation, sound, localization, …] or []
 workflow_overlay: ""             # the workflow.yaml domain_overlays key for this domain

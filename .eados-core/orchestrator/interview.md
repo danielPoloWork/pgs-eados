@@ -195,13 +195,17 @@ follow-ups until each is concrete enough to test against:
   `EACH_FUNCTIONAL_REQ`.
 - **Q5.3 — Non-functional requirements.** Performance, memory, portability, security,
   no-leak / no-UB guarantees, dependency policy. → `EACH_NONFUNCTIONAL_REQ`.
-  **Budget follow-up (scalability fold, #240).** For each **hard** NFR axis the domain declares
-  (`domains/<domain>.yaml` `nfr_axes[].hard_budget: true` — a game's framerate/RAM/GPU, web's
-  Core Web Vitals, a service's p99 latency), elicit a **numeric target**, never an adjective:
-  "p99 < 5 ms", "60 fps", "cold-start < 2 s", "heap ≤ 256 MB". Record each as a non-functional
-  requirement so spec §3 carries the number the design commits to, and the RFC's *Scalability
-  budgets* fold states it. *(Turning these numbers into evaluated audit-phase gates is #249; this
-  fold makes intake capture the value.)*
+  **Budget follow-up (scalability fold, #240; enforced #249).** For each **hard** NFR axis the
+  domain declares (`domains/<domain>.yaml` `nfr_axes[].hard_budget: true` — typed with
+  `unit`/`direction`, and a suggested `seed` to offer as the default: a game's framerate/RAM/GPU,
+  web's Core Web Vitals, a service's p99 latency), elicit a **numeric target**, never an
+  adjective: "p99 < 5 ms", "60 fps", "cold-start < 2 s", "heap ≤ 256 MB". Record each as a
+  **typed `spec.nfr_budgets` entry** (`{axis, target, unit, metric?}` — one entry per `metrics`
+  name for a composite axis like Core Web Vitals; the level from the axis's `scale` for
+  accessibility) *and* as a §3 non-functional requirement, so the RFC's *Scalability budgets*
+  fold states it. The **`nfr-budgets` audit-overlay gate** (#249) evaluates them in-process: a
+  hard axis with no recorded number — or a recorded measurement that violates it — fails the
+  audit entry; the budget is a gate, not a promise.
 - **Q5.4 — Logical architecture & core algorithm.** The central data structure or control
   flow. Capture it as prose + a diagram block; it seeds the first design ADRs. **Also elicit a
   structured architecture style** from

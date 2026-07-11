@@ -36,8 +36,16 @@ workflow_overlay:      # the workflow.yaml `domain_overlays` key this domain map
   **OQ4**, resolved in M2.
 - **`artifacts`** — `{ product_spec, design_doc, test_strategy }`. `product_spec` is `PRD` for
   software/mobile, `GDD` for a game.
-- **`nfr_axes[]`** — `{ axis, hard_budget }`. `hard_budget: true` marks a *fixed* constraint
-  (a game's RAM/GPU/framerate, a mobile app's size) the spec must treat as non-negotiable.
+- **`nfr_axes[]`** — `{ axis, hard_budget, unit?, direction?, seed?, scale?, metrics? }`.
+  `hard_budget: true` marks a *fixed* constraint (a game's RAM/GPU/framerate, a mobile app's
+  size) the spec must treat as non-negotiable — and a hard axis is **typed** (#249): `unit`
+  (fps, MB, s, …) + `direction` (`min` | `max`) make the budget checkable; `seed` is the
+  suggested target Q5.3 offers (data, never a comment). A level axis (web accessibility)
+  declares a `scale` (`"A|AA|AAA"`) its target is drawn from; a composite axis (Core Web
+  Vitals) declares `metrics` (`"LCP|INP|CLS"`) — one `spec.nfr_budgets` entry per metric. The
+  recorded budgets are enforced by the `nfr-budgets` audit-overlay gate (workflow.yaml,
+  evaluated in-process by `eados.py`): a hard axis with no recorded number — or a recorded
+  measurement that violates it — FAILs. A soft axis (`hard_budget: false`) stays untyped.
 - **`milestone_vocabulary`** — `semver` (version-driven, pre-1.0 milestone-driven) or
   `alpha-beta-rc` (Alpha / Beta / Release Candidate / Gold, as in game production).
 - **`cross_discipline_deps`** — the non-engineering pipeline a feature depends on (a game's

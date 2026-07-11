@@ -10,9 +10,11 @@ artifacts:
   product_spec: PRD
   design_doc: RFC
   test_strategy: required
+# Hard axes are TYPED (#249): unit + direction make the budget checkable (the `nfr-budgets`
+# audit-overlay gate); `seed` is the suggested target Q5.3 offers.
 nfr_axes:
-  - { axis: app_size, hard_budget: true }     # store download-size limits
-  - { axis: cold_start, hard_budget: true }   # launch-time target
+  - { axis: app_size, hard_budget: true, unit: MB, direction: max, seed: 200 }    # store download-size limits
+  - { axis: cold_start, hard_budget: true, unit: s, direction: max, seed: 2 }     # launch-time target
   - { axis: battery, hard_budget: false }
   - { axis: offline, hard_budget: false }
 milestone_vocabulary: semver

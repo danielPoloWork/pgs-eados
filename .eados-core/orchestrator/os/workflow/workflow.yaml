@@ -168,6 +168,23 @@ gates:
     wired: external
     blocking: true
     required_for: [audit]
+  # Numeric NFR-budget gate (#249): every HARD nfr_axis of the manifest's domain (typed in
+  # domains/<domain>.yaml with unit/direction/scale/metrics) must carry a recorded budget in
+  # spec.nfr_budgets, and a recorded measurement must satisfy it. Evaluated in-process by
+  # eados.py — `skipped` when the domain declares no hard axes (the software baseline), AND for
+  # a greenfield manifest still at `init` (budgets arrive with the Phase-5 interview; without an
+  # adoption record the audit edges are not takeable anyway — eados.py init stays green, the
+  # adoption-recorded precedent). The MANUAL review gates above stay (a human verifies on real
+  # hardware / a real build); this gate is the mechanical floor beneath them: the number must
+  # exist and not be violated on record. Attached per-domain via domain_overlays.*.add_gates —
+  # which, since #247, also places it on init->audit: an ADOPTED repo of that domain is held to
+  # the same bar (ADR-0021), and its budgets are elicited at adoption time.
+  - id: nfr-budgets
+    kind: test
+    runs: "python .eados-core/tools/eados.py scaffold <manifest>"
+    wired: in-process
+    blocking: true
+    required_for: [audit]
 
 # Per-domain adaptations. Absent keys inherit the base machine. These encode the delivery
 # guide's domain specifics (e.g. a game's asset pipeline, a mobile store-compliance gate).
@@ -176,11 +193,11 @@ gates:
 # state(s) its registry entry (above) names in required_for. Every add_gates id MUST have a
 # registry entry — cross-spec-consistency fails a bare id.
 domain_overlays:
-  software: {}
+  software: {}                               # no hard axes -> no nfr-budgets gate either
   web:
-    add_gates: [accessibility-review, web-vitals-budget]   # WCAG conformance + Core Web Vitals budget
+    add_gates: [accessibility-review, web-vitals-budget, nfr-budgets]   # WCAG + CWV reviews + the numeric floor (#249)
   game:
     insert_states: [asset-pipeline-review]   # Art / Animation / Sound cross-discipline deps
-    add_gates: [hardware-budget]             # RAM / GPU / framerate budget is a hard NFR
+    add_gates: [hardware-budget, nfr-budgets]   # hardware review + the numeric floor (#249)
   mobile:
-    add_gates: [store-compliance]            # App Store / Play Store review constraints
+    add_gates: [store-compliance, nfr-budgets]  # store review + the numeric floor (#249)

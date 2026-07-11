@@ -191,8 +191,8 @@ phases:
         prompt: "Functional requirements (measurable, testable phrasing)?"
         sets: [FUNCTIONAL_REQS]
       - id: Q5.3
-        prompt: "Non-functional requirements (perf, memory, security, deps, portability)?"
-        sets: [NONFUNCTIONAL_REQS]
+        prompt: "Non-functional requirements (perf, memory, security, deps, portability)? Plus a NUMERIC budget per hard domain axis (nfr_axes hard_budget, seeded from the axis's typed seed) - never an adjective."
+        sets: [NONFUNCTIONAL_REQS, spec.nfr_budgets]
       - id: Q5.4
         prompt: "Logical architecture & core algorithm/data structure? Plus a STRUCTURED architecture style (design-patterns.md §5: Layered|Hexagonal|Clean|MVC|Event-Driven|CQRS|DDD|…; none for a library), the expected first-class patterns, and the pattern-discipline posture."
         default: { architecture_style: "", pattern_discipline: advisory }   # per kind/domain: library->none; service/app->Layered|Hexagonal; web->Layered|MVC|Clean; mobile->MVVM|Clean
