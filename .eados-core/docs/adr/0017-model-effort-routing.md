@@ -59,6 +59,13 @@ Two facts constrain any mechanization:
   cheapest tier, so unlabeled small work (doc fixes, authoring) routes to `fast`/`low` by default.
 - A future host (or a re-ranked market) is one catalog entry, not a schema change; a future tier
   (e.g. a local model class) is an append to `tiers` plus rules that reference it.
+- **Application (16.4/#255) is downward only.** The advice is *applied* — not just printed — in
+  exactly one place: when a governed command **delegates** a sub-task to a host with per-delegation
+  model control, the adapter passes the resolved model + effort with the delegation. The contract,
+  the per-host application matrix, and the worked architect → engineer → reviewer → optimizer relay
+  live in [`os/routing/delegation.md`](../../orchestrator/os/routing/delegation.md); a host without
+  per-delegation control degrades to advisory-only. The top-level session model is never switched
+  by the agent — that boundary (invariant #1) is unchanged.
 
 ## References
 

@@ -4,8 +4,10 @@ The **model & effort routing policy** as data (M16 / ADR-0017). Given a unit of 
 — its tracker labels plus two derived flags — the policy recommends a **capability tier** and an
 **effort level**. It is *advisory-first*: the OS states the recommendation at its read-points
 (Step-0 triage, `/eados status`, the `.issues/` planning docs); the human keeps final model
-authority, and auto-application exists only for host-delegated subagent work (RFC-0001
-human-in-the-loop). The evaluator is [`../../../tools/route_advice.py`](../../../tools/route_advice.py)
+authority, and auto-application exists only for host-delegated subagent work — the one place the
+advice is *applied* rather than printed, specified in [`delegation.md`](./delegation.md) (M16 16.4,
+#255; RFC-0001 human-in-the-loop). The evaluator is
+[`../../../tools/route_advice.py`](../../../tools/route_advice.py)
 (M16 16.2; until it lands, the policy is read by the agent directly).
 
 **Tiers, not model names.** The rules speak capability tiers; concrete model names live *only* in
@@ -66,3 +68,5 @@ always *emitted* in the OS vocabulary; an adapter may translate on the way out.
 - Resolution is **deterministic** — same signals, same advice (no model/LLM in the loop).
 - Advice never overrides a human's explicit model/effort choice, and no rule can force a
   top-level session model switch — that action does not exist below the human (`AGENTS.md` §6).
+  Application is **downward only**: the [delegation hook](./delegation.md) may set the model of a
+  *delegated* sub-task on a capable host; it never re-routes the session itself.

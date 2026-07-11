@@ -915,7 +915,7 @@ GATE_COVERAGE = [
     (".eados-core/templates/**",                          "render-smoke + placeholder-integrity"),
     (".eados-core/orchestrator/profiles/*.yaml",          "profile-completeness"),
     (".eados-core/orchestrator/profiles/_schema.md",      "profile-completeness (schema)"),
-    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:)"),
+    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:) + routing-delegation (os/routing/delegation.md)"),
     (".eados-core/orchestrator/domains/*.yaml",           "domains + data-file-validity"),
     (".eados-core/orchestrator/placeholders.md",          "placeholder-integrity (the dictionary)"),
     (".eados-core/orchestrator/generate.md",              "generate-references"),
@@ -1453,6 +1453,62 @@ def check_command_adapters(fail):
         fail(name, problem)
 
 
+def routing_delegation_problems(delegation_text, readme_text, schema_text, routing_spec):
+    """Pure check of the 16.4 delegation-hook contract (#255). The advice policy is *applied* only
+    in `os/routing/delegation.md`; this keeps that doc honest and wired. Fails when the doc is
+    unreferenced by its two pointers (commands/README.md, os/routing/_schema.md), does not name the
+    evaluator it delegates resolution to, omits the advisory-only fallback, or leaves any catalog
+    host without a stated delegation posture (the anti-rot property — a host added to the catalog
+    must declare applied-vs-advisory in the matrix). Returns problem strings (empty == covered)."""
+    problems = []
+    if "delegation.md" not in (readme_text or ""):
+        problems.append("orchestrator/commands/README.md does not point at "
+                        "os/routing/delegation.md — the Host-adapters section must carry the "
+                        "routing hook (#255)")
+    if "delegation.md" not in (schema_text or ""):
+        problems.append("orchestrator/os/routing/_schema.md does not reference delegation.md — "
+                        "the applied-path doc must be linked from the routing schema (#255)")
+    if "route_advice" not in (delegation_text or ""):
+        problems.append("os/routing/delegation.md does not name route_advice.py — the hook must "
+                        "resolve routes through the evaluator, not restate the policy")
+    if "advisory" not in (delegation_text or "").lower():
+        problems.append("os/routing/delegation.md documents no advisory-only fallback — hosts "
+                        "without per-delegation model control must have a stated posture (#255)")
+    hosts = [h.get("host") for h in ((routing_spec or {}).get("catalog") or {}).get("hosts") or []
+             if isinstance(h, dict) and h.get("host")]
+    for host in hosts:
+        if str(host) not in (delegation_text or ""):
+            problems.append(f"os/routing/delegation.md does not account for catalog host "
+                            f"'{host}' — every host must be listed as applied or advisory-only so "
+                            "a new host cannot ship without a delegation posture")
+    return problems
+
+
+def check_routing_delegation(fail):
+    name = "routing-delegation"
+    routing_dir = os.path.join(ROOT, "orchestrator", "os", "routing")
+    routing_yaml = os.path.join(routing_dir, "routing.yaml")
+    if not os.path.exists(routing_yaml):
+        return  # routing is introduced with M16; absent before it
+    delegation_path = os.path.join(routing_dir, "delegation.md")
+    if not os.path.exists(delegation_path):
+        fail(name, "orchestrator/os/routing/delegation.md is missing — the 16.4 delegation-hook "
+                   "contract (#255) is unspecified")
+        return
+    readme_path = os.path.join(ROOT, "orchestrator", "commands", "README.md")
+    schema_path = os.path.join(routing_dir, "_schema.md")
+    try:
+        routing_spec = render.load_yaml(read(routing_yaml))
+    except Exception:  # noqa: BLE001 — a parse failure is data-file-validity's to report
+        routing_spec = None
+    for problem in routing_delegation_problems(
+            read(delegation_path),
+            read(readme_path) if os.path.exists(readme_path) else "",
+            read(schema_path) if os.path.exists(schema_path) else "",
+            routing_spec):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1476,6 +1532,7 @@ CHECKS = [
     check_examples,
     check_safe_write,
     check_command_adapters,
+    check_routing_delegation,
 ]
 
 
