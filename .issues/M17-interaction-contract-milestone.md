@@ -64,11 +64,11 @@ M15 / ADR-0018; routing table → M16).
 
 | Item | Issue | PR | Status |
 |---|---|---|---|
-| 17.1 | #277 | [#288](https://github.com/danielPoloWork/pgs-eados/pull/288) | draft PR open — `os/interaction/` spec (confidence / sycophancy / dissent / pushback) + ADR-0022 (numbering corrected from the reserved "ADR-0019") |
-| 17.2 | #278 | — | queued — depends on 17.1 |
-| 17.3 | #279 | — | queued — depends on 17.2 |
-| 17.4 | #280 | — | queued — depends on 17.2 |
-| 17.5 | #281 | — | queued — depends on 17.1–17.4 |
+| 17.1 | #277 | [#288](https://github.com/danielPoloWork/pgs-eados/pull/288) | merged — `os/interaction/` spec (confidence / sycophancy / dissent / pushback) + ADR-0022 (numbering corrected from the reserved "ADR-0019") |
+| 17.2 | #278 | [#289](https://github.com/danielPoloWork/pgs-eados/pull/289) | merged — rendered into `AGENTS.md` §10, `templates/AGENTS.md.tmpl` §12, `agent/README.md` pointer |
+| 17.3 | #279 | [#290](https://github.com/danielPoloWork/pgs-eados/pull/290) | merged — `interaction-lockstep` gate + `dissent.escalation_ladder` cross-spec ref |
+| 17.4 | #280 | [#291](https://github.com/danielPoloWork/pgs-eados/pull/291) | merged — runtime re-grounding (`phase_runner`, `self_check`, `preflight`) + command reply-shape cues |
+| 17.5 | #281 | — | this PR — USAGE §8, README ×3 (i18n hash refreshed), RFC-0001 §4 pointer, this delivery record, CHANGELOG |
 
 ## Out of scope (invariants)
 

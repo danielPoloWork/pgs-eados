@@ -72,6 +72,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
   ceiling). Tests updated across `self_check` / `preflight` / `phase_runner`, all discovered so they
   run in CI. The capstone (USAGE / README / delivery record) follows in 17.5.
 
+- **M17 capstone — the Interaction Contract documented and closed out (#281, M17 17.5).** An
+  interaction contract the maintainer doesn't know about is indistinguishable from host-default
+  behavior; capstone precedent (M8 §6 pointer, M16 plan doc) is docs + a delivery record.
+  [`USAGE.md`](.eados-core/docs/USAGE.md) §8 explains what a calibrated agent sounds like (the
+  confidence tags, the dissent template, the pushback protocol) and how to tune the vocabulary via
+  a `config/interaction.yaml` overlay; the README gains one Why-EADOS bullet — calibrated
+  interaction as a governance feature, toned honestly per the ADR-0019/ADR-0022 enforcement
+  ceiling (*instructed + artifact-gated + re-grounded*, never "guaranteed") — mirrored across
+  zh-Hans and ja with the i18n source hash refreshed in lockstep; RFC-0001 §4 gains a pointer from
+  the persona/authority model to the Interaction Contract as the persona's governed voice
+  counterpart (ADR-0022); the M17 milestone plan's delivery record now lists all five PRs. M17
+  (17.1–17.5) is complete.
+
 - **Honor-system hardening — the gate model grows teeth on four fronts (#250, M15 Wave 3,
   closing the milestone; the 0010 residuals).** The "gate-enforced pipeline" claim still leaned
   on trust in places, and the risk grows once real user code flows through the M15 commands.

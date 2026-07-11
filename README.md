@@ -70,6 +70,9 @@ placeholder is a hard error, never a guess.
   `consistency_lint`, risk scoring, and a traceability graph (RFC → milestone → PR → commit → release).
 - **Inbound contribution review** (`/eados review`) — triage a non-owner PR by trust tier, policy, and
   risk; recommend a disposition (it never auto-merges).
+- **Calibrated interaction as a governance feature** — confidence tags, no sycophancy, structured
+  dissent, evidence-first pushback, rendered into the agent contract and gated for congruence;
+  *instructed + artifact-gated + re-grounded*, never claimed as a guarantee on live chat.
 - **Guided installer** — a cross-platform `setup.{sh,command,ps1,bat}` with **fail-closed SHA256**
   verification and additive, no-clobber extraction.
 - **Self-improvement, versioned & human-gated** — a lessons ledger, an auto-tuner, and self-review.

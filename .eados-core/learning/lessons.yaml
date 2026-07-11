@@ -30,3 +30,10 @@
   context: A re-audit flagged profile CI actions shipping version-tag pins (vs the factory's SHA pins) as an inconsistency, but ADR-0009 §3 had already decided it — profile actions stay tag-pinned and Dependabot-managed by design.
   rule: Before filing an apparent inconsistency as a gap, check whether the governing ADR already decided it; a re-discovered trade-off is an addendum, not a new issue.
   source: audit #132; ADR-0009 §3 addendum (PR #137)
+
+- id: L-0005
+  date: 2026-07-11
+  scope: global
+  context: A milestone plan reserved "ADR-0019" for a not-yet-written decision; another milestone's work landed first and consumed that number, so the reservation was stale by the time the plan's own decision was ready to write up.
+  rule: Never hardcode a future ADR number in a plan doc — numbering is sequential and never reused, so a reservation made ahead of authoring can be consumed by unrelated work that lands first; resolve the actual number at authoring time and correct the plan in the same PR.
+  source: M17 17.1 (#277); ADR-0022 (numbering corrected from the reserved "ADR-0019")
