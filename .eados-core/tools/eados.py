@@ -6,8 +6,8 @@ This is the deterministic spine underneath it: `eados.py <phase> <manifest>` run
 **outgoing-transition entry gates** — the gates you must satisfy to leave the phase, read straight
 from [`workflow.yaml`](../orchestrator/os/workflow/workflow.yaml) (knowledge as data, no hardcoded
 chain) — evaluating the ones it can compute from the project (`manifest-valid`, `rfc-approved`,
-`roadmap-covers-rfcs`, `adoption-recorded`, `nfr-budgets`) and marking the rest `[manual]` /
-`[needs-input]`. It then prints the legal
+`roadmap-covers-rfcs`, `adoption-recorded`, `nfr-budgets`, `traceability-lint`) and marking the
+rest `[manual]` / `[needs-input]`. It then prints the legal
 next transitions and points at the procedure for the authoring + human-gated steps. `eados.py status`
 is the read-only doctor ([`doctor.py`](doctor.py)).
 
@@ -166,12 +166,33 @@ def _ev_nfr_budgets(manifest, ctx):
     return ("OK", "")
 
 
+def _ev_traceability_lint(manifest, ctx):
+    """The cross-cutting traceability gate (#250) — the graph `RFC -> milestone -> PR -> commit ->
+    release` must have no dangling edge. Needs the roadmap AND the links file (derive it:
+    `derive_links.py --out links.yaml`); a recorded RFC set with either input withheld is
+    `needs-input` (fail-closed under --strict, #200); no RFC refs recorded yet -> `skipped`."""
+    rfcs = _rfcs(manifest)
+    if not rfcs:
+        return ("skipped", "no RFC refs recorded yet — the graph has no roots to trace")
+    if ctx.get("roadmap_text") is None:
+        return ("needs-input", "no ROADMAP.md found — the RFC -> milestone edges cannot be traced")
+    if ctx.get("links") is None:
+        return ("needs-input", "no links file — derive it (`derive_links.py --out links.yaml`) "
+                "and pass --links; withholding the edges must not pass the gate")
+    problems = traceability.traceability_lint(ctx["roadmap_text"], rfcs, ctx["links"])
+    if problems:
+        kind, detail = problems[0]
+        return ("FAIL", f"{len(problems)} dangling edge(s) (e.g. {kind}: {detail})")
+    return ("OK", "")
+
+
 GATE_EVALUATORS = {
     "manifest-valid": _ev_manifest_valid,
     "rfc-approved": _ev_rfc_approved,
     "roadmap-covers-rfcs": _ev_roadmap_covers,
     "adoption-recorded": _ev_adoption_recorded,   # brownfield adoption (#247, ADR-0021)
     "nfr-budgets": _ev_nfr_budgets,               # numeric hard-axis budgets (#249)
+    "traceability-lint": _ev_traceability_lint,   # dangling-edge lint (#250)
 }
 
 # The procedure a phase points at for its authoring + human-gated steps.
@@ -191,12 +212,13 @@ def evaluate_gates(gate_ids, manifest, ctx):
     return out
 
 
-def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, strict=False):
+def run_phase(phase, manifest, workflow, roadmap_text=None, rfc_text=None, strict=False,
+              links=None):
     """Run `phase`'s deterministic outgoing gates over the project. Returns (lines, ok): `ok` is
     False when a gate the orchestrator can evaluate FAILs (manual/skipped never fail), or — under
     `strict` (#200) — when a gate is `needs-input` (a checkable input was withheld), so a gate can
     no longer be satisfied by omission. The phase not being a declared state is also not-ok."""
-    ctx = {"roadmap_text": roadmap_text, "rfc_text": rfc_text}
+    ctx = {"roadmap_text": roadmap_text, "rfc_text": rfc_text, "links": links}
     states = phase_runner.state_ids(workflow)
     if phase not in states:
         return [f"'{phase}' is not a declared workflow state {states}"], False
@@ -280,7 +302,7 @@ def main(argv=None):
         lines, ok = doctor.status_report(manifest, workflow, roadmap_text, links)
     else:
         lines, ok = run_phase(args.command, manifest, workflow, roadmap_text, rfc_text,
-                              strict=args.strict)
+                              strict=args.strict, links=links)
 
     # #214: surface the optimistic-concurrency counter the readout validated against, so a caller
     # can pass it to `phase_runner --propose --expect-rev N` before writing.

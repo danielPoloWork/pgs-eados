@@ -138,8 +138,11 @@ def main():
     #     gate_result, and phase != chain-end are each rejected (the honor-system gap is closed) ---
     def ds(phase, cps):
         return {"delivery_state": {"phase": phase, "checkpoints": cps}}
-    legal_chain = [{"from": "init", "to": "design", "confirmed_by": "owner"},
-                   {"from": "design", "to": "plan", "confirmed_by": "owner"}]
+    # #250: a human-gated checkpoint must also RECORD gate_results covering its entry gates
+    legal_chain = [{"from": "init", "to": "design", "confirmed_by": "owner",
+                    "gate_results": {"manifest-valid": "OK"}},
+                   {"from": "design", "to": "plan", "confirmed_by": "owner",
+                    "gate_results": {"rfc-approved": "OK"}}]
     check("a legal contiguous chain ending at the current phase is clean",
           pr.checkpoint_chain_problems(ds("plan", legal_chain), wf) == [], failures)
     check("a legacy manifest with no delivery_state is exempt",
@@ -176,11 +179,17 @@ def main():
           pr.canonical_phase("audit") == "audit", failures)
     check("current_phase canonicalizes a legacy refactor manifest to migrate",
           pr.current_phase({"delivery_state": {"phase": "refactor"}}) == "migrate", failures)
-    legacy_migrate_chain = [{"from": "init", "to": "design", "confirmed_by": "o"},
-                            {"from": "design", "to": "plan", "confirmed_by": "o"},
-                            {"from": "plan", "to": "scaffold", "confirmed_by": "o"},
-                            {"from": "scaffold", "to": "audit"},
-                            {"from": "audit", "to": "refactor", "confirmed_by": "o"}]
+    legacy_migrate_chain = [
+        {"from": "init", "to": "design", "confirmed_by": "o",
+         "gate_results": {"manifest-valid": "OK"}},
+        {"from": "design", "to": "plan", "confirmed_by": "o",
+         "gate_results": {"rfc-approved": "OK"}},
+        {"from": "plan", "to": "scaffold", "confirmed_by": "o",
+         "gate_results": {"roadmap-covers-rfcs": "OK"}},
+        {"from": "scaffold", "to": "audit"},
+        {"from": "audit", "to": "refactor", "confirmed_by": "o",
+         "gate_results": {"risk-register-present": "manual",
+                          "traceability-lint": "OK"}}]
     check("a legacy chain into `refactor` validates against the renamed `migrate` state",
           pr.checkpoint_chain_problems(ds("refactor", legacy_migrate_chain), wf) == [], failures)
     check("legacy_phase_aliases surfaces the deprecated phase for a warning",

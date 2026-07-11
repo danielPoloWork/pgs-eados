@@ -32,8 +32,13 @@ Owned by the **security-auditor** (with the **reviewer** for structured findings
    and each finding with `severity` (low/medium/high/critical), affected component, realistic
    impact, and a concrete mitigation. A confirmed defect → the bug ledger; a vulnerability → a
    **draft** advisory (the human publishes).
-5. **Record & hand off** — note the audit in `delivery_state`; if a migration is needed, propose
-   the human-gated `audit → migrate`:
+5. **Record & hand off** — note the audit in `delivery_state` **and append the phase-tagged run
+   record** (the learning loop's uniform shape; an audit incident records with `--failure` — the
+   riskiest surface feeding regression detection, #250):
+   ```bash
+   python .eados-core/tools/record_run.py <manifest> --phase audit   # add --failure GATE=MSG per finding
+   ```
+   If a migration is needed, propose the human-gated `audit → migrate`:
    ```bash
    python .eados-core/tools/phase_runner.py <manifest> --propose migrate
    ```

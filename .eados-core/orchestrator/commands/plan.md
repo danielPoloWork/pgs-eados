@@ -35,7 +35,12 @@ The `plan` phase turns approved RFCs into a **negotiated** milestone roadmap. Ow
    python .eados-core/tools/phase_runner.py <manifest> --propose scaffold
    ```
    The agent writes the emitted checkpoint + `phase: scaffold` **after** the human confirms.
-7. **Hand off** — to [`/eados scaffold`](../generate.md): render the repository as today, now with
+7. **Record the run** — append the phase-tagged run record (the learning loop's uniform shape;
+   every phase leaves the same audit trail, #250):
+   ```bash
+   python .eados-core/tools/record_run.py <manifest> --phase plan   # add --failure GATE=MSG on a red gate
+   ```
+8. **Hand off** — to [`/eados scaffold`](../generate.md): render the repository as today, now with
    the roadmap and spec already agreed.
 
 ## Boundary

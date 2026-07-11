@@ -44,7 +44,12 @@ product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review
    ```
    The agent writes the emitted checkpoint + `phase: plan` to the manifest **after** the human
    confirms; the runner never advances state itself.
-8. **Hand off** — to [`/eados plan`](../commands/README.md) (lands in M3): the producer turns the
+8. **Record the run** — append the phase-tagged run record (the learning loop's uniform shape;
+   every phase leaves the same audit trail, #250):
+   ```bash
+   python .eados-core/tools/record_run.py <manifest> --phase design   # add --failure GATE=MSG on a red gate
+   ```
+9. **Hand off** — to [`/eados plan`](../commands/README.md) (lands in M3): the producer turns the
    approved RFCs into a negotiated milestone roadmap.
 
 ## Boundary

@@ -19,8 +19,10 @@ domain: software             # development target: software|web|game|mobile -> o
 # without this block renders unchanged.
 delivery_state:
   phase: init                # init|design|plan|scaffold|audit|migrate
-  checkpoints: []            # [{from, to, gates, at, confirmed_by}] — the transition ledger (#199):
-                             # a legal, contiguous chain ending at `phase`; human-gated moves carry confirmed_by
+  checkpoints: []            # [{from, to, gates, at, confirmed_by, gate_results}] — the transition
+                             # ledger (#199): a legal, contiguous chain ending at `phase`; a
+                             # human-gated move carries confirmed_by AND records gate_results for
+                             # its entry gates (#250 — evidence, not honor; `--propose` emits both)
   refs: { rfcs: [], milestones: [], prs: [], releases: [] }   # cross-link ids, not content
 # adoption is the OPTIONAL brownfield record /eados adopt writes (#247, ADR-0021) — never for a
 # greenfield project. goals ⊆ governance-docs|retro-design|audit|migrate|bugfix (the closed menu);

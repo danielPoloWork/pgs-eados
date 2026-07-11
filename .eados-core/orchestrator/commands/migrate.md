@@ -42,7 +42,13 @@ sequenced **last** and every write is write-contained. Owned by the **enterprise
    4. **draft the PR** — one logical change, with the `git` cross-links (RFC/milestone); the human
       reviews and merges.
    5. **confirm** — re-run `brownfield.py <repo>`: the step's gap is closed. Proceed to the next.
-4. **Done** — when `brownfield.py` reports no gaps, the repo meets the EADOS standard. `migrate`
+4. **Record the run** — append the phase-tagged run record after each migration step (the
+   learning loop's uniform shape; a migrate incident on real user code records with `--failure`,
+   #250):
+   ```bash
+   python .eados-core/tools/record_run.py <manifest> --phase migrate   # add --failure GATE=MSG on an incident
+   ```
+5. **Done** — when `brownfield.py` reports no gaps, the repo meets the EADOS standard. `migrate`
    is the terminal phase; from here the repo governs itself under its rendered `AGENTS.md`.
 
 ## Boundary

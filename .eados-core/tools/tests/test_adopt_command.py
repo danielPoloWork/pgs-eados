@@ -154,9 +154,14 @@ def main():
     # --- chain legality: one confirmed adoption checkpoint reaches audit/migrate; the ordinary
     #     pipeline is untouched (init->design first; init->scaffold still illegal) ---
     for target in ("audit", "migrate"):
-        ds = {"delivery_state": {"phase": target,
+        # #250: a human-gated checkpoint also records its gate marks (the honor-system closure),
+        # and the recorded adoption must still EXIST (an OK-then-removed block is divergence)
+        ds = {"adoption": dict(VALID_ADOPTION),
+              "delivery_state": {"phase": target,
                                  "checkpoints": [{"from": "init", "to": target,
-                                                  "confirmed_by": "owner"}]}}
+                                                  "confirmed_by": "owner",
+                                                  "gate_results": {"manifest-valid": "OK",
+                                                                   "adoption-recorded": "OK"}}]}}
         check(f"a confirmed init -> {target} checkpoint chain is legal",
               phase_runner.checkpoint_chain_problems(ds, wf) == [], failures)
         ds_unconfirmed = {"delivery_state": {"phase": target,

@@ -11,6 +11,44 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Honor-system hardening — the gate model grows teeth on four fronts (#250, M15 Wave 3,
+  closing the milestone; the 0010 residuals).** The "gate-enforced pipeline" claim still leaned
+  on trust in places, and the risk grows once real user code flows through the M15 commands.
+  **(1) `git_check.py`** — the `os/git/git.yaml` policy finally has its deterministic evaluator:
+  branch naming (`<type>/<short-kebab>`, declared types; the default branch exempt),
+  Conventional-Commit shape (declared type + scope, ≤72-char subject; merge commits exempt), and
+  one-PR-at-a-time (via `gh`, degrading to SKIP offline). `--advisory` reports without failing
+  (the local pre-flight mode); CI omits it to gate. Registered as the cross-cutting **`git-policy`**
+  gate (`wired: external` — it reads git/gh state, not the manifest; PR *metadata* stays
+  `pr_metadata_check.py`'s job). **(2) `gate_results` are required evidence** — a human-gated
+  checkpoint must now RECORD `gate_results` covering its entry gates (`--propose` has emitted them
+  since #213; recording the checkpoint without them dropped the evidence), and the LAST
+  checkpoint's recorded marks are re-run for the ctx-free gates (`adoption-recorded`,
+  `nfr-budgets`): a mark recorded OK whose gate **now FAILs** — or now reads `skipped` because
+  what it checked was **removed** (the adoption block, the domain: the strongest tamper) — is
+  flagged as divergence: the manifest changed after the move was recorded, so the record is
+  stale, not evidence (`manifest-valid` is excluded: its evaluator calls this validator —
+  recursion). *Migration note:* a real manifest whose human-gated checkpoints predate #213 (no
+  `gate_results` recorded) now fails `manifest-valid` — backfill each hop by re-running
+  `phase_runner --propose <to>` and copying the emitted marks, or record the marks the hop's
+  `gates:` list names. **(3) the `traceability-lint` evaluator, seated for real** — the
+  documented gate finally evaluates in-process (the sixth evaluator): `skipped` with no RFC
+  roots, `needs-input` on a withheld roadmap/links file (fail-closed under `--strict`), FAIL on
+  a dangling edge; `eados.py` threads `--links` into the gate context, the gate flips
+  `wired: in-process`, **and it becomes an entry gate of `audit → migrate`** (the audit
+  procedure's step 1, now enforced at the transition — `required_for: [migrate]`), so the
+  evaluator guards a real move rather than existing on paper. **(4) the uniform action record** —
+  `design`/`plan`/`audit`/`migrate` each instruct the same phase-tagged
+  `record_run.py --phase <phase>` step, so the per-phase audit trail is homogeneous (the tool
+  already supported every phase since #215; the procedures now demand it). Every gate in
+  `workflow.yaml` now either has an in-process evaluator (6) or is explicitly `wired: external`
+  with its runner named. Fixtures across the suite (test_eados/_phase_runner/_render_guards/
+  _adopt_command, the walkthrough transcripts, the manifest template, adopt.md) record the
+  now-required gate marks. Guarded by the new `test_git_check.py` (policy-as-data cases,
+  exemptions, advisory/gating split, the gate registration) and `test_honor_hardening.py`
+  (missing/partial `gate_results` rejected, divergence flagged, the traceability evaluator's
+  five verdicts, the four uniform record steps).
+
 - **Numeric, enforced NFR budgets — the honor-system boolean is gone (#249, M15 Wave 3).** The
   domains' `nfr_axes` carried a boolean `hard_budget` only; the game's "60 fps" lived as a YAML
   comment; `scalab*` had zero occurrences in the factory — an NFR budget was a placeholder, not a
