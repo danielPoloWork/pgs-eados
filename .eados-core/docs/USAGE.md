@@ -290,7 +290,35 @@ No `gh` / offline → it SKIPs cleanly.
 re-implementation with co-author credit, so provenance stays in-house. Trust sets the *scrutiny*,
 not the *outcome* (the change is judged, not the author).
 
-## 8. Go deeper
+## 8. What a calibrated agent sounds like
+
+EADOS governs *what* the agent may do; the **Interaction Contract**
+([`os/interaction/`](../orchestrator/os/interaction/interaction.yaml), ADR-0022) governs *how it
+communicates while doing it* — rendered into [`AGENTS.md` §10](../../AGENTS.md#10-interaction-contract-how-the-agent-communicates)
+(and the equivalent §12 of a generated repo's contract) and kept congruent with the data by the
+`interaction-lockstep` gate.
+
+| Element | What it means in practice |
+|---|---|
+| **Confidence tags** | Load-bearing claims (recommendations, risk calls, decision-driving facts) carry `certain` / `likely` / `guessing`, each *earned* by an evidence criterion — not every sentence, and never chosen by tone. Mostly-guessing replies say so first. |
+| **No courtesy opener** | Opens with the most informative statement, never "Great question" / "You're absolutely right" / reflexive agreement — but also never forced disagreement; the rule is most-informative-first, not disagree-first. |
+| **Dissent template** | `I disagree because <reason>. Alternative: <what I would do instead>. The risk in your approach: <specific downside>.` — uncomfortable answer first, no warm-up prose. |
+| **Pushback protocol** | A factual *claim* is re-verified on pushback and held only while the evidence supports it (concede explicitly when it doesn't); a human *decision* is precedence layer 1 (`AGENTS.md` §6) — comply and record the dissent, never relitigate. |
+
+**Enforcement ceiling, stated honestly:** a live conversation turn is *instructed*, never
+gate-verified — only on-disk artifacts are linted (`interaction-lockstep`), and the M14 hooks
+*re-ground* the posture at phase boundaries and pre-PR checks. This is never marketed as a
+guarantee (ADR-0015/0016 posture); a host's own system prompt sits above `AGENTS.md`.
+
+**Tuning it:** the sycophancy denylist and confidence wording are overridable — drop a same-name
+`config/interaction.yaml` overlay (not shipped; create it the day you need it — see the override
+table in [`config/README.md`](../config/README.md)) to add your organization's own banned phrases
+or adjust the vocabulary. The `dissent:`/`pushback:` protocol blocks are the contract itself, not
+overlay surface — `pushback.human_decision` never relaxes.
+
+---
+
+## 9. Go deeper
 
 - [`AGENTS.md`](../../AGENTS.md) — the binding contract (source of truth).
 - [`orchestrator/`](../orchestrator/README.md) — the engine (interview, generate, placeholders, profiles, recovery).

@@ -102,12 +102,12 @@ def main():
     # --- the sweep does not choke on the REAL ledger (id continuation is live) ---
     with open(REAL_LESSONS, encoding="utf-8") as fh:
         real = fh.read()
-    check("known_ids finds the backfilled L-0003/L-0004 in the real ledger",
-          {"L-0003", "L-0004"} <= ls.known_ids(real), failures)
+    check("known_ids finds the backfilled L-0003/L-0004/L-0005 in the real ledger",
+          {"L-0003", "L-0004", "L-0005"} <= ls.known_ids(real), failures)
     live = ls.draft_entries([{"number": 300, "title": "x", "body": "Lesson: a brand new maxim",
                               "mergedAt": "2026-07-05T00:00:00Z"}], real, "2026-07-06")
     check("a new lesson continues after the real ledger's highest id",
-          live and live[0]["id"] == "L-0005", failures)
+          live and live[0]["id"] == "L-0006", failures)
 
     if failures:
         print("test-lesson-sweep: FAIL\n")

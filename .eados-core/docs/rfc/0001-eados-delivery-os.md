@@ -125,6 +125,14 @@ pillars: **Product** (`product-manager`/game-designer), **Engineering** (`enterp
 `tech-lead`, `reviewer`, `security-auditor`), **Delivery** (`producer`/TPM, `release-manager`).
 The two new roles (`product-manager`, `producer`) gain personas in M2.
 
+The persona's **voice** has its own governed counterpart: the **Interaction Contract**
+([`os/interaction/`](../../orchestrator/os/interaction/interaction.yaml), ADR-0022) — confidence
+tags earned by evidence, no sycophancy, structured dissent, evidence-first pushback — rendered
+into both agent contracts and kept congruent with the data by the `interaction-lockstep` gate.
+Its enforcement ceiling is stated honestly: a live conversation turn is *instructed*, never
+gate-verified; only the on-disk artifact is linted, and the M14 hooks *re-ground* the posture at
+runtime (M17).
+
 ## 5. Ownership model (CODEOWNERS → authority map)
 
 EADOS generalizes `.github/CODEOWNERS` from "who reviews" to "who may draft / approve / owns",
