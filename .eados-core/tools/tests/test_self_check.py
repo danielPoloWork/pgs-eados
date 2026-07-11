@@ -24,12 +24,13 @@ def check(label, cond, failures):
 def main():
     failures = []
     authority, git = sc._load(sc.AUTHORITY), sc._load(sc.GIT)
-    items = sc.preflight_checklist(authority, git)
+    interaction = sc._load(sc.INTERACTION)
+    items = sc.preflight_checklist(authority, git, interaction)
     qs = " | ".join(q for q, _ in items)
     srcs = " | ".join(s for _, s in items)
 
     # --- shape: a short, sourced, advisory checklist -------------------------
-    check("the checklist has 5–7 items", 5 <= len(items) <= 7, failures)
+    check("the checklist has 5–8 items", 5 <= len(items) <= 8, failures)
     check("every item carries a question and a source", all(q and s for q, s in items), failures)
 
     # --- each item is derived from (or cited to) its source of truth ---------
@@ -43,6 +44,23 @@ def main():
     check("the human draft/PR boundary item is present", "opens and merges" in qs, failures)
     check("English-on-disk is cited to AGENTS.md §2", "AGENTS.md §2" in srcs, failures)
     check("the precedence invariant is cited", "Precedence" in srcs, failures)
+
+    # --- the interaction contract is front-run (M17 17.4, #280): the operative rules re-asserted,
+    #     sourced from the real interaction spec + AGENTS.md §10 ------------------
+    check("the interaction item re-asserts the operative rules (calibrate / dissent template)",
+          "calibrate" in qs and "dissent template" in qs, failures)
+    check("the interaction item is sourced from the interaction spec + AGENTS.md §10",
+          "interaction:" in srcs and "AGENTS.md §10" in srcs, failures)
+    # Derived, not hardcoded: the source names the blocks the spec actually declares — a renamed
+    # block surfaces here rather than rotting (mirrors the git-metadata derivation proof below).
+    fake_ix = {"confidence": {"levels": ["x"]}, "dissent": {"template": "t"}}  # sycophancy/pushback absent
+    ix_src = " | ".join(s for _, s in sc.preflight_checklist({}, {}, fake_ix))
+    check("the interaction source names the blocks the spec declares (derived)",
+          "confidence" in ix_src and "dissent" in ix_src and "sycophancy" not in ix_src, failures)
+    # Absent spec -> the item is dropped (it depends on 17.2's contract existing, like every other
+    # spec-sourced item), so the two cited invariants remain the floor.
+    check("without the interaction spec the interaction item is dropped",
+          not any("interaction:" in s for _, s in sc.preflight_checklist(authority, git, None)), failures)
 
     # --- derivation proof: a NEW field added to the git spec flows straight through, nothing is
     #     hardcoded (mirrors the #221 fake-authority-terminus proof) -----------

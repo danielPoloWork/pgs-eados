@@ -37,3 +37,7 @@ issue body (see [`.issues/README.md`](../../../.issues/README.md)). It needs `gh
 
 Assessment only — `status` makes no change, proposes no transition, and runs no phase tool that
 writes. To *act*, use the phase command the readout points to (`/eados <phase>`), per `AGENTS.md` §6.
+
+**Calibrate the readout** (`AGENTS.md` §10): tag the health verdict's load-bearing calls by evidence
+(`certain`/`likely`/`guessing`, cite the check), and when the readout contradicts a move the
+maintainer is expecting, lead with the dissent — position / alternative / risk — not a soft opener.

@@ -62,12 +62,33 @@ def main():
     check("gh unauth -> not ok", not unauth["ok"], failures)
     check("gh unauth -> `gh auth login` hint", "gh auth login" in unauth["hint"], failures)
 
+    # --- interaction contract presence (advisory, #280) ---------------------
+    present = P.check_interaction_contract(root="/repo", exists=lambda p: True)
+    check("contract present -> ok", present["ok"], failures)
+    check("contract check is ALWAYS advisory (never required)", not present["required"], failures)
+    check("contract present -> detail points at AGENTS.md §10",
+          "AGENTS.md §10" in present["detail"], failures)
+    absent = P.check_interaction_contract(root="/repo", exists=lambda p: False)
+    check("contract absent -> not ok", not absent["ok"], failures)
+    check("contract absent -> still advisory (never required)", not absent["required"], failures)
+    check("contract absent -> a restore hint, not silence", "interaction.yaml" in absent["hint"], failures)
+    check("the probed path is the interaction spec under the given root",
+          P.INTERACTION_SPEC.endswith(os.path.join("interaction", "interaction.yaml")), failures)
+
     # --- composition: everything present + authed --------------------------
     good = dict(which=all_present, run=lambda cmd: (0, ""), version_info=(3, 12, 0), platform="linux")
     checks, healthy = P.preflight(**good)
     check("all present + authed -> healthy", healthy, failures)
     check("healthy run -> no failing required check",
           all(c["ok"] for c in checks if c["required"]), failures)
+    check("the interaction-contract check rides along in the composed checks",
+          any(c["name"] == "interaction-contract" for c in checks), failures)
+
+    # a MISSING interaction contract is advisory: it never flips the toolchain verdict --------
+    checks, healthy = P.preflight(exists=lambda p: False, **good)
+    ic = [c for c in checks if c["name"] == "interaction-contract"][0]
+    check("missing contract -> the check reports not-ok", not ic["ok"], failures)
+    check("missing contract -> healthy is UNCHANGED (advisory, not a gate)", healthy, failures)
 
     # --- git missing -> unhealthy; report names git with a usable hint ------
     def no_git(n):

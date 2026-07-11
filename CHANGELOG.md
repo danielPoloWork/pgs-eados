@@ -53,6 +53,25 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
   The `os/interaction/` directory stays covered by the existing `os/**` gate-coverage row (extended
   to name the new check). Runtime re-grounding follows in 17.4.
 
+- **Runtime reinforcement — the interaction contract is re-injected at the M14 hooks (#280, M17
+  17.4).** A contract read once at session start decays over a long run — the exact reason M14 built
+  re-grounding, pre-flight, and the pre-PR self-check. This closes the ADR-0022 *re-ground* tier so
+  the interaction posture is re-asserted the same way the workflow/authority/git non-negotiables
+  already are. Four surfaces, all **advisory** and all **spec-derived**: **(1)** `phase_runner.py`'s
+  re-grounding preamble (#221) gains an interaction line at every phase boundary — the confidence
+  vocabulary pulled from `interaction.yaml` (not hardcoded, so it cannot rot), the operative rules
+  pointing to `AGENTS.md` §10; **(2)** `self_check.py`'s pre-PR checklist front-runs the operative
+  rules as an added item, sourced from the blocks the policy actually declares (a renamed block
+  surfaces here, like the git-metadata derivation it sits beside); **(3)** `preflight.py` surfaces
+  the contract's on-disk *presence* — the section-presence half — as a note that never moves the
+  toolchain exit code; **(4)** the reply-shape commands (`status`, `review`, `plan`, `design`,
+  `audit`, and `init`'s hand-off) each carry a one-line calibration cue — confidence tag on the
+  verdict, dissent template on disagreement — and `init` maps the interview's `defaulted`/assumed
+  provenance (#169) to the `guessing` tag so questionnaire and chat share one vocabulary. No tool
+  grows behavior beyond the checks; live chat stays *instructed*, not gated (the honest ADR-0022
+  ceiling). Tests updated across `self_check` / `preflight` / `phase_runner`, all discovered so they
+  run in CI. The capstone (USAGE / README / delivery record) follows in 17.5.
+
 - **Honor-system hardening — the gate model grows teeth on four fronts (#250, M15 Wave 3,
   closing the milestone; the 0010 residuals).** The "gate-enforced pipeline" claim still leaned
   on trust in places, and the risk grows once real user code flows through the M15 commands.
