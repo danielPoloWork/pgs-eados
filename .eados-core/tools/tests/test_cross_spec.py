@@ -3,7 +3,7 @@
 ACROSS the delivery-OS specs. Pure-function tests on cross_spec_problems() with in-memory
 fixtures: a complete clean spec set has no problems, and every kind of dangling cross-reference
 (role / state / gate / overlay / level / domain / cross-cutting git gate / contribution decider +
-disposition) is caught. Dependency-free.
+disposition / interaction escalation ladder) is caught. Dependency-free.
 
     python .eados-core/tools/tests/test_cross_spec.py
 """
@@ -158,6 +158,25 @@ def main():
               el.cross_spec_problems(*clean(), None, contrib(disposition="made-up"))), failures)
     check("contribution is optional — a None yields no problems",
           el.cross_spec_problems(*clean(), None, None) == [], failures)
+
+    # M17 17.3 (#279): the interaction spec's conversation-external escalation pointer resolves to
+    # the authority spec's escalation ladder (data ref, precedent: the git gate-ref above).
+    ladder = {"dissent": {"escalation_ladder": "authority"}}
+    check("a resolved interaction escalation_ladder is accepted",
+          el.cross_spec_problems(*clean(), None, None, ladder) == [], failures)
+    check("a typo'd interaction escalation_ladder is caught",
+          any("escalation_ladder" in prob and "authoritee" in prob for prob in
+              el.cross_spec_problems(*clean(), None, None,
+                                     {"dissent": {"escalation_ladder": "authoritee"}})), failures)
+    a, w, p, r, rk, d = clean()
+    a["escalation"] = []   # the named spec exists but declares no ladder to resolve to
+    check("escalation_ladder naming authority with no ladder is caught",
+          any("no escalation ladder" in prob for prob in
+              el.cross_spec_problems(a, w, p, r, rk, d, None, None, ladder)), failures)
+    check("interaction is optional — a None yields no problems",
+          el.cross_spec_problems(*clean(), None, None, None) == [], failures)
+    check("interaction without the pointer yields no problems",
+          el.cross_spec_problems(*clean(), None, None, {"dissent": {}}) == [], failures)
 
     # Robustness: a missing/unparseable core spec is left to os-spec-completeness, not double-reported.
     check("a None workflow yields no problems (deferred to os-spec-completeness)",

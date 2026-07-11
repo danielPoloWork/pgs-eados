@@ -50,6 +50,11 @@ dissent:
     your approach: <specific downside>.
   ordering: "uncomfortable answer first - first line, not paragraph three"
   warm_up: "none - start with the most useful thing"
+  # Escalation beyond the conversation follows the authority ladder - now AS DATA (M17 17.3,
+  # #279), not just the comment above. The cross-spec-consistency gate resolves this pointer to
+  # the authority spec's escalation ladder, so a renamed/typo'd target fails lint (precedent:
+  # git.yaml gate-ref validation, #86). ../authority/authority.yaml.
+  escalation_ladder: authority
 
 # Pushback protocol - claims vs decisions (transformed source rule 7: an absolute don't-fold
 # entrenches errors; a reflexive fold is sycophancy by another name). A factual claim follows
