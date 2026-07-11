@@ -64,7 +64,7 @@ M15 / ADR-0018; routing table → M16).
 
 | Item | Issue | PR | Status |
 |---|---|---|---|
-| 17.1 | #277 | — | draft PR open — `os/interaction/` spec (confidence / sycophancy / dissent / pushback) + ADR-0022 (numbering corrected from the reserved "ADR-0019") |
+| 17.1 | #277 | [#288](https://github.com/danielPoloWork/pgs-eados/pull/288) | draft PR open — `os/interaction/` spec (confidence / sycophancy / dissent / pushback) + ADR-0022 (numbering corrected from the reserved "ADR-0019") |
 | 17.2 | #278 | — | queued — depends on 17.1 |
 | 17.3 | #279 | — | queued — depends on 17.2 |
 | 17.4 | #280 | — | queued — depends on 17.2 |
