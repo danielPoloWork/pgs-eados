@@ -5,9 +5,16 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
 
 ## [Unreleased]
+
+## [2.9.0] - 2026-07-11
+
+M15 (command surface & governed assistants) + M16 (model & effort routing) + M17 (interaction
+contract & confidence calibration) — a minor, additive roll-up: new `/eados` command surface and
+governed assistant modes, advisory model/effort routing as data, and the ninth OS spec governing
+how the agent communicates (calibrated confidence, no sycophancy, structured dissent).
 
 ### Added
 
