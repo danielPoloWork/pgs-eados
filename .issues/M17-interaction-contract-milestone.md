@@ -1,6 +1,6 @@
 # Milestone M17 — Interaction Contract & Confidence Calibration
 
-**Status:** planned · **Predecessor:** none hard — the M14 runtime hooks it plugs into shipped in
+**Status:** in progress · **Predecessor:** none hard — the M14 runtime hooks it plugs into shipped in
 v2.8.0; interleaves with the open M15/M16 tails at the owner's discretion
 **Owner:** `@danielPoloWork` · **Planned:** 2026-07-11
 
@@ -19,7 +19,10 @@ M15 / ADR-0018; routing table → M16).
 
 1. **Transformed, not verbatim.** Two source rules are counterproductive as written: "never start
    with agreement" forces contrarianism (manufactured challenges devalue real ones), and an
-   absolute "don't fold" entrenches errors. ADR-0019 records every delta (disposition table below).
+   absolute "don't fold" entrenches errors. ADR-0022 records every delta (disposition table below).
+   *(Numbering correction: this plan originally reserved "ADR-0019", consumed meanwhile by the
+   command-surface taxonomy — numbering is sequential and never reused, so the decision lands as
+   ADR-0022.)*
 2. **The enforcement ceiling is stated honestly.** Three tiers: *instruct* (live chat — no gate can
    verify a conversation turn), *verify* (on-disk artifacts, lint), *re-ground* (M14 runtime
    hooks). Never marketed as a guarantee — ADR-0015/0016 honesty posture.
@@ -34,7 +37,7 @@ M15 / ADR-0018; routing table → M16).
    the evidence holds, concede explicitly when wrong. A human *decision* is precedence layer 1
    (`os/README.md`): comply and record the dissent. The precedence order is untouched.
 
-## Source ruleset → disposition (feeds 17.1 / ADR-0019)
+## Source ruleset → disposition (feeds 17.1 / ADR-0022)
 
 | # | Source rule (owner ruleset, 2026-07-11) | Disposition | As adopted |
 |---|---|---|---|
@@ -51,7 +54,7 @@ M15 / ADR-0018; routing table → M16).
 
 | Item | Issue | Title | Effort | Routing |
 |---|---|---|---|---|
-| 17.1 | [#277](https://github.com/danielPoloWork/pgs-eados/issues/277) | Interaction policy as data + ADR-0019 (`os/interaction/` — confidence / sycophancy / dissent / pushback) | M | frontier-reasoning / high (decision-heavy, sets-pattern) |
+| 17.1 | [#277](https://github.com/danielPoloWork/pgs-eados/issues/277) | Interaction policy as data + ADR-0022 (`os/interaction/` — confidence / sycophancy / dissent / pushback) | M | frontier-reasoning / high (decision-heavy, sets-pattern) |
 | 17.2 | [#278](https://github.com/danielPoloWork/pgs-eados/issues/278) | Render the Interaction Contract into every agent surface (`AGENTS.md.tmpl`, factory `AGENTS.md`, `agent/README` pointer) | M | standard / medium |
 | 17.3 | [#279](https://github.com/danielPoloWork/pgs-eados/issues/279) | Gates: `interaction-lockstep` + gate-coverage entries + cross-spec refs | S | standard / medium |
 | 17.4 | [#280](https://github.com/danielPoloWork/pgs-eados/issues/280) | Runtime reinforcement: pre-flight / self-check / re-grounding + command reply-shape cues | M | standard / high |
@@ -61,7 +64,7 @@ M15 / ADR-0018; routing table → M16).
 
 | Item | Issue | PR | Status |
 |---|---|---|---|
-| 17.1 | #277 | — | queued |
+| 17.1 | #277 | — | draft PR open — `os/interaction/` spec (confidence / sycophancy / dissent / pushback) + ADR-0022 (numbering corrected from the reserved "ADR-0019") |
 | 17.2 | #278 | — | queued — depends on 17.1 |
 | 17.3 | #279 | — | queued — depends on 17.2 |
 | 17.4 | #280 | — | queued — depends on 17.2 |
@@ -70,7 +73,7 @@ M15 / ADR-0018; routing table → M16).
 ## Out of scope (invariants)
 
 - **Guaranteed live-chat compliance** — no gate can verify a conversation turn; the OS instructs,
-  verifies artifacts, and re-grounds (the ADR-0019 ceiling). Claiming more would be dishonest.
+  verifies artifacts, and re-grounds (the ADR-0022 ceiling). Claiming more would be dishonest.
 - **Per-activity interaction modules** — review/debug/optimize interaction shapes belong to the
   commands and personas that own those activities (M8, M15), not to this spec.
 - **Overriding the host harness** — a host's own system prompt sits above `AGENTS.md`; the
