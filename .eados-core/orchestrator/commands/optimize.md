@@ -15,7 +15,7 @@ recorded, or the run does not proceed.
 - **A manifest is required (ADR-0019 boundary).** The command runs only against an initialized
   project — a repository whose manifest carries `delivery_state`. Pasted or standalone code is
   **refused and routed**: greenfield → [`/eados init`](init.md); an existing ungoverned repository
-  → `/eados adopt` (#247; until it ships, `init`'s intake is the front door). A plain *question*
+  → [`/eados adopt`](adopt.md) (#247 — the brownfield intake). A plain *question*
   about code stays the Step-0 triage question route (`0-question` in
   [`../triage.yaml`](../triage.yaml) — answered directly, no command run).
 - **A numeric target.** The goal is a **number** from spec §3's non-functional budgets or the

@@ -128,6 +128,12 @@ placeholder は推測ではなくハードエラーです。
 | **`audit`** | 継続的リスクスコアリング + 強制トレーサビリティ lint。 | `traceability-lint`、リスク閾値 |
 | **`migrate`** | 既存リポジトリを、ゲート付き・サンドボックス化・**追加方式**の PR で標準へ。 | 書き込み制限サンドボックス |
 
+**既存の**コードベースは
+[`/eados adopt`](../../../../.eados-core/orchestrator/commands/adopt.md) から入ります ——
+ブラウンフィールドの受け入れ口：読み取り専用のギャップマップ、ゴールメニュー（ドキュメント /
+逆設計 / 監査 / 移行 / バグ修正）、そして `adoption:` 記録を持つ manifest により
+`init → audit` / `init → migrate` が合法かつ人間のゲート付きのルートになります。
+
 詳細は [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) と
 [コマンド・プレイブック](../../../../.eados-core/orchestrator/commands/README.md) に。横断的な六つの
 コマンドはどのフェーズでも使えます：[`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)

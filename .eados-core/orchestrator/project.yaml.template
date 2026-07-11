@@ -22,6 +22,14 @@ delivery_state:
   checkpoints: []            # [{from, to, gates, at, confirmed_by}] — the transition ledger (#199):
                              # a legal, contiguous chain ending at `phase`; human-gated moves carry confirmed_by
   refs: { rfcs: [], milestones: [], prs: [], releases: [] }   # cross-link ids, not content
+# adoption is the OPTIONAL brownfield record /eados adopt writes (#247, ADR-0021) — never for a
+# greenfield project. goals ⊆ governance-docs|retro-design|audit|migrate|bugfix (the closed menu);
+# gap_map_ref names where the read-only brownfield.py report was captured; provenance records how
+# each answer was settled (asked|defaulted|imported — its provenance lives HERE, not in interview.provenance).
+# adoption:
+#   goals: [audit, migrate]
+#   gap_map_ref: orchestrator/adoption-gap-map.md
+#   provenance: { goals: asked, gap_map_ref: imported }
 
 identity:
   project_name:    ""        # Repository name (e.g. pbr-cpp-memory-pool). -> {{PROJECT_NAME}}

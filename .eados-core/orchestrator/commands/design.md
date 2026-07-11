@@ -7,7 +7,8 @@ product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review
 ## Preconditions
 
 - The manifest exists with `delivery_state.phase: init` (from [`/eados init`](init.md)).
-  `phase_runner.py <manifest>` reports `-> design` as the legal move.
+  `phase_runner.py <manifest>` reports `-> design` as the default legal move (the adoption
+  edges it also lists stay NOT READY without an `adoption:` block, #247).
 
 ## Procedure
 

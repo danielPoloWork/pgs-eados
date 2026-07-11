@@ -32,13 +32,24 @@ def main():
     check("current_phase tolerates malformed delivery_state",
           pr.current_phase({"delivery_state": "oops"}) == "init", failures)
 
-    # --- legal_transitions: the entry phase ---
+    # --- legal_transitions: the entry phase forks (#247, ADR-0021) — the ordinary pipeline edge
+    #     plus the two brownfield adoption edges, all human-gated ---
     init = pr.legal_transitions(wf, "init")
-    check("init -> exactly one transition", len(init) == 1, failures)
-    check("init -> design", init and init[0].get("to") == "design", failures)
-    check("init -> design is human-gated", init and init[0].get("human_gate") is True, failures)
+    by_to = {t.get("to"): t for t in init}
+    check("init -> {design, audit, migrate} (the adoption fork, ADR-0021)",
+          set(by_to) == {"design", "audit", "migrate"}, failures)
+    check("init -> design stays first in declared order (the greenfield default)",
+          init and init[0].get("to") == "design", failures)
+    check("init -> design is human-gated", by_to.get("design", {}).get("human_gate") is True,
+          failures)
     check("init -> design gate is manifest-valid",
-          init and init[0].get("entry_gates") == ["manifest-valid"], failures)
+          by_to.get("design", {}).get("entry_gates") == ["manifest-valid"], failures)
+    for target in ("audit", "migrate"):
+        t = by_to.get(target, {})
+        check(f"init -> {target} is human-gated (it changes committed direction)",
+              t.get("human_gate") is True, failures)
+        check(f"init -> {target} is gated on manifest-valid + adoption-recorded",
+              t.get("entry_gates") == ["manifest-valid", "adoption-recorded"], failures)
 
     # --- plan is a fork: forward to scaffold + resumable back to design ---
     plan = {t.get("to") for t in pr.legal_transitions(wf, "plan")}

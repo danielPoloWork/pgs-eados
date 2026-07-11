@@ -79,10 +79,15 @@ EADOS status - project.yaml
   phase: init   (role: enterprise-architect; produces: manifest)
   legal next transitions:
     -> design   (gates: manifest-valid)  [human-gated]
+    -> audit    (gates: manifest-valid, adoption-recorded)  [human-gated]
+    -> migrate  (gates: manifest-valid, adoption-recorded)  [human-gated]
   refs: rfcs=['RFC-0001']; milestones=['1']
   roadmap-covers-rfcs: OK (RFC-0001 -> M1)
   traceability-lint: OK - the graph is whole
 ```
+
+(The `-> audit` / `-> migrate` rows are the brownfield adoption edges, #247/ADR-0021 — listed
+everywhere, NOT READY for this greenfield project since its manifest has no `adoption:` block.)
 
 ---
 
@@ -96,6 +101,8 @@ $ python .eados-core/tools/phase_runner.py project.yaml
 current phase: init
 legal next transitions:
   -> design   (gates: manifest-valid)  [human-gated — the owner confirms]
+  -> audit    (gates: manifest-valid, adoption-recorded)  [human-gated — the owner confirms]
+  -> migrate  (gates: manifest-valid, adoption-recorded)  [human-gated — the owner confirms]
 ```
 
 In `design` you (or the agent) author the RFC from the template, then the **`rfc-approved`** gate

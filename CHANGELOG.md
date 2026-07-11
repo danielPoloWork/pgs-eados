@@ -11,6 +11,46 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **`/eados adopt` — the brownfield adoption intake ships; `init → audit`/`init → migrate`
+  become legal by data (#247, M15 Wave 3; ADR-0021 — new).** The pieces for brownfield existed
+  (the installers default to `--mode existing`; `migrate` maps gaps read-only and migrates via
+  sandboxed PRs; the Wave-2 commands *refuse and route* ungoverned repos to `/eados adopt`) but
+  **nothing greeted a maintainer who just installed EADOS into an existing codebase** — and the
+  route the refusals pointed at did not exist. Now, per **ADR-0021** (new, indexed):
+  **(1) the intake** — `orchestrator/commands/adopt.md`, `init`'s brownfield sibling
+  (enterprise-architect-owned; an intake, **never a phase** — the ADR-0019 §1 state set is
+  unchanged and the manifest lands at `phase: init`): preflight + detect (git history, source
+  tree) → the **read-only gap map** (`brownfield.py`, captured beside the manifest as
+  `adoption-gap-map.md`) → the **goal menu** (`governance-docs` / `retro-design` / `audit` /
+  `migrate` / `bugfix`, conducted in the maintainer's language per §2) → the manifest's
+  **`adoption:` block** (goals + `gap_map_ref` + its own provenance) → the goal's route proposed
+  (earliest pipeline target wins: `design < audit < migrate`; `bugfix` hands off to
+  `/eados debug`, whose ADR-0019 precondition the new manifest satisfies). Worked fixture example
+  included. **(2) the route, as data** — `workflow.yaml` gains `init → audit` and
+  `init → migrate`, both human-gated and gated on `manifest-valid` + the new
+  **`adoption-recorded`** gate; no tool special-cases adoption (`_schema.md` invariant added;
+  the checkpoint-chain validator honors the new edges automatically). Domain-overlay gates
+  targeting `audit` attach to `init → audit` via `apply_overlay` — intended: an adopted web/game/
+  mobile repo meets the same domain bar. **(3) the gate, wired in-process** — `eados.py` gains
+  the `adoption-recorded` evaluator: **absent block → `skipped`** (a greenfield project is not
+  applicable — every ordinary `init` run stays green and the adoption edges are invisible to it),
+  malformed → `FAIL`, valid → `OK`. An `external`/`manual` wiring was rejected as decorative
+  (`manual` always satisfies the checkpoint validator — the honor-system gap #199/#213 closed).
+  **(4) the manifest** — `render.py` admits the optional `adoption:` section (`KNOWN_SECTIONS`;
+  `PROVENANCE_EXEMPT` since its provenance lives inside) and validates it via the new
+  `adoption_problems()` — goals from the **closed menu**, non-empty; `gap_map_ref` required;
+  per-key provenance from `asked|defaulted|imported` — one source of truth shared by
+  `validate_manifest` and the gate evaluator; `project.yaml.template` documents the block.
+  **(5) the surface** — the `commands/README.md` row + the `/eados:adopt` pointer adapter ship;
+  the four Wave-2 command files flip their "until it ships" parentheticals to the live route;
+  `init.md`/`interview.md` gain the brownfield fork pointers; the `enterprise-architect` persona
+  gains the adoption operating mode; RFC-0001's §3 diagram (+ `eados-flow.mmd`) gains the two
+  dotted adoption edges; `triage.yaml` gains an adoption example; the root README (+ zh-Hans/ja,
+  hash re-pinned) names the second front door. Guarded by the new **`test_adopt_command.py`**
+  (procedure + adapter, edges + gate data, evaluator `skipped`/`FAIL`/`OK`, validator
+  accept/reject, chain legality incl. the unconfirmed-move rejection, greenfield untouched) and
+  the rewritten `test_phase_runner.py` init-fork assertions.
+
 - **`/eados testcases` — governed test generation ships; the first QA-owned code command
   (#246, M15 Wave 2; ADR-0019 class 3, follows the #242 pattern) — completing Wave 2's
   cross-cutting class.** `testcases` was a **true gap**: no test-generation command existed

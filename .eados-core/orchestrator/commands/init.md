@@ -1,7 +1,10 @@
 # `/eados init` — initialize a governed project
 
 The **entry command** of the pipeline. It frames the project and writes the initial manifest so
-every later phase has state to read. Owned by the **enterprise-architect** role.
+every later phase has state to read. Owned by the **enterprise-architect** role. `init` frames a
+**new** project — for a repository that already has code and history, its brownfield sibling
+[`/eados adopt`](adopt.md) (#247, ADR-0021) is the front door: gap map → goal menu → a legal
+route into `design`/`audit`/`migrate`.
 
 ## Housekeeping (first run)
 
@@ -40,9 +43,12 @@ python .eados-core/tools/cleanup_installer.py . --apply  # remove them
    ```bash
    python .eados-core/tools/phase_runner.py orchestrator/project.yaml
    ```
-   At `phase: init` it reports the one legal transition, `-> design` (gate `manifest-valid`,
-   **human-gated**). Surface the preflight verdict from step 1 in the hand-off so the maintainer
-   sees the environment is ready (or what to fix) alongside the next move.
+   At `phase: init` it reports `-> design` (gate `manifest-valid`, **human-gated**) — the
+   greenfield default — plus the two adoption edges (`-> audit`, `-> migrate`), which stay
+   NOT READY for an ordinary project (their `adoption-recorded` gate reads `skipped` without the
+   `adoption:` block only [`/eados adopt`](adopt.md) writes). Surface the preflight verdict from
+   step 1 in the hand-off so the maintainer sees the environment is ready (or what to fix)
+   alongside the next move.
 6. **Hand off** — the maintainer chooses the next phase:
    - the **delivery pipeline** → `/eados design` (authoring RFCs; lands in M2); or
    - the **classic one-shot path** → finish the full interview (Phases 1–5) and `/eados scaffold`

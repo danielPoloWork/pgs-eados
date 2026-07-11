@@ -55,3 +55,8 @@ domain_overlays:    # per-domain adaptations (insert/remove states, add gates, r
 - `scaffold` is the only state that renders the repository (today's factory); it reads the
   manifest like every other phase and writes files — it never calls another phase directly,
   so generation stays decoupled from governance (they share state via the manifest only).
+- `init` may fork directly to `audit` or `migrate` **only** on the brownfield adoption route
+  (#247, ADR-0021): both edges are gated on `adoption-recorded`, which is `skipped` unless the
+  manifest carries the `adoption:` block `/eados adopt` writes — the edges are listed for every
+  manifest but never takeable by an ordinary greenfield project. Adoption is intake data, never
+  a state: the state set stays the closed ADR-0019 §1 sequence.

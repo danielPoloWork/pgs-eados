@@ -173,6 +173,8 @@ KNOWN_SECTIONS = {
     "delivery_state",   # EADOS persistent delivery state (M1-B); state, not a placeholder source
     "interview",        # interview provenance — asked|defaulted|imported per answer key (#169);
                         # state for the confirmation step + the learning loop, never a placeholder source
+    "adoption",         # brownfield adoption record — goals + gap_map_ref + its own provenance
+                        # (#247, ADR-0021); state written by /eados adopt, never a placeholder source
 }
 
 # Known top-level SCALARS (not sections). `schema_version` versions the manifest schema for
@@ -187,10 +189,63 @@ KNOWN_SCALARS = {"schema_version", "domain", "manifest_rev"}
 _PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 
 # Top-level keys that carry no interview answer, so need no provenance entry: the schema version
-# (system metadata) and the two state/meta sections. EVERY other top-level key present in the
+# (system metadata) and the state/meta sections. EVERY other top-level key present in the
 # manifest must appear in interview.provenance (#201) — a partial block silently starves override
 # derivation (derive_overrides treats an unrecorded key exactly like an explicitly `defaulted` one).
-PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview"}
+# `adoption` is exempt because its provenance lives INSIDE the block (#247, ADR-0021 §2).
+PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview", "adoption"}
+
+# The brownfield adoption goal menu (#247, ADR-0021): what a maintainer may ask of an adopted
+# repository. Closed — extending it takes an ADR, like every command-surface class (ADR-0019).
+_ADOPTION_GOALS = {"governance-docs", "retro-design", "audit", "migrate", "bugfix"}
+_ADOPTION_KEYS = {"goals", "gap_map_ref", "provenance"}
+
+
+def adoption_problems(adoption):
+    """Shape problems of a manifest's `adoption:` block (#247, ADR-0021): `goals` (non-empty,
+    from the closed menu), `gap_map_ref` (where the read-only brownfield.py report was captured),
+    and its own `provenance` sub-block (the section is PROVENANCE_EXEMPT — its provenance lives
+    here, like delivery_state's state lives inside delivery_state). One source of truth for the
+    shape: validate_manifest calls it when the section is present, and eados.py's
+    `adoption-recorded` gate evaluator calls it directly."""
+    problems = []
+    if not isinstance(adoption, dict):
+        return ["adoption must be a mapping (goals, gap_map_ref, provenance)"]
+    for key in sorted(adoption):
+        if key not in _ADOPTION_KEYS:
+            problems.append(f"adoption.{key} is not a recognized key (expected one of: "
+                            f"{', '.join(sorted(_ADOPTION_KEYS))})")
+    goals = adoption.get("goals")
+    if not isinstance(goals, list) or not goals:
+        problems.append("adoption.goals must be a non-empty list drawn from "
+                        f"{'|'.join(sorted(_ADOPTION_GOALS))} (ADR-0021)")
+    else:
+        for goal in goals:
+            # isinstance guard: a hand-edited nested mapping is unhashable — it must land as a
+            # problem string, never a TypeError traceback (the gate's malformed -> FAIL contract).
+            if not isinstance(goal, str) or goal not in _ADOPTION_GOALS:
+                problems.append(f"adoption.goals contains {goal!r} — not in the closed menu "
+                                f"{'|'.join(sorted(_ADOPTION_GOALS))} (ADR-0021)")
+    if not str(adoption.get("gap_map_ref") or "").strip():
+        problems.append("adoption.gap_map_ref is missing or empty — record where the "
+                        "brownfield.py gap map was captured")
+    prov = adoption.get("provenance")
+    if not isinstance(prov, dict) or not prov:
+        problems.append("adoption.provenance must be a non-empty mapping of adoption "
+                        "answer key -> asked|defaulted|imported")
+    else:
+        for key in sorted(prov):
+            if key not in _ADOPTION_KEYS - {"provenance"}:
+                problems.append(f"adoption.provenance names '{key}' which is not an adoption "
+                                "answer key (goals, gap_map_ref)")
+            # isinstance guard: an unhashable (nested-mapping) value must be a problem, not a crash.
+            if not isinstance(prov[key], str) or prov[key] not in _PROVENANCE_VALUES:
+                problems.append(f"adoption.provenance['{key}'] must be one of "
+                                f"asked|defaulted|imported, got {prov[key]!r}")
+        if "goals" not in prov:
+            problems.append("adoption.provenance has no entry for 'goals' — the elicited "
+                            "goal-menu answer must record how it was settled (#201 discipline)")
+    return problems
 
 # Scalars without which the generated repo is structurally broken (blank title, no owner,
 # no license, nowhere to put source). build_context defaults every scalar to "", so without
@@ -316,6 +371,12 @@ def validate_manifest(m, scalars):
                     "interview.provenance is incomplete — no entry for "
                     f"{', '.join(missing)}; record every answer key (an unrecorded section is "
                     "silently treated as defaulted and derives no override, #201)")
+    # #247 / ADR-0021: the brownfield adoption block is state + elicited answers with a fixed
+    # shape — a malformed block would silently defeat the `adoption-recorded` gate it feeds.
+    # Optional (greenfield manifests pass); when present it must be honest. Non-dict values are
+    # already rejected by the generic section-must-be-a-mapping check above.
+    if isinstance(m.get("adoption"), dict):
+        problems += adoption_problems(m["adoption"])
     # #199: delivery-state consistency. `delivery_state.checkpoints` must be a legal, contiguous
     # transition chain ending at the current phase, and a human-gated move must carry a
     # `confirmed_by:` — so `phase: scaffold` can no longer be asserted without the intervening

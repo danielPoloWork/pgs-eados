@@ -6,7 +6,8 @@ This is the deterministic spine underneath it: `eados.py <phase> <manifest>` run
 **outgoing-transition entry gates** — the gates you must satisfy to leave the phase, read straight
 from [`workflow.yaml`](../orchestrator/os/workflow/workflow.yaml) (knowledge as data, no hardcoded
 chain) — evaluating the ones it can compute from the project (`manifest-valid`, `rfc-approved`,
-`roadmap-covers-rfcs`) and marking the rest `[manual]` / `[needs-input]`. It then prints the legal
+`roadmap-covers-rfcs`, `adoption-recorded`) and marking the rest `[manual]` / `[needs-input]`. It
+then prints the legal
 next transitions and points at the procedure for the authoring + human-gated steps. `eados.py status`
 is the read-only doctor ([`doctor.py`](doctor.py)).
 
@@ -69,10 +70,25 @@ def _ev_roadmap_covers(manifest, ctx):
     return ("FAIL", f"uncovered: {', '.join(uncovered)}") if uncovered else ("OK", "")
 
 
+def _ev_adoption_recorded(manifest, ctx):
+    """The brownfield adoption gate (#247, ADR-0021). Absent block -> `skipped` (a greenfield
+    project is genuinely not applicable — `eados.py init` must stay green for every ordinary
+    manifest, since run_phase unions the gates of ALL outgoing init edges); present-but-malformed
+    -> FAIL (render.adoption_problems owns the shape rules); valid -> OK."""
+    adoption = manifest.get("adoption") if isinstance(manifest, dict) else None
+    if adoption is None:
+        return ("skipped", "no adoption block — a greenfield project; /eados adopt records one")
+    problems = render.adoption_problems(adoption)
+    if problems:
+        return ("FAIL", f"{len(problems)} problem(s) (e.g. {problems[0]})")
+    return ("OK", "")
+
+
 GATE_EVALUATORS = {
     "manifest-valid": _ev_manifest_valid,
     "rfc-approved": _ev_rfc_approved,
     "roadmap-covers-rfcs": _ev_roadmap_covers,
+    "adoption-recorded": _ev_adoption_recorded,   # brownfield adoption (#247, ADR-0021)
 }
 
 # The procedure a phase points at for its authoring + human-gated steps.

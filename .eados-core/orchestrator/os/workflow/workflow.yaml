@@ -52,6 +52,20 @@ transitions:
     to: design
     entry_gates: [manifest-valid]
     human_gate: false
+  # Brownfield adoption route (#247, ADR-0021): an ADOPTED repo — manifest written by
+  # /eados adopt with an `adoption:` block — may enter audit or migrate directly from init,
+  # gated on the recorded adoption (adoption-recorded is `skipped` for greenfield manifests —
+  # the edges are listed but NOT READY, never takeable). Note: domain-overlay gates whose
+  # required_for includes audit attach to init->audit too (apply_overlay) — intended: an
+  # adopted web/game/mobile repo entering audit meets the same domain bar as a generated one.
+  - from: init
+    to: audit
+    entry_gates: [manifest-valid, adoption-recorded]
+    human_gate: true
+  - from: init
+    to: migrate
+    entry_gates: [manifest-valid, adoption-recorded]
+    human_gate: true
 
 # The gate registry. lint/test/security/build/human/manual share one shape, so the checker
 # treats them uniformly. `wired: in-process` marks the gates `eados.py` evaluates via its
@@ -96,6 +110,17 @@ gates:
     wired: external
     blocking: true
     required_for: [migrate]
+  # Adoption gate (#247, ADR-0021): the manifest records a valid `adoption:` block (goals from
+  # the closed menu + gap_map_ref + provenance) — written by /eados adopt, validated in-process
+  # by eados.py (`skipped` when the block is absent: a greenfield project is not applicable;
+  # FAIL when present-but-malformed). Deliberately NOT external/manual: a manual mark always
+  # satisfies the checkpoint validator, which would make this gate decorative (ADR-0021 §4).
+  - id: adoption-recorded
+    kind: lint
+    runs: "python .eados-core/tools/eados.py init <manifest>"
+    wired: in-process
+    blocking: true
+    required_for: [audit, migrate]
   # Cross-cutting CI gate (NOT a phase-transition gate): it runs on every PR / in `audit`, not as a
   # precondition for one transition — hence `required_for: []`. Registered here so it is the single
   # source of gate ids; referenced by git.yaml's `traceability.gate` and validated by eados_lint's

@@ -122,6 +122,11 @@ generation runs `/eados scaffold` and ignores the rest.
 | **`audit`** | Continuous risk scoring + the enforced traceability lint. | `traceability-lint`, risk threshold |
 | **`migrate`** | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. | write-contained sandbox |
 
+An **existing** codebase enters through
+[`/eados adopt`](.eados-core/orchestrator/commands/adopt.md) — the brownfield intake: a read-only
+gap map, a goal menu (docs / retro-design / audit / migrate / bugfix), and a manifest whose
+`adoption:` record makes `init → audit` / `init → migrate` legal, human-gated routes.
+
 Full detail is in [`USAGE.md`](.eados-core/docs/USAGE.md) and the
 [command playbooks](.eados-core/orchestrator/commands/README.md). Six cross-cutting commands work
 in any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor),
