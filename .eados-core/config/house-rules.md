@@ -1,7 +1,7 @@
 <!--
 Organization house rules. Anything below the marker line is copied verbatim into every
-generated repository's AGENTS.md as "§13 Organization House Rules" (it wins over a conflicting
-default). Leave it empty to emit no §13. Write rules in English (the on-disk rule applies).
+generated repository's AGENTS.md as "§14 Organization House Rules" (it wins over a conflicting
+default). Leave it empty to emit no §14. Write rules in English (the on-disk rule applies).
 
 Examples you might add:
   - All PRs require two approving reviews before merge.

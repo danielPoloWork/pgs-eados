@@ -11,7 +11,7 @@ default. A blank/omitted overlay value falls through to the next layer.
 | File | Effect |
 |---|---|
 | [`defaults.yaml`](defaults.yaml) | Pre-fills the interview's answers — default branch, license, group path, coverage target, commit scopes, i18n defaults. The architect uses these instead of the built-in defaults and still echoes them back for confirmation. |
-| [`house-rules.md`](house-rules.md) | Organization-specific rules **injected into every generated `AGENTS.md`** as §13 (via `{{HOUSE_RULES}}`). Where a house rule conflicts with a default, the house rule wins. Empty by default (no §13 is emitted). |
+| [`house-rules.md`](house-rules.md) | Organization-specific rules **injected into every generated `AGENTS.md`** as §14 (via `{{HOUSE_RULES}}`). Where a house rule conflicts with a default, the house rule wins. Empty by default (no §14 is emitted). |
 | `agents/` | Drop custom role agents here, or a file overriding a shipped one (same name). They take precedence over [`../agent/`](../agent/README.md). Worked example: [`agents/example-role.md`](agents/example-role.md) — copy its shape, fill it in, and register it with a two-line `authority.yaml` record; no tool source reading required. |
 | `interaction.yaml` | Tunes the [interaction policy](../orchestrator/os/interaction/_schema.md) (ADR-0022) — same-name overlay over `orchestrator/os/interaction/interaction.yaml` for the `sycophancy:` denylist and `confidence:` wording (e.g. your organization's own banned-opener list). The `dissent:`/`pushback:` protocol blocks are the contract, not overlay surface — and `pushback.human_decision` never relaxes (precedence layer 1 sits above every spec). Not shipped; create it the day you need it. |
 
@@ -19,7 +19,7 @@ default. A blank/omitted overlay value falls through to the next layer.
 
 1. The architect loads `defaults.yaml` and uses it to pre-fill the interview.
 2. It copies the body of `house-rules.md` (if non-empty) into the manifest's
-   `governance.house_rules`, which the renderer emits as `AGENTS.md` §13.
+   `governance.house_rules`, which the renderer emits as `AGENTS.md` §14.
 3. Custom `agents/` are offered alongside the shipped registry.
 
 Nothing here is secret — keep tokens/webhooks out of these files (use CI secrets). Overlays are
