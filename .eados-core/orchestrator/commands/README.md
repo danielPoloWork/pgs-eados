@@ -94,6 +94,17 @@ never adds behavior); and an adapter matching neither (a planned command/alias s
 deleted row) is an orphan failure — a new command cannot ship undiscoverable, and a planned one
 cannot jump the queue.
 
+**Routing hook — delegated sub-tasks carry a routed model + effort (#255, M16 16.4).** Surfacing a
+command is one adapter job; the second is **applying** the model & effort routing (ADR-0017) when a
+command **delegates** a sub-task. On a host with per-delegation model control (Claude Code's
+Agent-tool `model:` parameter and subagent-definition `model:` frontmatter), the adapter resolves
+the sub-task's route via [`route_advice.py`](../../tools/route_advice.py) and passes the concrete
+model + effort with the delegation; on a host without it, the hook **degrades to advisory-only** —
+it states the route and proceeds at the session model. The **top-level session model is never
+switched** by the agent (a human action, e.g. `/model` — RFC-0001). The canonical contract, the
+per-host application matrix, and the worked **architect → engineer → reviewer → optimizer** relay
+live in [`../os/routing/delegation.md`](../os/routing/delegation.md).
+
 ## Command classes & the canonical alias table (ADR-0019)
 
 The surface has exactly **four classes**
