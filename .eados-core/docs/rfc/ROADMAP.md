@@ -41,6 +41,10 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **v2.7.0 release** | ✅ published 2026-07-07 — post-v2.6.0 hardening: the #203 audit-trail epic (#213–#215) + the #194–#202 defect-backlog fixes (no GitHub milestone; see the un-numbered write-up below) |
 | **M14 — agent-contract hardening & runtime re-grounding** | ✅ **done** — items 14.1–14.5 (#221–#225) |
 | **v2.8.0 release** | ✅ published 2026-07-08 — M14 agent-contract hardening & runtime re-grounding |
+| **M15 — command surface & governed assistants** | ✅ **done** — items 15.0–15.x (#233 plan; Waves 0–3, milestone #15 closed) |
+| **M16 — model & effort routing** | ✅ **done** — items 16.1–16.x (#256 plan; advisory routing-as-data, ADR-0017, milestone #16 closed) |
+| **M17 — interaction contract & confidence calibration** | ✅ **done** — items 17.1–17.5 (#277–#281; ADR-0022, `os/interaction/`, milestone #17 closed) |
+| **v2.9.0 release** | ✅ published 2026-07-11 — M15 command surface + M16 model/effort routing + M17 interaction contract |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
