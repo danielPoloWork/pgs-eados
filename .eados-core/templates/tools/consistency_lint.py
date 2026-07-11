@@ -364,6 +364,29 @@ def check_i18n_freshness():
                        "commit(s) after the recorded source commit)")
 
 
+# ---------------------------------------------------------------------------
+# 8. Enterprise posture ↔ compliance register (ADR-0015 / #248)
+# ---------------------------------------------------------------------------
+# The posture must not be prose-only. If AGENTS.md declares the enterprise posture, the
+# compliance register (docs/compliance/README.md) must exist; and the register must not exist
+# without the declaration. Two directions so neither the doc nor the AGENTS.md clause can drift
+# out on its own — the same both-ways discipline the ADR-index and bug-ledger checks use.
+_ENTERPRISE_MARKER = "enterprise governance posture"
+
+
+def check_posture():
+    name = "posture"
+    agents = read("AGENTS.md") if exists("AGENTS.md") else ""
+    declared = _ENTERPRISE_MARKER in agents
+    register = exists("docs/compliance/README.md")
+    if declared and not register:
+        fail(name, "AGENTS.md declares the enterprise governance posture but "
+                   "docs/compliance/README.md (the control register) is missing")
+    if register and not declared:
+        fail(name, "docs/compliance/README.md exists but AGENTS.md does not declare the "
+                   "enterprise governance posture — the register has no posture to serve")
+
+
 CHECKS = [
     check_version_lockstep,
     check_adr_index,
@@ -372,6 +395,7 @@ CHECKS = [
     check_milestones,
     check_bugs,
     check_i18n_freshness,
+    check_posture,
 ]
 
 

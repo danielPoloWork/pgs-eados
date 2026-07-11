@@ -82,6 +82,7 @@ def build_context(m):
         "LICENSE_ID": own.get("license_id", ""),
         "DEFAULT_BRANCH": own.get("default_branch", ""),
         "ASSIGNEE": own.get("assignee") or own.get("owner", ""),   # #141: blank -> the owner, never "@me"
+        "POSTURE": gov.get("posture") or "standard",   # standard (default) | enterprise (Q0.5, ADR-0015)
         "START_VERSION": gov.get("start_version", "0.0.0"),
         "VERSION_START": gov.get("version_start", ""),
         "LANG": lng,
@@ -140,6 +141,7 @@ def build_context(m):
         "IF_PKG_ECOSYSTEM": bool(pkg_eco.strip()),
         "IF_HOUSE_RULES": bool(str(gov.get("house_rules", "") or "").strip()),
         "IF_ARCHITECTURE_STYLE": bool(str(spec.get("architecture_style", "") or "").strip()),  # #151
+        "IF_ENTERPRISE": (gov.get("posture") or "standard").strip().lower() == "enterprise",  # #248, ADR-0015
         "IF_LAYERED": bool(caps.get("layered")),   # #152: opt-in layered package skeleton
         "IF_API_SPEC": bool(caps.get("api_spec")),  # #240: opt-in docs/api/ OpenAPI/IDL stub (service/web)
         # #150: recorded authoring-language exceptions (ADR-0016) — non-English choices render an
@@ -311,6 +313,14 @@ def validate_manifest(m, scalars):
             f"governance.start_version '{sv}' is not a numeric X.Y.Z version "
             "(did you swap it with version_start?)"
         )
+    # #248: the governance posture is a closed vocabulary (ADR-0015). A typo or wrong case
+    # (`entrprise`, `Enterprise`) would silently degrade to a `standard` repo with the raised-bar
+    # clauses missing — exactly the silently-defaulted-answer failure this materialization closes.
+    # Fail loud at --check instead. Absent == the `standard` default (POSTURE handles the fallback).
+    posture = _map(m, "governance").get("posture")
+    if posture is not None and str(posture) not in ("standard", "enterprise"):
+        problems.append(f"governance.posture '{posture}' is not one of standard|enterprise "
+                        "(ADR-0015; a typo would silently render a standard repo)")
     # #214: the optimistic-concurrency counter is a non-negative integer when present (absent == 0).
     rev = m.get("manifest_rev")
     if rev is not None and not (isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0):
@@ -604,6 +614,8 @@ def main():
                 continue
             if rel.startswith("docs/api/") and not flags["IF_API_SPEC"]:
                 continue
+            if rel.startswith("docs/compliance/") and not flags["IF_ENTERPRISE"]:
+                continue   # the compliance register is the enterprise posture's artifact (#248)
             if rel == "docs/workflow/announcements.md.tmpl" and not flags["IF_ANNOUNCE"]:
                 continue
             if rel == "docs/workflow/operations.md.tmpl" and not flags["IF_SERVICE"]:

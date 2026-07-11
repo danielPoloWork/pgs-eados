@@ -37,6 +37,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{DEFAULT_BRANCH}}` | Mainline branch | `main` |
 | `{{ASSIGNEE}}` | PR assignee handle — the repository **owner** by default (a blank manifest `assignee` resolves to `{{OWNER}}`); never `@me`, which would resolve to whichever actor drafts the PR | `danielPoloWork` |
 | `{{PROJECT_KIND}}` | `library` \| `service` \| `cli` \| `app` | `library` |
+| `{{POSTURE}}` | Governance/compliance posture (Q0.5, ADR-0015): `standard` (default) or `enterprise` — a raised bar orthogonal to the domain | `standard` |
 | `{{START_VERSION}}` | Numeric start version (drives the README badge + day-zero version constant) | `0.0.0` |
 | `{{VERSION_START}}` | Versioning-start descriptor (prose) | `pre-1.0 milestone-driven` |
 
@@ -133,6 +134,7 @@ These gate optional sections so a CLI does not ship a library's packaging docs, 
 | `{{#IF_PKG_ECOSYSTEM}}` | The language has a Dependabot ecosystem (derived: `PKG_ECOSYSTEM` non-empty) |
 | `{{#IF_HOUSE_RULES}}` | An organization house-rules overlay is present (derived: `HOUSE_RULES` non-empty) |
 | `{{#IF_ARCHITECTURE_STYLE}}` | A structured architecture style was committed (derived: `ARCHITECTURE_STYLE` non-empty) |
+| `{{#IF_ENTERPRISE}}` | The enterprise governance posture is set (derived: `POSTURE` == `enterprise`, Q0.5/ADR-0015; renders the raised-bar clauses in `AGENTS.md` §3/§7/§10 + seeds the `docs/compliance/` index) |
 
 ## 9. Documentation i18n, announcements & customization
 

@@ -60,7 +60,12 @@ See [`docs/i18n/`](docs/i18n/).
 is **{{PROJECT_TAGLINE}}**.
 
 The full specification is in [`docs/specs/01_spec_{{PROJECT_SLUG}}.md`](docs/specs/01_spec_{{PROJECT_SLUG}}.md).
-The current plan and progress live in [`ROADMAP.md`](ROADMAP.md).
+The current plan and progress live in [`ROADMAP.md`](ROADMAP.md).{{#IF_ENTERPRISE}}
+
+This project is held to the **enterprise governance posture** (`governance.posture: enterprise`,
+ADR-0015): a raised compliance bar orthogonal to the domain — mandatory ADRs for security-relevant
+decisions, stricter review, and a maintained compliance-docs surface. The raised-bar clauses are in
+§7 and §10; the compliance index is [`docs/compliance/README.md`](docs/compliance/README.md).{{/IF_ENTERPRISE}}
 
 ## 4. Repository Layout
 
@@ -214,7 +219,13 @@ Documentation is part of the deliverable. Every PR ships its own doc updates.
 - **Threat model** — `docs/security/threat-model.md`: the STRIDE pass per trust boundary (the
   analysis beside the root `SECURITY.md` policy). Update it in the same PR as any change to a
   trust boundary — a new untrusted input, external service, or privilege change.
-- **Workflow docs** — `docs/workflow/` holds the git, documentation, release, and maintenance
+{{#IF_ENTERPRISE}}- **Compliance docs (enterprise posture)** — `docs/compliance/`, indexed by
+  [`docs/compliance/README.md`](docs/compliance/README.md): the control register and the evidence
+  each control maps to. A change touching a registered control updates its row in the same PR.
+  Under this posture a **security-relevant** decision (authn/authz, crypto, data handling, a trust
+  boundary, a dependency with a known CVE surface) **requires an ADR** — it is never an
+  undocumented judgment call.
+{{/IF_ENTERPRISE}}- **Workflow docs** — `docs/workflow/` holds the git, documentation, release, and maintenance
   conventions, plus `github-setup.md` (one-time repo configuration).{{#IF_ANNOUNCE}} Release
   announcements: `docs/workflow/announcements.md`.{{/IF_ANNOUNCE}}{{#IF_SERVICE}} Production
   runbook: `docs/workflow/operations.md`.{{/IF_SERVICE}}{{#IF_PACKAGING}} Distribution:
@@ -269,7 +280,10 @@ Every PR must clear, at minimum:
 {{/IF_BENCH}}{{#IF_API_SPEC}}| API contract | endpoints/payloads/errors/versioning documented under `docs/api/`, in sync with spec §5 |
 {{/IF_API_SPEC}}| Versioning | SemVer; `CHANGELOG.md` updated for user-visible changes |
 | Congruence | `python tools/consistency_lint.py` passes |
-
+{{#IF_ENTERPRISE}}| Review (enterprise) | **two** approving reviews before merge; a security-relevant change also requires the `security-auditor`'s sign-off |
+| Security ADR (enterprise) | every security-relevant decision carries an ADR (§7) — no undocumented judgment calls |
+| Compliance (enterprise) | `docs/compliance/` control register current; a touched control's row updated in the same PR |
+{{/IF_ENTERPRISE}}
 Shortcuts ("just disable the warning", "tests next PR", "docs follow-up") are not allowed.
 If something is genuinely out of scope, file it as a new `ROADMAP.md` item in the same PR.
 
