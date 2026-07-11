@@ -11,6 +11,32 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Interaction policy as data — the ninth OS spec governs how the agent communicates (#277,
+  M17 17.1, ADR-0022).** EADOS governed *what* an agent may do but said nothing about *how it
+  communicates while doing it* — confidence uncalibrated, courtesy openers host-default,
+  disagreement unstructured (verified 2026-07-11: zero coverage across `os/`, `agent/`, both
+  contracts). The owner-provided 7-rule ruleset (2026-07-11) is adopted **transformed, not
+  verbatim**: **(1) the spec** — `orchestrator/os/interaction/` (`_schema.md` +
+  `interaction.yaml`) ships four blocks: `confidence:` (`certain`/`likely`/`guessing` with an
+  evidence criterion per level
+  and a load-bearing-claims scope rule; `guessing` aligned with the #169 `defaulted`/assumed
+  provenance), `sycophancy:` (the banned-opener/phrase denylist as data, overridable via a
+  same-name `config/interaction.yaml` overlay — the first config-overlay surface for an `os/`
+  spec, registered in `config/README.md`), `dissent:` (reason / alternative / specific risk,
+  uncomfortable-answer-first, no warm-up), `pushback:` (re-verify the evidence; hold a claim only
+  while the evidence holds; concede explicitly; a human decision is precedence layer 1 — comply +
+  record dissent); **(2) the ADR** — ADR-0022 records the full source-rule disposition table
+  (adopted / transformed / declined, with rules 1 and 7 transformed — forced contrarianism and
+  absolute no-fold are counterproductive) and the honest enforcement ceiling — *instruct* (live
+  chat), *verify* (artifacts, lint), *re-ground* (M14 hooks); **(3) the registration** — the
+  `os/README.md` spec table (ninth row), covered by the existing `os-spec-completeness` +
+  `data-file-validity` discovery and the `os/**` gate-coverage row — no new lint entry (a row
+  ahead of its files trips stale-entry hygiene; the untracked-file trap resolves by commit).
+  Contract rendering, the
+  `interaction-lockstep` gate, and runtime re-grounding follow in 17.2–17.4. (Recorded as
+  ADR-0022: the plan's reserved "ADR-0019" was consumed by the command-surface taxonomy —
+  numbering is sequential and never reused.)
+
 - **Honor-system hardening — the gate model grows teeth on four fronts (#250, M15 Wave 3,
   closing the milestone; the 0010 residuals).** The "gate-enforced pipeline" claim still leaned
   on trust in places, and the risk grows once real user code flows through the M15 commands.

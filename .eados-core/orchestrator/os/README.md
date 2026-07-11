@@ -19,6 +19,7 @@ validates against a schema — never a special case in a tool.
 | **risk** | The audit risk model: security-surface globs, size buckets, levels, the per-domain mandatory-gate threshold | [`risk/_schema.md`](risk/_schema.md) · [`risk/risk.yaml`](risk/risk.yaml) |
 | **contribution** | The inbound-PR trust model: contributor tiers, the never-merge-non-owner-commits courtesy policy, the `contribution-review` gate, the escalation ladder | [`contribution/_schema.md`](contribution/_schema.md) · [`contribution/contribution.yaml`](contribution/contribution.yaml) |
 | **routing** | Model & effort routing (advisory-first): work signals → capability tier + effort, the dated per-host model catalog (tiers-not-names, ADR-0017) | [`routing/_schema.md`](routing/_schema.md) · [`routing/routing.yaml`](routing/routing.yaml) |
+| **interaction** | The conversation contract (instruct-verify-re-ground): confidence tags with evidence criteria, the sycophancy denylist (config-overridable), structured dissent, the pushback protocol — claims follow evidence, decisions follow the human (transformed adoption, ADR-0022) | [`interaction/_schema.md`](interaction/_schema.md) · [`interaction/interaction.yaml`](interaction/interaction.yaml) |
 
 The **traceability graph** (requirement → RFC → milestone → PR → commit → release) and its lint
 are *described* here and in the RFC but are **built in M3/M4** — derived from the cross-links the
