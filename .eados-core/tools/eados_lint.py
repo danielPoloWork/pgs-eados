@@ -490,7 +490,7 @@ def _load_domains():
 
 
 def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, domains=None, git=None,
-                        contribution=None):
+                        contribution=None, interaction=None):
     """Pure referential-integrity check across the parsed delivery-OS specs. Returns a list of
     problem strings (empty == every cross-reference resolves). I/O-free so it is unit-testable
     with in-memory fixtures; check_cross_spec_consistency() supplies the on-disk specs."""
@@ -616,6 +616,22 @@ def cross_spec_problems(authority, workflow, plan=None, rfc=None, risk=None, dom
                 problems.append("contribution.escalation.disposition references unknown disposition "
                                 f"'{esc['disposition']}'")
 
+    # --- interaction: conversation-external escalation points at another spec's ladder AS DATA
+    #     (M17 17.3, #279). The OS carries exactly one escalation ladder — the authority spec's —
+    #     so the pointer resolves to `authority` with a non-empty `escalation:` list. A renamed or
+    #     typo'd target is caught here, like the git cross-cutting gate-ref above (#86). ---
+    if isinstance(interaction, dict):
+        dissent = interaction.get("dissent")
+        ladder = dissent.get("escalation_ladder") if isinstance(dissent, dict) else None
+        if ladder is not None:
+            if ladder != "authority":
+                problems.append(f"interaction.dissent.escalation_ladder references unknown spec "
+                                f"'{ladder}' — the conversation-external escalation ladder is the "
+                                "authority spec (../authority/authority.yaml)")
+            elif not (isinstance(authority.get("escalation"), list) and authority.get("escalation")):
+                problems.append("interaction.dissent.escalation_ladder names 'authority' but that "
+                                "spec declares no escalation ladder to resolve to")
+
     return problems
 
 
@@ -628,7 +644,8 @@ def check_cross_spec_consistency(fail):
         return  # os-spec-completeness reports a missing/unparseable core spec
     problems = cross_spec_problems(authority, workflow, _load_spec("plan"),
                                    _load_spec("rfc"), _load_spec("risk"), _load_domains(),
-                                   _load_spec("git"), _load_spec("contribution"))
+                                   _load_spec("git"), _load_spec("contribution"),
+                                   _load_spec("interaction"))
     for problem in problems:
         fail(name, problem)
 
@@ -915,7 +932,7 @@ GATE_COVERAGE = [
     (".eados-core/templates/**",                          "render-smoke + placeholder-integrity"),
     (".eados-core/orchestrator/profiles/*.yaml",          "profile-completeness"),
     (".eados-core/orchestrator/profiles/_schema.md",      "profile-completeness (schema)"),
-    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:) + routing-delegation (os/routing/delegation.md)"),
+    (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:) + routing-delegation (os/routing/delegation.md) + interaction-lockstep (os/interaction/ <-> AGENTS.md + templates/AGENTS.md.tmpl)"),
     (".eados-core/orchestrator/domains/*.yaml",           "domains + data-file-validity"),
     (".eados-core/orchestrator/placeholders.md",          "placeholder-integrity (the dictionary)"),
     (".eados-core/orchestrator/generate.md",              "generate-references"),
@@ -1509,6 +1526,64 @@ def check_routing_delegation(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 21. Interaction lockstep (#279, M17 17.3) — the interaction policy is data (os/interaction/
+#     interaction.yaml, ADR-0022); 17.2 rendered it into the two agent contracts (factory
+#     AGENTS.md §10 + templates/AGENTS.md.tmpl §12). Nothing stopped the prose and the data from
+#     drifting — the exact failure class version-lockstep / i18n-freshness exist for. This gate
+#     keeps them congruent: every `sycophancy.banned_openers` phrase and every `confidence.levels`
+#     tag in the spec must appear in EACH rendered surface. Data is the source of truth; prose may
+#     elaborate, but it may never omit an entry (a dropped banned phrase or confidence tag = the
+#     contract silently diverging from the policy). Presence, not paraphrase — the enforceable
+#     proxy for "never contradict or omit", mirroring version-lockstep's badge-equality check.
+# ---------------------------------------------------------------------------
+def interaction_lockstep_problems(interaction, surfaces):
+    """Pure check. `interaction`: the parsed interaction.yaml; `surfaces`: (label, text) pairs for
+    each rendered contract surface. Every banned opener and every confidence tag the spec declares
+    must be present verbatim in each surface. Returns problem strings (empty == congruent). I/O-free
+    so the contract is unit-testable with in-memory fixtures."""
+    if not isinstance(interaction, dict):
+        return []   # a missing/unparseable spec is os-spec-completeness / data-file-validity's report
+    syc = interaction.get("sycophancy") if isinstance(interaction.get("sycophancy"), dict) else {}
+    openers = [str(o).strip() for o in (syc.get("banned_openers") or []) if str(o).strip()]
+    conf = interaction.get("confidence") if isinstance(interaction.get("confidence"), dict) else {}
+    levels = [str(v).strip() for v in (conf.get("levels") or []) if str(v).strip()]
+    if not openers and not levels:
+        return ["interaction.yaml declares no banned_openers or confidence.levels to lock the "
+                "contract surfaces to"]
+    problems = []
+    for label, text in surfaces:
+        for phrase in openers:
+            if phrase not in text:
+                problems.append(f"{label}: banned opener {phrase!r} from interaction.yaml is not "
+                                "rendered — the contract must carry every denylist entry (data is "
+                                "the source of truth; prose may elaborate, never omit)")
+        for tag in levels:
+            if tag not in text:
+                problems.append(f"{label}: confidence tag {tag!r} from interaction.yaml is not "
+                                "rendered — the contract must carry every confidence level (data is "
+                                "the source of truth; prose may elaborate, never omit)")
+    return problems
+
+
+def check_interaction_lockstep(fail):
+    name = "interaction-lockstep"
+    interaction = _load_spec("interaction")
+    if not isinstance(interaction, dict):
+        return  # interaction spec absent (pre-M17) or unparseable — the other gates report it
+    surfaces = []
+    factory = os.path.join(REPO_ROOT, "AGENTS.md")
+    if os.path.exists(factory):
+        surfaces.append(("AGENTS.md §10", read(factory)))
+    tmpl = os.path.join(TEMPLATES, "AGENTS.md.tmpl")
+    if os.path.exists(tmpl):
+        surfaces.append(("templates/AGENTS.md.tmpl §12", read(tmpl)))
+    if not surfaces:
+        return  # a partial checkout without the rendered contract surfaces — nothing to lock
+    for problem in interaction_lockstep_problems(interaction, surfaces):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1533,6 +1608,7 @@ CHECKS = [
     check_safe_write,
     check_command_adapters,
     check_routing_delegation,
+    check_interaction_lockstep,
 ]
 
 

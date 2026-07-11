@@ -37,6 +37,22 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
   ADR-0022: the plan's reserved "ADR-0019" was consumed by the command-surface taxonomy —
   numbering is sequential and never reused.)
 
+- **`interaction-lockstep` gate — the contract prose can no longer drift from the policy data
+  (#279, M17 17.3).** 17.1 made the interaction policy data and 17.2 rendered it into the two
+  agent contracts (factory `AGENTS.md` §10 + `templates/AGENTS.md.tmpl` §12), but nothing stopped
+  the two from diverging — the exact failure class `version-lockstep` and `i18n-freshness` exist
+  for. Two `eados_lint` additions close it: **(1)** a new `interaction-lockstep` check requires
+  every `sycophancy.banned_openers` phrase and every `confidence.levels` tag in `interaction.yaml`
+  to appear verbatim in each rendered surface — data is the source of truth; prose may elaborate,
+  never omit (presence is the enforceable proxy for "never contradict"); **(2)** the
+  conversation-external escalation pointer is now **data** — `interaction.dissent.escalation_ladder:
+  authority` — resolved by `cross-spec-consistency` to the authority spec's `escalation:` ladder,
+  so a renamed or typo'd target fails lint instead of rotting silently (precedent: the `git.yaml`
+  gate-ref validation, #86). Negative tests prove each check fires (a mutated template phrase or a
+  broken ladder ref → lint fails); the suite is discovered, so both run in CI with no enumeration.
+  The `os/interaction/` directory stays covered by the existing `os/**` gate-coverage row (extended
+  to name the new check). Runtime re-grounding follows in 17.4.
+
 - **Honor-system hardening — the gate model grows teeth on four fronts (#250, M15 Wave 3,
   closing the milestone; the 0010 residuals).** The "gate-enforced pipeline" claim still leaned
   on trust in places, and the risk grows once real user code flows through the M15 commands.

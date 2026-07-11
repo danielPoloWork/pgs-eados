@@ -40,6 +40,7 @@ dissent:            # structured disagreement - the ADR pattern applied to conve
   template:         # reason / alternative / specific risk, the three required parts
   ordering:         # uncomfortable answer first
   warm_up:          # no warm-up prose
+  escalation_ladder: # the spec whose escalation ladder governs conversation-external escalation
 pushback:           # claims follow the evidence; decisions follow the human
   on_pushback:      # re-verify the evidence before answering
   hold_claim:       # hold a claim only while the evidence still supports it
@@ -86,7 +87,10 @@ uncomfortable answer is the **first line, not paragraph three**, and there is no
 Escalation beyond the conversation follows the authority ladder
 ([`../authority/authority.yaml`](../authority/authority.yaml)); once the human decides, the
 dissent is recorded and never relitigated — until then, a standing factual claim is governed by
-the pushback block below.
+the pushback block below. `dissent.escalation_ladder` names that spec **as data** (M17 17.3): the
+`cross-spec-consistency` gate resolves it to the authority spec's `escalation:` ladder, so a
+renamed or typo'd target fails lint rather than rotting silently (precedent: the `git.yaml`
+gate-ref validation, #86).
 
 ## Pushback — claims vs decisions
 
