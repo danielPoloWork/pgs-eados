@@ -13,11 +13,15 @@ artifacts:
   product_spec: GDD                      # Game Design Document
   design_doc: RFC                        # feature/tech spec (combat system, etc.)
   test_strategy: required
+# Hard axes are TYPED (#249): unit + direction make the budget checkable (the `nfr-budgets`
+# audit-overlay gate FAILs a hard axis with no recorded number in spec.nfr_budgets, and a
+# recorded measurement that violates it). `seed` is the suggested target Q5.3 offers — the
+# interview elicits the real value; the seed is data, never a comment.
 nfr_axes:
-  - { axis: framerate, hard_budget: true }   # e.g. 60 fps target — non-negotiable
-  - { axis: memory, hard_budget: true }      # RAM budget per console/platform
-  - { axis: gpu, hard_budget: true }         # GPU / draw-call budget
-  - { axis: load_time, hard_budget: true }
+  - { axis: framerate, hard_budget: true, unit: fps, direction: min, seed: 60 }   # non-negotiable
+  - { axis: memory, hard_budget: true, unit: MB, direction: max, seed: 512 }      # RAM per console/platform
+  - { axis: gpu, hard_budget: true, unit: "draw calls", direction: max, seed: 2000 }
+  - { axis: load_time, hard_budget: true, unit: s, direction: max, seed: 30 }
 milestone_vocabulary: alpha-beta-rc          # Alpha / Beta / Release Candidate / Gold
 cross_discipline_deps: [art, animation, sound]   # the asset pipeline
 workflow_overlay: game                       # inserts asset-pipeline-review + the hardware-budget gate

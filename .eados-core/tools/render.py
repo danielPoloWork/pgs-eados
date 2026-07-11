@@ -202,6 +202,56 @@ PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interv
 _ADOPTION_GOALS = {"governance-docs", "retro-design", "audit", "migrate", "bugfix"}
 _ADOPTION_KEYS = {"goals", "gap_map_ref", "provenance"}
 
+# A spec.nfr_budgets entry (#249): the NUMERIC budget recorded for a domain NFR axis at intake
+# (Q5.3). `axis` names the domain's nfr_axes entry; `target` is the committed number (or the
+# level for a scale axis); `metric` qualifies a composite axis (Core Web Vitals: LCP/INP/CLS);
+# `measured` is an optional recorded measurement the nfr-budgets gate compares against target.
+_NFR_BUDGET_KEYS = {"axis", "target", "metric", "unit", "measured"}
+
+
+def budget_number(value):
+    """The numeric value of a budget field, or None. yamlmini deliberately keeps unquoted
+    decimals as strings (#153 loader fidelity), so a manifest's `target: 2.5` arrives here as
+    the string "2.5" — coerce the numeric-looking string ONCE, shared by the shape validator
+    below and the `nfr-budgets` gate evaluator (eados.py, #249). Bools are not numbers."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    s = str(value if value is not None else "").strip()
+    return float(s) if re.fullmatch(r"-?\d+(\.\d+)?", s) else None
+
+
+def nfr_budget_problems(budgets):
+    """Shape problems of a manifest's `spec.nfr_budgets` list (#249). Domain-aware semantics
+    (hard-axis coverage, scale membership, direction comparison) live in eados.py's
+    `nfr-budgets` gate evaluator — this validates only the manifest-local shape, so the two
+    layers cannot disagree about what a well-formed entry is."""
+    problems = []
+    if not isinstance(budgets, list):
+        return ["spec.nfr_budgets must be a list of {axis, target, ...} budget entries (#249)"]
+    for i, entry in enumerate(budgets):
+        if not isinstance(entry, dict):
+            problems.append(f"spec.nfr_budgets[{i}] must be a mapping (axis, target, ...)")
+            continue
+        for key in sorted(entry):
+            if key not in _NFR_BUDGET_KEYS:
+                problems.append(f"spec.nfr_budgets[{i}].{key} is not a recognized key (expected "
+                                f"one of: {', '.join(sorted(_NFR_BUDGET_KEYS))})")
+        if not str(entry.get("axis") or "").strip():
+            problems.append(f"spec.nfr_budgets[{i}].axis is missing or empty — name the domain "
+                            "NFR axis this budget covers")
+        target = entry.get("target")
+        if isinstance(target, bool) or (budget_number(target) is None
+                                        and not str(target or "").strip()):
+            problems.append(f"spec.nfr_budgets[{i}].target must be a number — or the level, for "
+                            f"a scale axis — that the design commits to; got {target!r}")
+        measured = entry.get("measured")
+        if measured is not None and budget_number(measured) is None:
+            problems.append(f"spec.nfr_budgets[{i}].measured must be a number when present, "
+                            f"got {measured!r}")
+    return problems
+
 
 def adoption_problems(adoption):
     """Shape problems of a manifest's `adoption:` block (#247, ADR-0021): `goals` (non-empty,
@@ -387,6 +437,10 @@ def validate_manifest(m, scalars):
     # already rejected by the generic section-must-be-a-mapping check above.
     if isinstance(m.get("adoption"), dict):
         problems += adoption_problems(m["adoption"])
+    # #249: recorded NFR budgets have a fixed shape — a malformed entry would silently defeat
+    # the `nfr-budgets` gate it feeds. Optional (a domain with no hard axes records none).
+    if spec.get("nfr_budgets") is not None:
+        problems += nfr_budget_problems(spec.get("nfr_budgets"))
     # #199: delivery-state consistency. `delivery_state.checkpoints` must be a legal, contiguous
     # transition chain ending at the current phase, and a human-gated move must carry a
     # `confirmed_by:` — so `phase: scaffold` can no longer be asserted without the intervening

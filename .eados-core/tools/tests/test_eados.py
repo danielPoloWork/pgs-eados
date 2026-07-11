@@ -55,8 +55,10 @@ def _chain_to(phase):
     return chain
 
 
-def manifest_yaml(phase, domain=None):
-    """A raw manifest string at `phase` carrying the legal checkpoint chain (#199)."""
+def manifest_yaml(phase, domain=None, budgets=None):
+    """A raw manifest string at `phase` carrying the legal checkpoint chain (#199). `budgets`
+    (a list of (axis, target) tuples) records spec.nfr_budgets — a domain with hard axes needs
+    them to clear the in-process nfr-budgets gate (#249)."""
     lines = [
         "identity:", "  project_name: Demo", "  project_slug: demo", "  project_kind: library",
         "ownership:", "  owner: me", "  license_id: MIT", "  default_branch: main",
@@ -64,8 +66,12 @@ def manifest_yaml(phase, domain=None):
         "spec:", "  objective: A demo library.", "  functional_reqs: [do one thing]",
         "  verification: unit tests", "  milestones:",
         '    - { number: 2, title: Harden, goal: Stable API, items: ["2.1 freeze the API"] }',
-        "delivery_state:", f"  phase: {phase}",
     ]
+    if budgets:
+        lines.append("  nfr_budgets:")
+        for axis, target in budgets:
+            lines.append(f"    - {{ axis: {axis}, target: {target} }}")
+    lines += ["delivery_state:", f"  phase: {phase}"]
     chain = _chain_to(phase)
     if chain:
         lines.append("  checkpoints:")
@@ -188,13 +194,26 @@ def main():
         rc, out = run("status", manifest)
         check("CLI `eados.py status` runs the doctor (exit 0)",
               rc == 0 and "phase: plan" in out, failures)
-        # #165: the CLI reads the manifest's domain and applies its overlay end-to-end
+        # #165: the CLI reads the manifest's domain and applies its overlay end-to-end.
+        # #249: a game manifest carries its four hard-axis budgets — without them the in-process
+        # nfr-budgets gate (now on the overlay) correctly FAILs the scaffold exit.
         game = os.path.join(d, "game.yaml")
         with open(game, "w", encoding="utf-8") as h:
-            h.write(manifest_yaml("scaffold", domain="game"))
+            h.write(manifest_yaml("scaffold", domain="game",
+                                  budgets=[("framerate", 60), ("memory", 512),
+                                           ("gpu", 2000), ("load_time", 30)]))
         rc, out = run("scaffold", game)
         check("CLI applies the manifest's domain overlay ([manual] hardware-budget)",
               rc == 0 and "[manual] hardware-budget" in out, failures)
+        check("CLI evaluates the nfr-budgets gate in-process ([OK], #249)",
+              "[OK] nfr-budgets" in out, failures)
+        # ...and a game manifest WITHOUT budgets fails the same exit (the enforcement, #249)
+        bare = os.path.join(d, "game-bare.yaml")
+        with open(bare, "w", encoding="utf-8") as h:
+            h.write(manifest_yaml("scaffold", domain="game"))
+        rc, out = run("scaffold", bare)
+        check("CLI FAILs a game manifest with no recorded budgets (rc 1, #249)",
+              rc == 1 and "[FAIL] nfr-budgets" in out, failures)
         rc, out = run("status", game)
         check("CLI status surfaces the applied overlay",
               rc == 0 and "domain: game" in out and "asset-pipeline-review" in out, failures)

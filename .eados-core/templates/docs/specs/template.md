@@ -18,7 +18,11 @@ mechanical check in the verification strategy (§6).
 ## 3. Non-Functional Requirements
 
 Performance, memory, portability, security, dependency policy, compatibility guarantees,
-no-leak / no-UB / no-race promises.
+no-leak / no-UB / no-race promises — and the **scalability/load vocabulary** where it applies:
+throughput (req/s), concurrent users/sessions, p50/p99 latency, saturation point, capacity
+headroom, cold-start. A **hard** budget is a **number with its unit and direction** ("p99 ≤ 5 ms",
+"≥ 60 fps", "cold-start ≤ 2 s", "heap ≤ 256 MB") — never an adjective; state how each number is
+measured (§6 verification) so a violation is mechanical, not argued.
 
 ## 4. Logical Architecture & Core Algorithm
 

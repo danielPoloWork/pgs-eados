@@ -6,8 +6,8 @@ This is the deterministic spine underneath it: `eados.py <phase> <manifest>` run
 **outgoing-transition entry gates** — the gates you must satisfy to leave the phase, read straight
 from [`workflow.yaml`](../orchestrator/os/workflow/workflow.yaml) (knowledge as data, no hardcoded
 chain) — evaluating the ones it can compute from the project (`manifest-valid`, `rfc-approved`,
-`roadmap-covers-rfcs`, `adoption-recorded`) and marking the rest `[manual]` / `[needs-input]`. It
-then prints the legal
+`roadmap-covers-rfcs`, `adoption-recorded`, `nfr-budgets`) and marking the rest `[manual]` /
+`[needs-input]`. It then prints the legal
 next transitions and points at the procedure for the authoring + human-gated steps. `eados.py status`
 is the read-only doctor ([`doctor.py`](doctor.py)).
 
@@ -84,11 +84,94 @@ def _ev_adoption_recorded(manifest, ctx):
     return ("OK", "")
 
 
+def _ev_nfr_budgets(manifest, ctx):
+    """The numeric NFR-budget gate (#249). Every HARD axis of the manifest's domain
+    (domains/<domain>.yaml `nfr_axes[].hard_budget: true`, typed with unit/direction/scale/
+    metrics) must carry a recorded budget in spec.nfr_budgets, well-formed
+    (render.nfr_budget_problems owns the entry shape; render.budget_number coerces the
+    yamlmini string-decimals), typed right (numeric, or on the axis's scale; one entry per
+    declared composite metric), and — when a `measured` value is recorded — satisfied per the
+    axis's direction. No hard axes declared -> `skipped` (the software baseline). A GREENFIELD
+    manifest still at phase `init` (no adoption block) -> `skipped`: budgets are elicited at
+    Q5.3 (Phase 5), and without an adoption record the audit edges this gate rides are not
+    takeable anyway — `eados.py init` must stay green, exactly like `adoption-recorded`. An
+    ADOPTED manifest at init IS held to the bar (the ADR-0021 same-bar consequence). An
+    unreadable domain profile -> `needs-input` (a checkable input is missing, #200)."""
+    adoption = manifest.get("adoption") if isinstance(manifest, dict) else None
+    if phase_runner.current_phase(manifest) == "init" and not adoption:
+        return ("skipped", "greenfield manifest at init — budgets arrive with the Phase-5 "
+                "interview; the audit edges are not takeable from here without adoption")
+    domain = phase_runner.manifest_domain(manifest)
+    path = os.path.join(os.path.dirname(HERE), "orchestrator", "domains", f"{domain}.yaml")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            axes = render.load_yaml(fh.read()).get("nfr_axes") or []
+    except (OSError, ValueError):
+        return ("needs-input", f"domain profile domains/{domain}.yaml is missing or unreadable — "
+                "the hard-axis budgets cannot be checked")
+    hard = [a for a in axes if isinstance(a, dict) and a.get("hard_budget")]
+    if not hard:
+        return ("skipped", f"domain '{domain}' declares no hard NFR axes — nothing to budget")
+    spec = manifest.get("spec") if isinstance(manifest, dict) else None
+    budgets = (spec or {}).get("nfr_budgets") if isinstance(spec, dict) else None
+    problems = render.nfr_budget_problems(budgets if budgets is not None else [])
+    by_axis = {}
+    for entry in (budgets if isinstance(budgets, list) else []):
+        if isinstance(entry, dict) and str(entry.get("axis") or "").strip():
+            by_axis.setdefault(entry["axis"], []).append(entry)
+    for axis in hard:
+        name, unit = axis.get("axis"), axis.get("unit") or "a number"
+        entries = by_axis.get(name) or []
+        if not entries:
+            problems.append(f"hard axis '{name}' ({unit}) has no recorded budget in "
+                            "spec.nfr_budgets — a hard budget is a number, not a promise")
+            continue
+        scale = str(axis.get("scale") or "").strip()
+        direction = str(axis.get("direction") or "max").strip()
+        for entry in entries:
+            target = entry.get("target")
+            tgt_num = render.budget_number(target)
+            if scale:
+                allowed = [s.strip() for s in scale.split("|")]
+                if str(target).strip() not in allowed:
+                    problems.append(f"hard axis '{name}': target {target!r} is not on the "
+                                    f"scale {scale}")
+            elif tgt_num is None:
+                problems.append(f"hard axis '{name}': target must be numeric ({unit}), "
+                                f"got {target!r}")
+            measured_num = render.budget_number(entry.get("measured"))
+            if tgt_num is not None and measured_num is not None:
+                satisfied = (measured_num >= tgt_num if direction == "min"
+                             else measured_num <= tgt_num)
+                if not satisfied:
+                    problems.append(f"hard axis '{name}': measured {entry.get('measured')} "
+                                    f"violates the {direction} budget of {target} "
+                                    f"{axis.get('unit') or ''}".rstrip())
+        # composite axis (#249): the declared metrics must EACH carry an entry, and an entry's
+        # metric must be one the axis declares — the _schema.md one-entry-per-metric promise.
+        metrics = [m.strip() for m in str(axis.get("metrics") or "").split("|") if m.strip()]
+        if metrics:
+            seen = {str(e.get("metric") or "").strip() for e in entries}
+            for metric in metrics:
+                if metric not in seen:
+                    problems.append(f"hard axis '{name}': composite metric '{metric}' has no "
+                                    "recorded budget entry")
+            for e in entries:
+                em = str(e.get("metric") or "").strip()
+                if em and em not in metrics:
+                    problems.append(f"hard axis '{name}': unknown metric '{em}' (declared: "
+                                    f"{axis.get('metrics')})")
+    if problems:
+        return ("FAIL", f"{len(problems)} problem(s) (e.g. {problems[0]})")
+    return ("OK", "")
+
+
 GATE_EVALUATORS = {
     "manifest-valid": _ev_manifest_valid,
     "rfc-approved": _ev_rfc_approved,
     "roadmap-covers-rfcs": _ev_roadmap_covers,
     "adoption-recorded": _ev_adoption_recorded,   # brownfield adoption (#247, ADR-0021)
+    "nfr-budgets": _ev_nfr_budgets,               # numeric hard-axis budgets (#249)
 }
 
 # The procedure a phase points at for its authoring + human-gated steps.

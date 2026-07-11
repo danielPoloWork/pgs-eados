@@ -11,6 +11,36 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.8.0**.
 
 ### Added
 
+- **Numeric, enforced NFR budgets — the honor-system boolean is gone (#249, M15 Wave 3).** The
+  domains' `nfr_axes` carried a boolean `hard_budget` only; the game's "60 fps" lived as a YAML
+  comment; `scalab*` had zero occurrences in the factory — an NFR budget was a placeholder, not a
+  gate. Now, schema-first: **(1) hard axes are typed data** — every `hard_budget: true` axis in
+  `domains/{game,web,mobile}.yaml` carries `unit` + `direction` (`min|max`) + a suggested `seed`
+  (the game's framerate is `seed: 60`, a value, not a comment); a level axis (web accessibility)
+  declares its `scale` (`A|AA|AAA`), a composite axis (Core Web Vitals) its `metrics`
+  (`LCP|INP|CLS`) — `domains/_schema.md` + `_template.yaml` document the shape. **(2) budgets are
+  typed manifest entries** — Q5.3's follow-up (interview.md + questionnaire.yaml `sets:`) records
+  each elicited number as a `spec.nfr_budgets` entry (`{axis, target, unit, metric?, measured?}`),
+  shape-validated by the new `render.nfr_budget_problems()` (wired into `validate_manifest`).
+  **(3) the gate is evaluated, not declared** — a new **`nfr-budgets`** gate (`wired: in-process`,
+  the fifth `eados.py` evaluator) FAILs a hard axis with **no recorded number**, a target **off
+  the axis's scale**, an **adjective** on a numeric axis, a **composite metric** (CWV) missing
+  its entry or naming an undeclared one, or a recorded **measurement that violates** the
+  direction (`45 fps` against a `min 60` budget) — with `render.budget_number()` coercing the
+  string-decimals yamlmini deliberately preserves (`target: 2.5` arrives as `"2.5"`); `skipped`
+  for a domain with no hard axes (the software baseline) **and for a greenfield manifest still
+  at `init`** (budgets arrive with the Phase-5 interview; without an adoption record the audit
+  edges the gate rides are not takeable — the `adoption-recorded` precedent, while an *adopted*
+  manifest at init is held to the bar per ADR-0021). It attaches per-domain via
+  `domain_overlays.*.add_gates` (web/game/mobile → every transition into `audit`, including the
+  #247 adoption edge — same bar for an adopted repo); the existing **manual** review gates
+  (hardware/store/accessibility/web-vitals) stay — this is the mechanical floor beneath them.
+  **(4) vocabulary** — the generated spec §3 gains the scalability/load vocabulary (throughput,
+  concurrent users, p50/p99, saturation point, capacity headroom, cold-start) so the design fold
+  (#240) has content to elicit against. Guarded by the new `test_nfr_budgets.py` (typed-axis
+  sweep over every shipped domain, validator accept/reject, evaluator skipped/FAIL/OK incl.
+  scale + composite + violation cases, overlay attachment, base machine untouched).
+
 - **The enterprise governance posture now materializes in the rendered repo (#248, M15 Wave 3;
   ADR-0015).** Q0.5 captured `governance.posture` and ADR-0015 promised a raised bar (mandatory
   ADRs for security-relevant decisions, stricter review, a compliance-docs expectation) — but no
