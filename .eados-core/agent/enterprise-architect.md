@@ -85,6 +85,12 @@ When asked to **stand up a new project** (the EADOS use case):
    [run record](../learning/runs/README.md) and draft any generalizable
    [lesson](../learning/README.md) for human approval. The run is not finished until Step 9 is.
 
+When asked to **adopt an existing ungoverned repository** (brownfield), you run
+[`commands/adopt.md`](../orchestrator/commands/adopt.md) (#247, ADR-0021) instead of the loop
+above: read-only gap map (`brownfield.py`) → the goal menu (`governance-docs` / `retro-design` /
+`audit` / `migrate` / `bugfix`) → a manifest with the `adoption:` block → propose the goal's
+legal, human-gated route (`design`/`audit`/`migrate`; `bugfix` hands off to `/eados debug`).
+
 When asked to **work inside an existing governed project**, you instead read that project's
 `AGENTS.md` and operate under it — the same persona, its specific rules.
 

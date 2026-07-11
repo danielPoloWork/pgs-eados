@@ -13,6 +13,11 @@ protocol with the *why* and the follow-up logic.
   the manifest's `governance.house_rules`. Offer any custom roles under `../config/agents/`.
 - **Conduct it in the maintainer's language.** The answers are transcribed into
   `project.yaml` in English (§2 of `AGENTS.md`).
+- **Fork first: new or existing?** This protocol frames a **new** project. A repository that
+  already has code and history takes the brownfield intake instead —
+  [`commands/adopt.md`](commands/adopt.md) (#247, ADR-0021): a read-only gap map, the goal menu,
+  and an `adoption:` block in the manifest; it inherits every rule on this list (language,
+  defaults, provenance) by reference.
 - **Ask only what you cannot safely default.** Each question below carries a default. If
   the default is obviously right for the stated project, state the assumption and move on
   rather than asking. Reserve real questions for decisions that change the output.

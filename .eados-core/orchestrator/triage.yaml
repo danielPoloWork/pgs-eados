@@ -55,6 +55,9 @@ examples:
     - input: "generate a new Rust service repository"
       verdict: five-step-loop
       why: "a governed generation run — interview -> profile -> manifest -> render -> verify"
+    - input: "adopt EADOS governance in my existing repo"
+      verdict: five-step-loop
+      why: "evolving a repo under governance — the brownfield intake (/eados adopt, #247) enters the same pipeline"
     - input: "scaffold the enterprise system for my Python CLI"
       verdict: five-step-loop
       why: "a full generation — the five-step loop with its human-gated manifest confirmation"

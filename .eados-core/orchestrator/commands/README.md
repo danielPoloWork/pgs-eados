@@ -32,6 +32,7 @@ authority, and the session model is never switched by the agent.
 | Command | Phase | Status | Procedure |
 |---------|-------|--------|-----------|
 | `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
+| `/eados adopt` | init (brownfield intake) | **available** (M15 W3) | [`adopt.md`](adopt.md) |
 | `/eados design` | design | **available** (M2) | [`design.md`](design.md) |
 | `/eados plan` | plan | **available** (M3) | [`plan.md`](plan.md) |
 | `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
@@ -100,6 +101,10 @@ The surface has exactly **four classes**
 takes an ADR:
 
 1. **Phases** — the `workflow.yaml` state machine above. No wishlist verb mints a phase.
+   `interview` is the *intake* of this class, with two front doors: [`/eados init`](init.md)
+   (greenfield) and [`/eados adopt`](adopt.md) (#247 — brownfield; the manifest lands at
+   `phase: init` and the recorded `adoption:` block makes `init → audit`/`init → migrate`
+   legal by data, ADR-0021).
 2. **Phase sub-modes** — a deepened entry into an existing phase; no new state, transition, or
    authority. Design sub-modes: `systemdesign`/`api`/`database`/`scalability`/`pseudocode` (#240);
    audit sub-mode: `security` (#241).
@@ -116,7 +121,8 @@ takes an ADR:
 
 **Manifest boundary (ADR-0019).** A cross-cutting code command runs only against an initialized
 project (a manifest with `delivery_state`). Pasted/standalone code → the command **refuses and
-routes**: greenfield to `/eados init`, an existing ungoverned repo to `/eados adopt` (#247).
+routes**: greenfield to `/eados init`, an existing ungoverned repo to
+[`/eados adopt`](adopt.md) (#247).
 Questions about code stay the Step-0 triage question route (`0-question` — answered directly,
 no command run).
 
@@ -152,7 +158,13 @@ own** — it reports what is legal; the human decides. Example (a fresh manifest
 current phase: init
 legal next transitions:
   -> design   (gates: manifest-valid)  [human-gated — the owner confirms]
+  -> audit    (gates: manifest-valid, adoption-recorded)  [human-gated — the owner confirms]
+  -> migrate  (gates: manifest-valid, adoption-recorded)  [human-gated — the owner confirms]
 ```
+
+(The two adoption edges, #247/ADR-0021, are listed for every manifest but stay NOT READY for a
+greenfield project — their `adoption-recorded` gate reads `skipped` without the `adoption:` block
+only `/eados adopt` writes.)
 
 `--propose <to>` validates a *proposed* transition and **emits** the `delivery_state` checkpoint to
 write — it does **not** write state (the agent does, after the human confirms a human-gated move):
@@ -168,7 +180,8 @@ python .eados-core/tools/eados.py <phase> <manifest>     # or: eados.py status <
 ```
 
 runs a phase's **deterministic outgoing gates** — read from `workflow.yaml` (no hardcoded chain) —
-evaluating the ones it can (`manifest-valid`, `rfc-approved`, `roadmap-covers-rfcs`) via the sibling
+evaluating the ones it can (`manifest-valid`, `rfc-approved`, `roadmap-covers-rfcs`,
+`adoption-recorded`) via the sibling
 tools and marking render-time / human gates `[manual]`, then prints the legal next transitions and
 points at the procedure above for the authoring + human-gated steps. It is the **executable spine**
 beneath the markdown procedures; like `phase_runner`, it **reports and gates — it never authors,

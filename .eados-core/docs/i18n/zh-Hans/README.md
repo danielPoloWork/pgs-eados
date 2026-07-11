@@ -117,6 +117,11 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 | **`audit`** | 持续风险评分 + 强制的可追溯性 lint。 | `traceability-lint`、风险阈值 |
 | **`migrate`** | 通过受门禁、沙箱化、**追加式**的 PR 把既有仓库带到标准。 | 写入受限的沙箱 |
 
+**既有**代码库经由
+[`/eados adopt`](../../../../.eados-core/orchestrator/commands/adopt.md) 进入 —— 棕地引导入口：
+只读差距地图、目标菜单（文档 / 逆向设计 / 审计 / 迁移 / 修缺陷），以及带 `adoption:` 记录的
+manifest，使 `init → audit` / `init → migrate` 成为合法且需人工把关的路径。
+
 完整细节见 [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) 与
 [命令手册](../../../../.eados-core/orchestrator/commands/README.md)。六个跨切面命令在任何阶段都可用：
 [`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)（只读体检）、

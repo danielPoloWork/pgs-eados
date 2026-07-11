@@ -15,7 +15,7 @@ code, or is deliberately **`xfail`** with a linked defect.
 - **A manifest is required (ADR-0019 boundary).** The command runs only against an initialized
   project — a repository whose manifest carries `delivery_state`. Pasted or standalone code is
   **refused and routed**: greenfield → [`/eados init`](init.md); an existing ungoverned repository
-  → `/eados adopt` (#247; until it ships, `init`'s intake is the front door). A plain *question*
+  → [`/eados adopt`](adopt.md) (#247 — the brownfield intake). A plain *question*
   about code stays the Step-0 triage question route (`0-question` in
   [`../triage.yaml`](../triage.yaml) — answered directly, no command run).
 - **A testable target.** One unit or behavior per run, tied to a **spec §6** verification claim

@@ -96,6 +96,8 @@ flowchart LR
   SCAFFOLD -->|"consistency-lint + self-review"| AUDIT["audit · risk<br/><i>security-auditor</i>"]:::phase
   AUDIT -->|"risk-register · H"| MIGRATE["migrate · brownfield<br/><i>architect</i>"]:::phase
   PLAN -. resumable .-> DESIGN
+  INIT -. "adoption-recorded · H (#247)" .-> AUDIT
+  INIT -. "adoption-recorded · H (#247)" .-> MIGRATE
 ```
 
 `· H` marks a **human-gated** transition (the owner confirms). The "engine" is not a runtime: it

@@ -1,5 +1,18 @@
 # [FEATURE] `/eados adopt` — brownfield adoption interview: existing repo → goal menu → tailored route
 
+> **✅ Delivered** (2026-07-11, closes [#247](https://github.com/danielPoloWork/pgs-eados/issues/247); **ADR-0021**).
+> `/eados adopt` ships as `init`'s brownfield sibling intake (never a phase — the ADR-0019 §1
+> state set is unchanged): preflight + detect → read-only gap map (`brownfield.py`, captured as
+> `adoption-gap-map.md`) → goal menu (`governance-docs`/`retro-design`/`audit`/`migrate`/`bugfix`)
+> → manifest `adoption:` block (goals + `gap_map_ref` + its own provenance) → the goal's legal,
+> human-gated route. The adoption route is **data**: `workflow.yaml` gains `init → audit` /
+> `init → migrate` gated on `manifest-valid` + the new in-process `adoption-recorded` gate
+> (`eados.py` evaluator: absent → `skipped`, so the greenfield pipeline is untouched; malformed →
+> FAIL); `render.py` admits + validates the optional `adoption:` section (`adoption_problems()`,
+> closed goal menu, shared with the evaluator). Registry row + `/eados:adopt` adapter ship; the
+> four Wave-2 refusal routes flip live; RFC-0001 §3 diagram gains the dotted adoption edges.
+> Guarded by `test_adopt_command.py` + the rewritten `test_phase_runner.py` init-fork block.
+
 **Labels:** `enhancement`, `severity:high`, `area:commands`, `area:orchestrator`
 **Component:** `orchestrator/commands/` (new `adopt.md`), `orchestrator/os/workflow/workflow.yaml`, `orchestrator/interview.md`
 

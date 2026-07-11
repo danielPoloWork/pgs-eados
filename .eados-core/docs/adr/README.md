@@ -29,3 +29,4 @@ is sequential and never reused. Template: the generated
 | [0018](0018-ops-delivery-perimeter.md) | Ops & deployment perimeter: ops documents in scope, live infrastructure a recorded non-goal, `deploy` phase deferred | Accepted |
 | [0019](0019-command-surface-taxonomy.md) | Command-surface taxonomy: phases closed, design/audit sub-modes, bounded cross-cutting class, adapters+aliases; manifest required | Accepted |
 | [0020](0020-rename-refactor-phase-to-migrate.md) | Rename the brownfield phase `refactor` → `migrate` (naming honesty; frees `refactor` for the code-quality command); `phase: refactor` a deprecated alias for one minor | Accepted |
+| [0021](0021-brownfield-adoption-route.md) | Brownfield adoption route: `/eados adopt` as init's sibling intake; `adoption:` manifest block; `init → audit`/`init → migrate` legal by data, gated on in-process `adoption-recorded` | Accepted |
