@@ -72,5 +72,9 @@ specialized" ≠ "unsupported" — add an overlay when a domain needs one.
 
 - **English on disk**, any language in chat (`AGENTS.md` §2).
 - **Agent drafts; human opens/merges/publishes** (`AGENTS.md` §6.1 / §11).
+- **Calibrated, non-sycophantic communication** — confidence tags earned by evidence, no
+  courtesy openers, structured dissent, evidence-first pushback. One contract for every role
+  ([`../orchestrator/os/interaction/interaction.yaml`](../orchestrator/os/interaction/interaction.yaml),
+  ADR-0022; rendered into the governing `AGENTS.md`).
 - **Measurable over asserted** — prove with tests/checks, not prose.
 - **Learn** — record a generalizable lesson in [`../learning/lessons.yaml`](../learning/README.md).
