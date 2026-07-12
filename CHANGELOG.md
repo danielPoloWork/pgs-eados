@@ -11,6 +11,21 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
 
 ### Added
 
+- **Consumer-side routing — `/eados plan` attaches a model/effort route per roadmap item (#296,
+  M18 18.1).** M16 routed only the factory's own planning surface (filed-issue `Routing:` lines,
+  the `.issues/` plan-doc column); a repo that *installs* the OS got a route-less `ROADMAP.md`. The
+  `plan` phase now closes that gap: the negotiation protocol's tech-lead step
+  ([`os/plan/negotiation-protocol.md`](.eados-core/orchestrator/os/plan/negotiation-protocol.md))
+  attaches a capability tier (`fast` / `standard` / `frontier-reasoning`) + effort (`low`–`max`)
+  next to the T-shirt size — resolved with `route_advice.py` where signals are known, a tech-lead
+  judgment otherwise (a roadmap item has no tracker labels yet; the route firms up when the item is
+  filed as an issue) — and [`commands/plan.md`](.eados-core/orchestrator/commands/plan.md) has each
+  roadmap item carry that route, **tiers not model names** (the ADR-0017 invariant: names live only
+  in the dated `catalog:` and would rot in a roadmap). Advisory throughout — the route recommends,
+  the human keeps final model authority; a companion checkpoint (18.2) compares it against the
+  session model at run time. No policy or code change: the `os/routing` policy is referenced, not
+  duplicated.
+
 - **Command-surface reference gains a `Description` column.** `commands/README.md`'s canonical
   `/eados <name>` table listed status and procedure but no one-line summary — a maintainer had to
   read the prose paragraph below the table (or open each `.md`) to see what a command does. Every
