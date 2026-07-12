@@ -5,9 +5,18 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
 
 ## [Unreleased]
+
+## [2.10.0] - 2026-07-12
+
+M18 (consumer-side routing & model checkpoint) — a minor, additive release: `/eados plan` attaches
+a model/effort route to each roadmap item (tiers, not model names), an advisory route checkpoint
+(`route_advice.py --check`) warns when the session model is off a step's routed tier and records an
+accepted bypass, and routing is documented end-to-end. Advisory throughout — the human keeps model
+authority; an agent never switches its own session model. Also includes the `/eados` command-table
+`Description` column.
 
 ### Added
 

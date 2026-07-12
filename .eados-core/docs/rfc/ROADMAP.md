@@ -45,6 +45,8 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **M16 — model & effort routing** | ✅ **done** — items 16.1–16.x (#256 plan; advisory routing-as-data, ADR-0017, milestone #16 closed) |
 | **M17 — interaction contract & confidence calibration** | ✅ **done** — items 17.1–17.5 (#277–#281; ADR-0022, `os/interaction/`, milestone #17 closed) |
 | **v2.9.0 release** | ✅ published 2026-07-11 — M15 command surface + M16 model/effort routing + M17 interaction contract |
+| **M18 — consumer-side routing & model checkpoint** | ✅ **done** — items 18.1–18.3 (#296–#298; roadmap routes + advisory `--check` checkpoint, milestone #18 closed) |
+| **v2.10.0 release** | ✅ published 2026-07-12 — M18 consumer-side routing & model checkpoint |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
