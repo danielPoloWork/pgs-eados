@@ -9,6 +9,16 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Command-surface reference gains a `Description` column.** `commands/README.md`'s canonical
+  `/eados <name>` table listed status and procedure but no one-line summary — a maintainer had to
+  read the prose paragraph below the table (or open each `.md`) to see what a command does. Every
+  row now carries a one-line "what it does" cell sourced from the command's own procedure doc; the
+  `command-adapters` gate's row parser only anchors on the first four cells, so the addition is
+  lint-safe. The front-door `README.md` "The phase pipeline" table and its cross-cutting-command
+  prose already existed and already link here — nothing duplicated there.
+
 ## [2.9.0] - 2026-07-11
 
 M15 (command surface & governed assistants) + M16 (model & effort routing) + M17 (interaction
