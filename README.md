@@ -8,6 +8,9 @@
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](.eados-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
+> [!TIP]
+> **Finding EADOS useful? Please [give it a ⭐ on GitHub](https://github.com/danielPoloWork/pgs-eados)** — a star helps others discover the project and supports its continued development.
+
 > **🌐 Translations:** [简体中文](.eados-core/docs/i18n/zh-Hans/README.md) · [日本語](.eados-core/docs/i18n/ja/README.md) — derived from this English source. Policy & freshness: [`.eados-core/docs/i18n/`](.eados-core/docs/i18n/README.md).
 
 > A language-agnostic **delivery operating system** for enterprise software, web, games, and mobile
