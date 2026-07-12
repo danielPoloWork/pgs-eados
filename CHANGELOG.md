@@ -9,6 +9,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **README star callout.** A brief `> [!TIP]` note under the badges invites readers to star the
+  repository — mirrored across the zh-Hans and ja translations with the i18n source hash refreshed
+  in lockstep. Placed below the badges (not above the title) to keep the enterprise framing intact.
+
 ## [2.10.0] - 2026-07-12
 
 M18 (consumer-side routing & model checkpoint) — a minor, additive release: `/eados plan` attaches

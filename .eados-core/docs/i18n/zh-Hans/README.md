@@ -8,6 +8,9 @@
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../../.eados-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
+> [!TIP]
+> **觉得 EADOS 有用？欢迎[在 GitHub 上点亮 ⭐](https://github.com/danielPoloWork/pgs-eados)** —— 一颗 Star 能帮助更多人发现本项目，也是对持续开发的支持。
+
 > 🌐 本页面是项目 [`README.md`](../../../../README.md) 的简体中文翻译。
 > **英文版本为唯一权威来源** —— 如本译文与原文不一致，以英文版为准。
 > 用其他语言阅读：[English](../../../../README.md) · [日本語](../ja/README.md)。
