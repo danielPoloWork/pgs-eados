@@ -303,6 +303,22 @@ def main():
           any("sure/hunch" in ln
               for ln in pr.phase_invariants(wf, authority, gitspec, "design", t_hd, fake_ix)), failures)
 
+    # --- #297: the preamble also re-states the advisory model-routing posture, DERIVED — the tiers
+    #     come from the spec, and it never tells the agent to switch its own session model. ---
+    routing = pr.load_routing()
+    inv_rt = pr.phase_invariants(wf, authority, gitspec, "design", t_hd, interaction, routing)
+    check("with the routing spec, the preamble re-states the routing posture (ADR-0017)",
+          any("model routing" in ln and "ADR-0017" in ln for ln in inv_rt), failures)
+    check("the routing line names the checkpoint and forbids a session switch",
+          any("route_advice.py --check" in ln and "never switch the session model" in ln
+              for ln in inv_rt if "model routing" in ln), failures)
+    check("without the routing spec, the routing line is dropped (degrades, never crashes)",
+          not any("model routing" in ln for ln in inv), failures)
+    fake_rt = {"tiers": ["cheap", "pricey"]}
+    check("the tier vocabulary is DERIVED (a fake spec's tiers flow through)",
+          any("cheap/pricey" in ln for ln in
+              pr.phase_invariants(wf, authority, gitspec, "design", t_hd, interaction, fake_rt)), failures)
+
     # --- #221: the long-run reminder fires only past the checkpoint-depth threshold ---
     check("long_run_reminder is empty below the threshold",
           pr.long_run_reminder({"delivery_state": {"checkpoints": []}}, authority, gitspec) == [], failures)
@@ -326,12 +342,17 @@ def main():
               "runtime invariants" in rout.getvalue() and "human-owner" in rout.getvalue(), failures)
         check("report() re-reads the interaction contract in the preamble (#280)",
               "interaction contract" in rout.getvalue() and "AGENTS.md §10" in rout.getvalue(), failures)
+        check("report() re-states the model-routing posture in the preamble (#297)",
+              "model routing" in rout.getvalue() and "route_advice.py --check" in rout.getvalue(),
+              failures)
         pout = io.StringIO()
         pr.report_propose(mpath, "design", out=pout)
         check("report_propose() emits the re-grounding preamble for the proposed move",
               "runtime invariants" in pout.getvalue() and "tech-lead" in pout.getvalue(), failures)
         check("report_propose() re-reads the interaction contract in the preamble (#280)",
               "interaction contract" in pout.getvalue(), failures)
+        check("report_propose() re-states the model-routing posture (#297)",
+              "model routing" in pout.getvalue(), failures)
 
     if failures:
         print("test-phase-runner: FAIL\n")

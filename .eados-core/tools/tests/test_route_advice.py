@@ -172,6 +172,64 @@ def main():
           all(s in text for s in ["tier=", "effort=", adv["model"]]), failures)
     check("formatted advice states the advisory boundary", "advisory" in text, failures)
 
+    # --- the route checkpoint (#297): tier_of_model normalization ---
+    check("model matches its own catalog name", ra.tier_of_model("Opus 4.8", spec) == "standard", failures)
+    check("normalization tolerates id form (claude-opus-4-8)",
+          ra.tier_of_model("claude-opus-4-8", spec) == "standard", failures)
+    check("frontier model resolves", ra.tier_of_model("Fable 5", spec) == "frontier-reasoning", failures)
+    check("an off-catalog model resolves to no tier", ra.tier_of_model("gpt-4", spec) is None, failures)
+    check("an empty model resolves to no tier", ra.tier_of_model("", spec) is None, failures)
+    check("tier_of_model honors the host", ra.tier_of_model("X-mid", spec, host="other-host") == "standard",
+          failures)
+
+    # --- check_route: ok / mismatch (below+above) / unknown-model ---
+    std = ra.advise(ra.signals_for(["severity:medium"], [], spec), spec)   # standard/medium
+    ok = ra.check_route(std, "Opus 4.8", spec)
+    check("check_route OK when session tier == routed tier", ok["status"] == "ok", failures)
+    check("OK carries no direction", ok["direction"] is None, failures)
+
+    below = ra.check_route(std, "Sonnet 5", spec)                          # fast < standard
+    check("check_route flags a below-route mismatch",
+          below["status"] == "mismatch" and below["direction"] == "below", failures)
+    check("mismatch reports the session's own tier", below["current_tier"] == "fast", failures)
+
+    front = ra.advise(ra.signals_for(["adr"], [], spec), spec)            # frontier-reasoning
+    above = ra.check_route(front, "Opus 4.8", spec)                       # standard < frontier
+    check("check_route flags an above vs below correctly",
+          above["status"] == "mismatch" and above["direction"] == "below", failures)
+    over = ra.check_route(std, "Fable 5", spec)                           # frontier > standard
+    check("a session above the route reads 'above'",
+          over["status"] == "mismatch" and over["direction"] == "above", failures)
+
+    unknown = ra.check_route(std, "gpt-4", spec)
+    check("check_route degrades to unknown-model off-catalog", unknown["status"] == "unknown-model", failures)
+    check("unknown-model carries no session tier", unknown["current_tier"] is None, failures)
+
+    # --- format_check: the three verdicts, and the honest effort caveat everywhere ---
+    ok_txt = ra.format_check(ok, heading="labels: severity:medium")
+    check("OK verdict prints ROUTE-OK", "ROUTE-OK" in ok_txt, failures)
+    mis_txt = ra.format_check(below)
+    check("mismatch verdict prints ROUTE-MISMATCH", "ROUTE-MISMATCH" in mis_txt, failures)
+    check("mismatch names the record_run bypass", "--route-mismatch" in mis_txt, failures)
+    unk_txt = ra.format_check(unknown, host="claude-code")
+    check("unknown verdict prints ROUTE-CHECK (cannot compare)",
+          "ROUTE-CHECK" in unk_txt and "cannot compare" in unk_txt, failures)
+    for label, txt in (("ok", ok_txt), ("mismatch", mis_txt), ("unknown", unk_txt)):
+        check(f"{label} states effort is not verifiable", "not verifiable" in txt, failures)
+        check(f"{label} states the advisory boundary", "advisory" in txt.lower(), failures)
+
+    # --- the CLI --check path: always exit 0, whatever the verdict ---
+    check("--check OK exits 0",
+          ra.main(["--labels", "severity:medium", "--check", "--current-model", "Opus 4.8"]) == 0, failures)
+    check("--check MISMATCH still exits 0 (advisory, never a gate)",
+          ra.main(["--labels", "severity:medium", "--check", "--current-model", "Sonnet 5"]) == 0, failures)
+    check("--check unknown-model still exits 0",
+          ra.main(["--labels", "severity:medium", "--check", "--current-model", "gpt-4"]) == 0, failures)
+    check("--check without --current-model is a usage error (exit 2)",
+          ra.main(["--labels", "severity:medium", "--check"]) == 2, failures)
+    check("--check with --milestone is refused (exit 2)",
+          ra.main(["--milestone", "M18", "--check", "--current-model", "Opus 4.8"]) == 2, failures)
+
     if failures:
         print("\ntest-route-advice: FAIL")
         for f in failures:

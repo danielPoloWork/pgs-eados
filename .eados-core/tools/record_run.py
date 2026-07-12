@@ -126,12 +126,29 @@ def _single_line(text):
     return " ".join(str(text).split()) or "(no message)"
 
 
+def parse_route_mismatch(spec):
+    """`ROUTED=SESSION` -> {routed, session}, or (None, problem). An accepted route mismatch (M18
+    18.2, #297): the human ran a unit of work on a model below/above its routed tier and proceeded
+    — a legitimate override that should be visible, not silent (the recorded-dissent posture,
+    ADR-0022 §10.4). Both sides are free strings (the routed 'tier/effort' shorthand and the
+    session tier/model), non-empty; the tool does not re-derive the route, it records the accepted
+    fact. Returns ({} , None) when `spec` is falsy — the flag was not passed."""
+    if not spec:
+        return {}, None
+    routed, sep, session = str(spec).partition("=")
+    routed, session = routed.strip(), session.strip()
+    if not sep or not routed or not session:
+        return None, f"--route-mismatch needs ROUTED=SESSION (both non-empty), got {spec!r}"
+    return {"routed": _single_line(routed), "session": _single_line(session)}, None
+
+
 def build_run_record(manifest, template, known_lessons, today, outcome="ok",
-                     failures=(), lessons=(), rubric=(), phase="scaffold"):
+                     failures=(), lessons=(), rubric=(), phase="scaffold", route_mismatch=None):
     """(record, problems): the record dict ready for emission, and every validation problem
     found (empty == valid). `failures` are 'GATE=MESSAGE' strings, `lessons` lesson ids,
     `rubric` 'DIM=SCORE' strings — exactly the CLI's repeatable flags. `phase` is the delivery
-    phase the record is for (#215: scaffold by default; migrate/audit for real-user-code work)."""
+    phase the record is for (#215: scaffold by default; migrate/audit for real-user-code work).
+    `route_mismatch` is an optional 'ROUTED=SESSION' string — an accepted route override (#297)."""
     problems = []
     if phase not in PHASES:
         problems.append(f"phase must be one of {'|'.join(PHASES)}, got {phase!r}")
@@ -186,6 +203,10 @@ def build_run_record(manifest, template, known_lessons, today, outcome="ok",
             continue
         scores[dim] = int(score)
 
+    mismatch, mismatch_problem = parse_route_mismatch(route_mismatch)
+    if mismatch_problem:
+        problems.append(mismatch_problem)
+
     record = {
         "slug": slug,
         "date": today,
@@ -197,6 +218,7 @@ def build_run_record(manifest, template, known_lessons, today, outcome="ok",
         "lessons_applied": applied,
         "failures": parsed_failures,
         "rubric": scores,
+        "route_mismatch": mismatch,
     }
     return record, problems
 
@@ -246,6 +268,13 @@ def emit_record_yaml(record):
                 out.append(f"  {dim}: {record['rubric'][dim]}")
     else:
         out.append("rubric: {}")
+    # #297: an accepted route mismatch, emitted only when one was recorded — a rare, exceptional
+    # override, unlike the always-present core channels, so absence keeps records byte-identical.
+    mismatch = record.get("route_mismatch")
+    if mismatch:
+        out.append("route_mismatch:")
+        out.append(f"  routed: {_scalar(mismatch['routed'])}")
+        out.append(f"  session: {_scalar(mismatch['session'])}")
     return "\n".join(out) + "\n"
 
 
@@ -328,6 +357,10 @@ def main(argv=None):
     ap.add_argument("--phase", choices=PHASES, default="scaffold",
                     help="the delivery phase this record is for (default scaffold, generate.md "
                          "Step 9); use e.g. --phase migrate to log a migrate-phase incident (#215)")
+    ap.add_argument("--route-mismatch", metavar="ROUTED=SESSION",
+                    help="record an accepted route override (#297), e.g. --route-mismatch "
+                         "\"frontier-reasoning/high=standard\" — the run proceeded on a model off "
+                         "its routed tier; the checkpoint (route_advice.py --check) prints this string")
     ap.add_argument("--date", help="record date YYYY-MM-DD (default: today)")
     ap.add_argument("--dry-run", action="store_true", help="print the record; write nothing")
     args = ap.parse_args(argv)
@@ -347,7 +380,7 @@ def main(argv=None):
     record, problems = build_run_record(
         manifest, template, known_lesson_ids(lessons_text), today,
         outcome=args.outcome, failures=args.failure, lessons=args.lesson, rubric=args.rubric,
-        phase=args.phase)
+        phase=args.phase, route_mismatch=args.route_mismatch)
     if problems:
         print("record-run: FAIL — the record would not be honest\n")
         for p in problems:
