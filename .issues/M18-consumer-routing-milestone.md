@@ -53,9 +53,9 @@ with a recorded bypass — without touching the ADR-0017 authority boundary.
 
 | Item | Issue | PR | Status |
 |---|---|---|---|
-| 18.1 | #296 | — | queued |
-| 18.2 | #297 | — | queued — depends on 18.1 (the checkpoint reads the roadmap route) |
-| 18.3 | #298 | — | queued — depends on 18.1–18.2 |
+| 18.1 | #296 | [#300](https://github.com/danielPoloWork/pgs-eados/pull/300) | merged — a route per roadmap item (negotiation protocol + item format, tiers-not-names) |
+| 18.2 | #297 | [#301](https://github.com/danielPoloWork/pgs-eados/pull/301) | merged — `route_advice.py --check` + `record_run.py --route-mismatch` + `phase_runner.py` boundary route line |
+| 18.3 | #298 | — | this PR — USAGE §9 routing section, README bullet ×3 (i18n hash refreshed), this delivery record, CHANGELOG |
 
 ## Out of scope (invariants)
 

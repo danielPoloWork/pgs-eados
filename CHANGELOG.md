@@ -11,6 +11,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
 
 ### Added
 
+- **M18 capstone — model & effort routing documented end-to-end (#298, M18 18.3).** M16 shipped the
+  routing policy, evaluator, and delegation hook but **no user-facing docs**; M18 added the
+  consumer-side pieces (roadmap routes, the `--check` checkpoint) and this capstone makes the whole
+  feature discoverable. [`USAGE.md`](.eados-core/docs/USAGE.md) §9 "How the OS routes model & effort"
+  explains the advisory posture (tiers-not-names, the dated catalog), where the route shows up
+  (roadmap item, triage/status, phase boundaries), the `--check` walkthrough
+  (`ROUTE-OK` / `ROUTE-MISMATCH` / `ROUTE-CHECK`, the recorded bypass), and the honest ceiling
+  (effort recommended never verified; the session model is a self-report; no session auto-swap). The
+  README gains one Why-EADOS bullet — routing-as-data, human keeps model authority — mirrored across
+  zh-Hans and ja with the i18n source hash refreshed in lockstep. The M18 plan's delivery record
+  now lists all three PRs. M18 (18.1–18.3) is complete.
+
 - **Route checkpoint — the OS warns when the session model is off a unit of work's routed tier
   (#297, M18 18.2).** M16's advisory posture existed in prose (`os/routing/delegation.md`: "print
   the advice and stop") but nothing mechanical compared the model the session actually runs on to
