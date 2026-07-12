@@ -31,6 +31,7 @@ WORKFLOW = os.path.join(ROOT, "orchestrator", "os", "workflow", "workflow.yaml")
 AUTHORITY = os.path.join(ROOT, "orchestrator", "os", "authority", "authority.yaml")
 GIT = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
 INTERACTION = os.path.join(ROOT, "orchestrator", "os", "interaction", "interaction.yaml")
+ROUTING = os.path.join(ROOT, "orchestrator", "os", "routing", "routing.yaml")
 
 # #221: a project this many recorded transitions deep re-grounds the core non-negotiables — a
 # deterministic proxy for a "long run" (there is no session in a one-shot CLI). Data, not magic.
@@ -65,6 +66,13 @@ def load_interaction(path=INTERACTION):
     """The interaction policy, or `{}` when absent — the re-grounding preamble re-reads it (M17 17.4,
     #280) to re-inject the how-you-communicate posture at each boundary. Optional like authority/git:
     a project without the spec loses the interaction line, never the report."""
+    return _load_optional(path)
+
+
+def load_routing(path=ROUTING):
+    """The model/effort routing policy, or `{}` when absent — the preamble re-states the advisory
+    routing posture at each boundary (M18 18.2, #297). Optional: a project without the spec loses
+    the routing line, never the report."""
     return _load_optional(path)
 
 
@@ -204,13 +212,16 @@ def terminal_decider(authority):
     return last.get("decider")
 
 
-def phase_invariants(workflow, authority, git, phase, transition=None, interaction=None):
+def phase_invariants(workflow, authority, git, phase, transition=None, interaction=None,
+                     routing=None):
     """The runtime non-negotiables for being AT `phase` — and, when `transition` is given, for TAKING
     that specific move — each line DERIVED from a spec field, never a hardcoded rule. Pure (no I/O).
     Returns a list of one-line strings suitable for a re-grounding preamble. When `interaction` is
     given (the interaction policy, #280), the preamble also re-reads the how-you-communicate contract
     — the *re-ground* tier of the ADR-0022 enforcement ceiling — so a long run cannot let the
-    calibrated-confidence / no-sycophancy / structured-dissent posture drift out of view."""
+    calibrated-confidence / no-sycophancy / structured-dissent posture drift out of view. When
+    `routing` is given (the routing policy, #297), it re-states the advisory model/effort posture —
+    check the route, never switch the session model (ADR-0017)."""
     lines = []
     role = phase_role(workflow, phase)
     if role:
@@ -239,6 +250,13 @@ def phase_invariants(workflow, authority, git, phase, transition=None, interacti
         levels = "/".join((interaction.get("confidence") or {}).get("levels") or []) or "by evidence"
         lines.append(f"interaction contract: tag load-bearing claims ({levels}) by evidence, no "
                      "courtesy opener, structured dissent — a human decision is layer 1 (AGENTS.md §10)")
+    if routing:
+        # #297: re-state the advisory routing posture. Tiers are pulled from the spec (not hardcoded)
+        # so the vocabulary can't rot; the checkpoint is route_advice.py --check.
+        tiers = "/".join(routing.get("tiers") or []) or "by signals"
+        lines.append(f"model routing (os/routing, ADR-0017): the route ({tiers}) is advisory — check "
+                     "it with route_advice.py --check --current-model <id>; never switch the session "
+                     "model, the human holds model authority")
     lines.append("on-disk values are English (AGENTS.md §2); the full contract is AGENTS.md")
     return lines
 
@@ -265,11 +283,12 @@ def long_run_reminder(manifest, authority, git, threshold=LONG_RUN_CHECKPOINTS):
 
 
 def _emit_regrounding(out, workflow, authority, git, manifest, phase, transition=None, indent="",
-                      interaction=None):
+                      interaction=None, routing=None):
     """Print the re-grounding preamble (#221): the phase invariants, then the long-run reminder when a
     project is deep enough to warrant it. Thin I/O over the pure builders above. `interaction` (#280)
-    adds the how-you-communicate line when the policy is present."""
-    invariants = phase_invariants(workflow, authority, git, phase, transition, interaction)
+    adds the how-you-communicate line; `routing` (#297) adds the advisory model/effort line — each
+    when its policy is present."""
+    invariants = phase_invariants(workflow, authority, git, phase, transition, interaction, routing)
     if invariants:
         print(f"{indent}runtime invariants (re-grounded at this boundary):", file=out)
         for line in invariants:
@@ -287,7 +306,8 @@ def report(manifest_path, out=sys.stdout):
         manifest = render.load_yaml(handle.read())
     warn_legacy_phases(manifest)
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
-    authority, git, interaction = load_authority(), load_git(), load_interaction()
+    authority, git, interaction, routing = (load_authority(), load_git(), load_interaction(),
+                                            load_routing())
     states = state_ids(workflow)
     phase = current_phase(manifest)
     print(f"current phase: {phase}  (manifest_rev {manifest_rev(manifest)})", file=out)
@@ -304,7 +324,8 @@ def report(manifest_path, out=sys.stdout):
             human = "  [human-gated — the owner confirms]" if t.get("human_gate") else ""
             print(f"  -> {t.get('to')}   (gates: {gates}){human}", file=out)
     # #221: re-ground the invariants for the current phase at this boundary (transition-agnostic).
-    _emit_regrounding(out, workflow, authority, git, manifest, phase, interaction=interaction)
+    _emit_regrounding(out, workflow, authority, git, manifest, phase, interaction=interaction,
+                      routing=routing)
     return 0
 
 
@@ -480,7 +501,8 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
               file=out)
         return 1
     workflow = apply_overlay(load_workflow(), manifest_domain(manifest))
-    authority, git, interaction = load_authority(), load_git(), load_interaction()
+    authority, git, interaction, routing = (load_authority(), load_git(), load_interaction(),
+                                            load_routing())
     states = state_ids(workflow)
     frm = current_phase(manifest)
     print(f"proposed transition: {frm} -> {to_phase}  (read at manifest_rev {rev})", file=out)
@@ -499,7 +521,7 @@ def report_propose(manifest_path, to_phase, out=sys.stdout, evaluate=None, ctx=N
           f"human-gated: {'yes' if t.get('human_gate') else 'no'}", file=out)
     # #221: re-ground the non-negotiables for THIS specific move before it is evaluated/recorded.
     _emit_regrounding(out, workflow, authority, git, manifest, to_phase, transition=t, indent="  ",
-                      interaction=interaction)
+                      interaction=interaction, routing=routing)
     gate_results = evaluate(entry_gates, manifest, ctx or {}) if evaluate else None
     if gate_results:
         print("  gate results (live): "

@@ -163,6 +163,32 @@ def main():
               for p in rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05", phase="bogus")[1]),
           failures)
     check("emit writes the phase line", "phase:" in rr.emit_record_yaml(rec_r), failures)
+
+    # --- #297: an accepted route mismatch — parsed, emitted only when present, round-trips ---
+    rec_m, probs_m = rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05",
+                                         route_mismatch="frontier-reasoning/high=standard")
+    check("build_run_record records the accepted mismatch",
+          rec_m.get("route_mismatch") == {"routed": "frontier-reasoning/high", "session": "standard"}
+          and probs_m == [], failures)
+    loaded_m = render.load_yaml(rr.emit_record_yaml(rec_m))
+    check("round-trip: the route_mismatch block survives",
+          loaded_m.get("route_mismatch") == {"routed": "frontier-reasoning/high", "session": "standard"},
+          failures)
+    check("route_mismatch is omitted when the flag is absent (records stay byte-identical)",
+          "route_mismatch" not in rr.emit_record_yaml(rec_r), failures)
+    check("route_mismatch defaults to empty in the record dict",
+          rr.build_run_record(MANIFEST, TEMPLATE, KNOWN, "2026-07-05")[0]["route_mismatch"] == {},
+          failures)
+    check("a malformed route mismatch (no '=') is a problem",
+          any("ROUTED=SESSION" in p for p in rr.build_run_record(
+              MANIFEST, TEMPLATE, KNOWN, "2026-07-05", route_mismatch="frontier-reasoning")[1]),
+          failures)
+    check("a route mismatch with an empty side is a problem",
+          any("ROUTED=SESSION" in p for p in rr.build_run_record(
+              MANIFEST, TEMPLATE, KNOWN, "2026-07-05", route_mismatch="standard=")[1]), failures)
+    r_ok, _ = rr.parse_route_mismatch("standard/medium=fast")
+    check("parse_route_mismatch trims and splits",
+          r_ok == {"routed": "standard/medium", "session": "fast"}, failures)
     check("a sensitive override key redacts its chosen value (host/url/registry/token/...)",
           rr.redact_overrides([{"key": "ci.registry_url", "default": "d", "chosen": "internal:5000"}])
           == [{"key": "ci.registry_url", "default": "d", "chosen": "<redacted>"}], failures)

@@ -14,6 +14,11 @@ message, exit 2) when `gh` is missing, unauthenticated, or offline — like `pr_
     python .eados-core/tools/route_advice.py --labels "adr,severity:high" [--flags decision-heavy]
     python .eados-core/tools/route_advice.py --issue 247 [--repo OWNER/REPO] [--json]
     python .eados-core/tools/route_advice.py --milestone "M15 — command surface & governed assistants"
+    python .eados-core/tools/route_advice.py --labels "adr" --check --current-model "Opus 4.8"
+
+The `--check` mode (M18 18.2) compares the resolved route against the model the session
+self-reports (`--current-model`) and prints ROUTE-OK / ROUTE-MISMATCH — advisory, always exit 0;
+it never switches the model (no host lets an agent re-route its own session — ADR-0017).
 """
 
 import os
@@ -224,6 +229,73 @@ def format_advice(advice, heading=None):
     return "\n".join(out)
 
 
+# --- the route checkpoint (M18 18.2, #297) --------------------------------
+# Compare a resolved route against the model the session self-reports it is running on. The
+# session model is NOT introspectable by any host's agent, so the tool trusts its
+# `--current-model` argument (stated in the output). Effort is likewise unobservable — the
+# checkpoint verifies the model->tier half only and says so. Advisory always: the caller exits 0
+# regardless of the verdict (ADR-0017 — a blocking model gate would claim authority the OS lacks).
+def _norm_model(name):
+    """Lowercase, alphanumerics only — so 'Opus 4.8' / 'claude-opus-4-8' / 'opus-4.8' compare equal."""
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+
+def tier_of_model(model, spec, host=None):
+    """The catalog tier whose model matches `model` for `host`, or `None` when no *single* tier
+    matches. Normalized match with containment tolerance; zero or ambiguous (>1) hits return `None`
+    — the honest 'cannot compare' signal the checkpoint degrades on rather than guessing."""
+    target = _norm_model(model)
+    if not target:
+        return None
+    models = _host_entry(spec, host).get("models") or {}
+    hits = [tier for tier, name in models.items()
+            if (n := _norm_model(name)) and (n == target or n in target or target in n)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def check_route(advice, current_model, spec, host=None):
+    """Pure: compare a resolved route (`advise(...)`) against the session's self-reported model.
+    Returns {status, routed_tier, routed_effort, routed_model, current_model, current_tier,
+    direction}. `status` is 'ok' (tiers match), 'mismatch' (differ — `direction` is 'below'/'above'
+    the routed tier), or 'unknown-model' (current model not in the dated catalog → cannot compare).
+    Effort is never compared: no host exposes the session's effort, so only the model->tier half is
+    verified (the output states this)."""
+    tier_rank = {t: i for i, t in enumerate(spec["tiers"])}
+    routed_tier = advice["tier"]
+    current_tier = tier_of_model(current_model, spec, host)
+    if current_tier is None:
+        status, direction = "unknown-model", None
+    elif current_tier == routed_tier:
+        status, direction = "ok", None
+    else:
+        status = "mismatch"
+        direction = "below" if tier_rank[current_tier] < tier_rank[routed_tier] else "above"
+    return {"status": status, "routed_tier": routed_tier, "routed_effort": advice["effort"],
+            "routed_model": advice["model"], "current_model": str(current_model),
+            "current_tier": current_tier, "direction": direction}
+
+
+def format_check(check, host=None, heading=None):
+    """The human-readable checkpoint block. Advisory always — the caller exits 0 whatever the verdict."""
+    routed = f"{check['routed_tier']}/{check['routed_effort']} (-> {check['routed_model']})"
+    out = [heading] if heading else []
+    if check["status"] == "ok":
+        out.append(f"ROUTE-OK — routed {routed}; session model '{check['current_model']}' is the "
+                   f"{check['routed_tier']} tier. Match.")
+    elif check["status"] == "mismatch":
+        out.append(f"ROUTE-MISMATCH — routed {routed}; session '{check['current_model']}' is the "
+                   f"{check['current_tier']} tier ({check['direction']} the route). Switch with your "
+                   "host's model control, or proceed to accept the mismatch and record it: "
+                   f"record_run.py --route-mismatch "
+                   f"\"{check['routed_tier']}/{check['routed_effort']}={check['current_tier']}\".")
+    else:  # unknown-model
+        out.append(f"ROUTE-CHECK — routed {routed}; session model '{check['current_model']}' is not "
+                   f"in the dated catalog (host: {host or 'default'}) — cannot compare tiers (advisory).")
+    out.append("  effort is recommended, not verifiable (no host exposes the session effort); only "
+               "the model half is checked. Advisory — the human keeps final model authority (ADR-0017).")
+    return "\n".join(out)
+
+
 # --- the thin `gh` shell (best-effort; degrades cleanly) ------------------
 def _gh_json(args):
     import json
@@ -282,7 +354,20 @@ def main(argv=None):
     ap.add_argument("--repo", help="OWNER/REPO (default: the repo gh infers)")
     ap.add_argument("--host", default=None, help="catalog host (default: the first catalog entry)")
     ap.add_argument("--json", action="store_true", help="emit structured advice as JSON")
+    ap.add_argument("--check", action="store_true",
+                    help="compare the resolved route against the session model (--current-model); "
+                         "prints ROUTE-OK / ROUTE-MISMATCH, advisory — always exits 0")
+    ap.add_argument("--current-model",
+                    help="the model the session is running on, self-reported (required with --check)")
     args = ap.parse_args(argv)
+
+    if args.check and args.milestone is not None:
+        print("route-advice: --check compares one session model to one unit of work — use --labels "
+              "or --issue, not --milestone", file=sys.stderr)
+        return 2
+    if args.check and not args.current_model:
+        print("route-advice: --check requires --current-model <id>", file=sys.stderr)
+        return 2
 
     try:
         spec = load_routing()
@@ -326,6 +411,12 @@ def main(argv=None):
     except ValueError as exc:
         print(f"route-advice: ERROR — {exc}", file=sys.stderr)
         return 1
+    if args.check:
+        # #297: advisory checkpoint — compare the route to the session model, always exit 0.
+        check = check_route(advice, args.current_model, spec, host=args.host)
+        print(json.dumps(check, indent=2) if args.json
+              else format_check(check, host=args.host, heading=heading))
+        return 0
     if args.json:
         print(json.dumps(advice, indent=2))
     else:

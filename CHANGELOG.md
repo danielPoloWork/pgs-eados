@@ -11,6 +11,24 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.9.0**.
 
 ### Added
 
+- **Route checkpoint — the OS warns when the session model is off a unit of work's routed tier
+  (#297, M18 18.2).** M16's advisory posture existed in prose (`os/routing/delegation.md`: "print
+  the advice and stop") but nothing mechanical compared the model the session actually runs on to
+  the route. Three additions close it, all advisory: **(1)** `route_advice.py --check
+  --current-model <id>` resolves the route, maps the session model to a catalog tier, and prints
+  `ROUTE-OK` / `ROUTE-MISMATCH` (below/above the route) / `ROUTE-CHECK` (session model not in the
+  dated catalog → cannot compare) — **always exit 0**, never a gate (ADR-0017: a blocking model
+  check would claim authority the OS lacks). The effort half is *not* compared — no host exposes
+  the session effort — and the output says so; the session model is the agent's self-report
+  (`--current-model`), stated honestly. **(2)** `record_run.py --route-mismatch "ROUTED=SESSION"`
+  records an *accepted* mismatch in the run record (emitted only when present, so existing records
+  stay byte-identical) — a legitimate override made visible, the recorded-dissent posture
+  (ADR-0022 §10.4). **(3)** `phase_runner.py`'s re-grounding preamble (#221/#280 hook family) gains
+  a routing line — the tiers pulled from `routing.yaml` (derived, not hardcoded), pointing at the
+  checkpoint and reaffirming the hard limit: **the agent never switches its own session model**
+  (auto-application stays downward-only, `delegation.md`). Tests cover OK / mismatch / unknown-model
+  degrade, the record round-trip, and the derived-from-spec runner line.
+
 - **Consumer-side routing — `/eados plan` attaches a model/effort route per roadmap item (#296,
   M18 18.1).** M16 routed only the factory's own planning surface (filed-issue `Routing:` lines,
   the `.issues/` plan-doc column); a repo that *installs* the OS got a route-less `ROADMAP.md`. The
