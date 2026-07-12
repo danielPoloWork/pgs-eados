@@ -29,21 +29,21 @@ recommended model tier + effort** for the work ahead — `triage.yaml` `routing_
 [`route_advice.py`](../../tools/route_advice.py). Advisory only: the human keeps final model
 authority, and the session model is never switched by the agent.
 
-| Command | Phase | Status | Procedure |
-|---------|-------|--------|-----------|
-| `/eados init` | init | **available** (M1) | [`init.md`](init.md) |
-| `/eados adopt` | init (brownfield intake) | **available** (M15 W3) | [`adopt.md`](adopt.md) |
-| `/eados design` | design | **available** (M2) | [`design.md`](design.md) |
-| `/eados plan` | plan | **available** (M3) | [`plan.md`](plan.md) |
-| `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) |
-| `/eados audit` | audit | **available** (M4) | [`audit.md`](audit.md) |
-| `/eados migrate` | migrate | **available** (M5) | [`migrate.md`](migrate.md) |
-| `/eados status` | — (any) | **available** (M6) | [`status.md`](status.md) |
-| `/eados review` | — (any) | **available** (M8) | [`review.md`](review.md) |
-| `/eados debug` | — (any) | **available** (M15 W2) | [`debug.md`](debug.md) |
-| `/eados refactor` | — (any) | **available** (M15 W2) | [`refactor.md`](refactor.md) |
-| `/eados optimize` | — (any) | **available** (M15 W2) | [`optimize.md`](optimize.md) |
-| `/eados testcases` | — (any) | **available** (M15 W2) | [`testcases.md`](testcases.md) |
+| Command | Phase | Status | Procedure | What it does |
+|---------|-------|--------|-----------|-------------|
+| `/eados init` | init | **available** (M1) | [`init.md`](init.md) | Frame a new project, load the domain profile, write the manifest skeleton (`delivery_state`). |
+| `/eados adopt` | init (brownfield intake) | **available** (M15 W3) | [`adopt.md`](adopt.md) | Brownfield intake for an existing repo: a read-only gap map + goal menu → a manifest whose `adoption:` record makes `init → audit` / `init → migrate` legal, human-gated. |
+| `/eados design` | design | **available** (M2) | [`design.md`](design.md) | Author or import an RFC under the review protocol. |
+| `/eados plan` | plan | **available** (M3) | [`plan.md`](plan.md) | Negotiate the roadmap from approved RFCs and build the traceability graph. |
+| `/eados scaffold` | scaffold | **available** (today's factory) | [`../generate.md`](../generate.md) | Generate the governed repository from the manifest — the classic factory (render + `consistency_lint`). |
+| `/eados audit` | audit | **available** (M4) | [`audit.md`](audit.md) | Continuous risk scoring + the enforced traceability lint and risk register. |
+| `/eados migrate` | migrate | **available** (M5) | [`migrate.md`](migrate.md) | Bring an existing repo up to standard via gated, sandboxed, **additive** PRs. |
+| `/eados status` | — (any) | **available** (M6) | [`status.md`](status.md) | Read-only doctor: current phase, legal next moves, traceability coverage at a glance. |
+| `/eados review` | — (any) | **available** (M8) | [`review.md`](review.md) | Evaluate an inbound PR against the contribution policy and draft a disposition — **recommends, never merges**. |
+| `/eados debug` | — (any) | **available** (M15 W2) | [`debug.md`](debug.md) | Governed defect investigation: reproduce → root-cause → one-change fix + regression test → bug-ledger record. |
+| `/eados refactor` | — (any) | **available** (M15 W2) | [`refactor.md`](refactor.md) | Behavior-preserving code-quality refactoring: a green suite on both sides, guided by the patterns catalogue. |
+| `/eados optimize` | — (any) | **available** (M15 W2) | [`optimize.md`](optimize.md) | Measure-first performance work against a numeric NFR budget: baseline → one change → re-measure. |
+| `/eados testcases` | — (any) | **available** (M15 W2) | [`testcases.md`](testcases.md) | QA-owned test generation against spec §6: a green suite, or an `xfail` with a linked defect. |
 
 `/eados status`, `/eados review`, `/eados debug`, `/eados refactor`, `/eados optimize`, and
 `/eados testcases` are **cross-cutting** — not phases that advance. `/eados status` is a
