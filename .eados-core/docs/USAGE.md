@@ -318,7 +318,49 @@ overlay surface — `pushback.human_decision` never relaxes.
 
 ---
 
-## 9. Go deeper
+## 9. How the OS routes model & effort
+
+EADOS treats **which model, at which effort** each unit of work deserves as data — the
+[`os/routing`](../orchestrator/os/routing/routing.yaml) policy (ADR-0017), evaluated by
+[`route_advice.py`](../tools/route_advice.py). It is **advisory-first**: the OS *recommends*, the
+human keeps final model authority; **no agent ever switches its own session model** (auto-selection
+exists only for work a run *delegates* beneath itself, [`os/routing/delegation.md`](../orchestrator/os/routing/delegation.md)).
+
+**Tiers, not model names.** The policy speaks capability **tiers** (`fast` / `standard` /
+`frontier-reasoning`) × an **effort** (`low` – `max`); concrete model names live only in the
+policy's dated `catalog:`, so a market shift is a one-line catalog edit — never a policy, roadmap,
+or code change.
+
+**Where you see it:**
+
+| Surface | What it shows |
+|---|---|
+| **`/eados plan`** | Each `ROADMAP.md` item carries its route — `size: M · route: standard / medium` — attached during negotiation next to the T-shirt size. |
+| **Step-0 triage / `/eados status`** | The recommended tier + effort for the work ahead. |
+| **Phase boundaries** | `phase_runner.py` re-states the advisory posture and points at the checkpoint. |
+
+**The route checkpoint** — before starting a step, compare the route to the model you are actually on:
+
+```bash
+python .eados-core/tools/route_advice.py --labels "adr,severity:high" --flags decision-heavy \
+  --check --current-model "Opus 4.8"
+```
+
+- **`ROUTE-OK`** — the session tier matches the route.
+- **`ROUTE-MISMATCH`** — you are below (or above) the routed tier; switch with your host's model
+  control (e.g. Claude Code's `/model`), **or** proceed and record the accepted mismatch:
+  `record_run.py --route-mismatch "frontier-reasoning/high=standard"`.
+- **`ROUTE-CHECK`** — the session model is not in the dated catalog, so tiers cannot be compared.
+
+It **always exits 0** — advisory, never a gate. Two limits are stated honestly, not hidden: the
+**effort** setting is not observable by any host's agent (the checkpoint verifies the *model* half
+only and says so), and the session model is the agent's **self-report** (`--current-model`), not an
+API the tool can read. Claiming a gate could police either would violate the ADR-0015/0016 honesty
+posture.
+
+---
+
+## 10. Go deeper
 
 - [`AGENTS.md`](../../AGENTS.md) — the binding contract (source of truth).
 - [`orchestrator/`](../orchestrator/README.md) — the engine (interview, generate, placeholders, profiles, recovery).

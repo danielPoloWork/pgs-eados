@@ -37,3 +37,10 @@
   context: A milestone plan reserved "ADR-0019" for a not-yet-written decision; another milestone's work landed first and consumed that number, so the reservation was stale by the time the plan's own decision was ready to write up.
   rule: Never hardcode a future ADR number in a plan doc — numbering is sequential and never reused, so a reservation made ahead of authoring can be consumed by unrelated work that lands first; resolve the actual number at authoring time and correct the plan in the same PR.
   source: M17 17.1 (#277); ADR-0022 (numbering corrected from the reserved "ADR-0019")
+
+- id: L-0006
+  date: 2026-07-12
+  scope: global
+  context: The route checkpoint can verify the session MODEL against the routed tier, but no host exposes the session's EFFORT setting, and the model identity is the agent's own self-report — so it can mechanically observe only part of what it governs.
+  rule: A checkpoint that can observe only part of what it governs must exit non-blocking AND state the unobservable part in its own output (what is verified, what is trusted self-report) — partial verification presented as complete is a dishonest gate.
+  source: M18 18.2 (#297); route_advice.py --check (effort/self-report caveat; ADR-0015/0016 honesty posture)
