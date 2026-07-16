@@ -106,8 +106,11 @@ def main():
           {"L-0003", "L-0004", "L-0005", "L-0006"} <= ls.known_ids(real), failures)
     live = ls.draft_entries([{"number": 300, "title": "x", "body": "Lesson: a brand new maxim",
                               "mergedAt": "2026-07-05T00:00:00Z"}], real, "2026-07-06")
+    # Derived, not pinned: the ledger legitimately grows (every append would break a literal —
+    # the same enumeration-drift class the #168 discovery runner killed).
+    next_id = "L-%04d" % (max(int(i.split("-")[1]) for i in ls.known_ids(real)) + 1)
     check("a new lesson continues after the real ledger's highest id",
-          live and live[0]["id"] == "L-0007", failures)
+          live and live[0]["id"] == next_id, failures)
 
     if failures:
         print("test-lesson-sweep: FAIL\n")

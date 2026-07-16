@@ -257,6 +257,13 @@ follow-ups until each is concrete enough to test against:
   `title`, a one-line `goal`, and its `items` as pre-numbered tasks (`2.1`, `2.2`, …). Ask
   follow-up questions until the whole roadmap is concrete; never defer milestones to "later". →
   `EACH_MILESTONE`.
+  - **Routing-signal follow-up (optional, #306/ADR-0023).** For each item, ask whether it
+    carries a routing *signal* — `security`, `adr`, `severity:medium|high`, `sets-pattern`
+    (first of its class), `decision-heavy` (the decision is the deliverable) — and record the
+    item as `{text, signals[]}` instead of a plain string. Signals, **never tiers**: the
+    `os/routing` rules stay the one place that maps signals to routes, and the renderer derives
+    each item's advisory route (`route: <tier> / <effort>`) into the generated `ROADMAP.md`.
+    Plain-string items stay legal and render unchanged (the legend's floor covers them).
 
 > **Follow-up discipline (Phase 5):** for every requirement, ask "how would CI prove this
 > failed?" If there is no mechanical check, either refine the requirement until there is,

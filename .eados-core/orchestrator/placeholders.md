@@ -109,9 +109,14 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{#EACH_LAYER}}` | Layered package skeleton (when `capabilities.layered`); each item is a package-name string, referenced with `{{.}}` | `controller`, `service`, `repository`, `dto`, `mapper` |
 | `{{#EACH_PUBLIC_API}}` | Public surface entries | — |
 | `{{SPEC_VERIFICATION}}` | Verification & test strategy paragraph | — |
-| `{{#EACH_MILESTONE1_ITEM}}` | Extra Milestone-1 roadmap items (beyond the universal bootstrap 1.1–1.5) | — |
+| `{{#EACH_MILESTONE1_ITEM}}` | Extra Milestone-1 roadmap items (beyond the universal bootstrap 1.1–1.5); each entry is a plain string or a `{text, signals[]}` object (#306 — an object renders with its derived advisory route) | — |
 | `{{#EACH_MILESTONE}}` | The project's milestones beyond bootstrap, defined up front; per-item fields: `number`, `title`, `goal`, `items` | — |
-| `{{#ITEMS}}` | A milestone's checklist items — nested loop **inside** `{{#EACH_MILESTONE}}`; `{{.}}` is one pre-numbered item string | — |
+| `{{#ITEMS}}` | A milestone's checklist items — nested loop **inside** `{{#EACH_MILESTONE}}`; `{{.}}` is one pre-numbered item string. A manifest item in the `{text, signals[]}` object form arrives here already route-suffixed (`<text> — route: <tier> / <effort> (<signals>)`, ADR-0023) | — |
+| `{{ROUTE_TIERS}}` | The `os/routing` capability-tier ladder, cheapest → most capable (derived from `os/routing/routing.yaml`, never the manifest) | `fast → standard → frontier-reasoning` |
+| `{{ROUTE_EFFORTS}}` | The `os/routing` effort ladder, lowest → highest (derived from `os/routing/routing.yaml`) | `low → medium → high → max` |
+| `{{ROUTE_FLOOR}}` | The routing floor — the route an unsignalled/unrouted item takes (derived from `os/routing` `defaults:`) | `fast / low` |
+| `{{ROUTE_CATALOG}}` | The dated catalog snapshot, one bullet per host mapping each tier to its current model name (the ONLY place model names surface — ADR-0017) | `- **claude-code**: fast → Sonnet 5 · …` |
+| `{{ROUTE_CATALOG_AS_OF}}` | The catalog's `as_of:` date — the staleness/review cue for the rendered snapshot | `2026-07-09` |
 
 ## 8. Conditional capability flags
 

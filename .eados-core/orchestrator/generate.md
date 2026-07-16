@@ -159,6 +159,10 @@ the benchmark and TSan jobs when `capabilities.bench` / `capabilities.threading`
   `spec.milestone1_items`) and **every** `spec.milestones` entry (`number`, `title`, `goal`,
   `items`) — plus the *Spec Coverage Map* skeleton (one row per spec section) so the lint's
   `spec-map` check passes. Mirror the same milestone list into the README milestone table.
+  The template also renders the **routing legend** (tiers/efforts, floor, dated catalog snapshot
+  — all derived from `os/routing/routing.yaml`), and an item recorded as `{text, signals[]}`
+  carries its derived advisory route (`— route: <tier> / <effort>`, #306/ADR-0023); plain-string
+  items render unchanged under the legend's floor.
 - **Seed every roadmap milestone on GitHub** as `MN — <name>` (em-dash) with a goal-derived
   description, so milestone-scoped PR delivery starts against a complete board (matching EADOS's
   own `M1 … MN`). Once the remote exists, run the helper:

@@ -204,7 +204,7 @@ phases:
         prompt: "Verification & test strategy — how is each requirement proven in CI?"
         sets: [SPEC_VERIFICATION]
       - id: Q5.7
-        prompt: "Full roadmap up front — Milestone 1 is the universal bootstrap; lay out ALL further milestones now (each: number, title, goal, pre-numbered items), not one at a time."
+        prompt: "Full roadmap up front — Milestone 1 is the universal bootstrap; lay out ALL further milestones now (each: number, title, goal, pre-numbered items), not one at a time. Optionally tag an item with routing signals (security, adr, severity:medium|high, sets-pattern, decision-heavy) via the {text, signals[]} item form to derive its advisory model/effort route (#306)."
         sets: [MILESTONE1_ITEMS, MILESTONES]
     follow_ups:
       - for_each: requirement
