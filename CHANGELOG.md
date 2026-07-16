@@ -11,6 +11,24 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
 
 ### Added
 
+- **Scaffold routing surface — advisory model/effort routes rendered into the generated ROADMAP
+  (#306, ADR-0023).** Template parity with `os/routing`: a roadmap item in the manifest may take
+  the `{text, signals[]}` object form — *signals* (`security`, `adr`, `severity:*`,
+  `sets-pattern`, `decision-heavy`), never tiers — and the renderer derives its advisory route
+  through the same only-raise evaluator as `route_advice.py`, rendering
+  `— route: <tier> / <effort> (<signals>)` in the plan phase's #300 notation. The generated
+  `ROADMAP.md` opens with a routing legend (tier/effort ladders, the floor, the dated catalog
+  snapshot — five new `ROUTE_*` placeholders derived from `routing.yaml`, so model names surface
+  only via catalog values and a catalog refresh changes no template); the generated `AGENTS.md`
+  §6.1 tells the maintainer to pick the session model per item and restates advisory-first.
+  Plain-string items (every legacy manifest) render byte-identical under the legend's floor
+  clause; an object with no signals renders the explicit floor. `validate_manifest` loud-rejects
+  malformed object items and **inert signals** (matching no routing rule or declared flag — the
+  `set-pattern` typo class); an unreadable `routing.yaml` fails only manifests that actually use
+  the object form. Interview Q5.7 gains the optional signal follow-up; `reference.yaml` exercises
+  both forms (render-smoke); field lesson upstreamed as L-0007. Closes the `egl-utils-js` field
+  gap where the maintainer had to hand-annotate routes minutes after hand-off.
+
 - **README star callout.** A brief `> [!TIP]` note under the badges invites readers to star the
   repository — mirrored across the zh-Hans and ja translations with the i18n source hash refreshed
   in lockstep. Placed below the badges (not above the title) to keep the enterprise framing intact.

@@ -44,3 +44,10 @@
   context: The route checkpoint can verify the session MODEL against the routed tier, but no host exposes the session's EFFORT setting, and the model identity is the agent's own self-report — so it can mechanically observe only part of what it governs.
   rule: A checkpoint that can observe only part of what it governs must exit non-blocking AND state the unobservable part in its own output (what is verified, what is trusted self-report) — partial verification presented as complete is a dishonest gate.
   source: M18 18.2 (#297); route_advice.py --check (effort/self-report caveat; ADR-0015/0016 honesty posture)
+
+- id: L-0007
+  date: 2026-07-16
+  scope: global
+  context: The OS routed model/effort per unit of work (os/routing, ADR-0017) and the plan phase attached routes to roadmap items, but the scaffold's rendered ROADMAP carried none of it — the maintainer's first post-hand-off question was which model to use per step, answered by hand-annotating the generated artifact.
+  rule: A delivery surface the OS governs must be visible in the artifact the maintainer actually plans from — when a policy layer gains a consumer-facing effect, extend template parity to it in the same milestone, or record the deliberate omission as an ADR.
+  source: field run egl-utils-js 2026-07-16 (local lesson L-0008, maintainer-approved); upstreamed by #306 / ADR-0023

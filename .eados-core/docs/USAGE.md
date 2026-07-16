@@ -336,6 +336,7 @@ or code change.
 | Surface | What it shows |
 |---|---|
 | **`/eados plan`** | Each `ROADMAP.md` item carries its route — `size: M · route: standard / medium` — attached during negotiation next to the T-shirt size. |
+| **`scaffold` (the generated repo)** | The rendered `ROADMAP.md` opens with a routing legend (tiers/efforts, floor, dated catalog snapshot) and any roadmap item recorded with intake signals carries its derived advisory route (`— route: <tier> / <effort>`, #306/ADR-0023); the generated `AGENTS.md` §6 restates the advisory boundary. |
 | **Step-0 triage / `/eados status`** | The recommended tier + effort for the work ahead. |
 | **Phase boundaries** | `phase_runner.py` re-states the advisory posture and points at the checkpoint. |
 

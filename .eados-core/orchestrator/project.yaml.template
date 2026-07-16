@@ -136,7 +136,13 @@ spec:                         # Filled from Phase 5 of the intake interview. SUB
   verification:     ""        # Verification strategy. -> {{SPEC_VERIFICATION}}
   milestone1_items: []        # Extra M1 items beyond the bootstrap. -> {{#EACH_MILESTONE1_ITEM}}
   # The full forward roadmap, defined UP FRONT (Milestone 1 = the universal bootstrap, automatic).
-  # Each entry: {number, title, goal, items: ["<n>.<m> task", ...]}.        -> {{#EACH_MILESTONE}}
+  # Each entry: {number, title, goal, items: [...]}.                        -> {{#EACH_MILESTONE}}
+  # An item is a plain string ("<n>.<m> task" — renders unchanged) or, to derive an advisory
+  # model/effort route into the ROADMAP (#306, ADR-0023), an object:
+  #   {text: "<n>.<m> task", signals: [security, adr, "severity:medium", sets-pattern, decision-heavy]}
+  # Signals — never tiers — are the os/routing vocabulary (routing.yaml rules + flags); the
+  # renderer resolves them through the same only-raise evaluator as route_advice.py. An object
+  # with no signals still renders the explicit floor route; an inert signal is rejected at --check.
   milestones: []
 
 # Interview provenance (#169) — filled by the architect DURING the interview, never
