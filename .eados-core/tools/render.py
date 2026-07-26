@@ -46,6 +46,139 @@ def _map(d, key):
     return v if isinstance(v, dict) else {}
 
 
+# ---------------------------------------------------------------------------
+# Advisory model/effort routing surface (#306, ADR-0023) — template parity with os/routing.
+# The generated ROADMAP carries a routing legend plus a per-item advisory route; both derive
+# from orchestrator/os/routing/routing.yaml through route_advice's loud-rejecting loader and
+# only-raise evaluator, so the policy has exactly one implementation and the templates carry
+# tiers, never model names (ADR-0017 — names live only in the dated catalog).
+# ---------------------------------------------------------------------------
+_ITEM_KEYS = {"text", "signals"}   # the {text, signals[]} object form of a roadmap item
+
+
+def _load_routing():
+    """The parsed os/routing spec via route_advice's loud-rejecting loader. Imported lazily —
+    route_advice imports this module for load_yaml, so a module-level import would be a cycle
+    (the same break as validate_manifest's phase_runner import). Raises OSError/ValueError."""
+    import route_advice   # noqa: E402 — lazy: breaks the route_advice <-> render import cycle
+    return route_advice.load_routing()
+
+
+def routing_scalars(routing):
+    """The ROADMAP legend placeholders derived from the routing spec: the tier/effort ladders
+    (cheapest/lowest first, the spec's own order), the floor, and the dated catalog snapshot.
+    Model names flow from catalog VALUES only — a catalog refresh changes the next render's
+    output, never a template or this code (ADR-0017)."""
+    tiers = [str(t) for t in routing.get("tiers") or []]
+    defaults = routing.get("defaults") or {}
+    catalog = routing.get("catalog") or {}
+    lines = []
+    for h in catalog.get("hosts") or []:
+        models = h.get("models") if isinstance(h, dict) else {}
+        cells = " · ".join(f"{t} → {(models or {}).get(t, '')}" for t in tiers)
+        lines.append(f"- **{(h or {}).get('host', '')}**: {cells}")
+    return {
+        "ROUTE_TIERS": " → ".join(tiers),
+        "ROUTE_EFFORTS": " → ".join(str(e) for e in routing.get("efforts") or []),
+        "ROUTE_FLOOR": f"{defaults.get('tier', '')} / {defaults.get('effort', '')}",
+        "ROUTE_CATALOG": "\n".join(lines),
+        "ROUTE_CATALOG_AS_OF": str(catalog.get("as_of", "")),
+    }
+
+
+def routed_item(item, routing):
+    """One roadmap item, route-suffixed. A plain string (the legacy form) passes through
+    untouched; a `{text, signals[]}` object gains the advisory route its signals earn under the
+    os/routing only-raise resolution — ` — route: <tier> / <effort>[ (<signals>)]`, the plan
+    phase's own notation (tiers, never model names). An object with no signals still carries
+    the explicit floor: opting into the object form is opting into a visible route."""
+    if not isinstance(item, dict):
+        return item
+    import route_advice   # lazy — see _load_routing
+    text = str(item.get("text") or "").strip()
+    signals = [str(s).strip() for s in (item.get("signals") or [])
+               if isinstance(s, (str, int, float)) and str(s).strip()]
+    declared = routing.get("flags") if isinstance(routing.get("flags"), dict) else {}
+    labels = [s for s in signals if s not in declared]
+    flags = [s for s in signals if s in declared]
+    adv = route_advice.advise(route_advice.signals_for(labels, flags, routing), routing)
+    suffix = f" — route: {adv['tier']} / {adv['effort']}"
+    if signals:
+        suffix += f" ({', '.join(signals)})"
+    return text + suffix
+
+
+def _routing_signal_vocabulary(routing):
+    """Every signal a roadmap item may usefully declare: the spec's asserted flags plus each
+    tracker label its rules reference. Anything outside this set is INERT — no rule can ever
+    match it, so declaring it is a typo (`set-pattern` for `sets-pattern`) that would silently
+    route to the floor; validation rejects it loudly instead (#306 — the same posture as
+    route_advice.signals_for's unknown-flag rejection)."""
+    vocab = set(routing.get("flags") or {})
+    for rule in routing.get("rules") or []:
+        for sig in (rule.get("when") or []):
+            s = str(sig)
+            if s.startswith("label:"):
+                vocab.add(s[len("label:"):].strip())
+    return vocab
+
+
+def milestone_item_problems(spec_section):
+    """Shape problems of roadmap items in their #306 `{text, signals[]}` object form; plain
+    strings — the legacy form — are always legal and acquire no routing dependency. Signals are
+    checked against the routing spec's usable vocabulary; an unreadable routing spec is itself
+    a problem only when an object item actually needs it to render."""
+    problems, objects = [], []
+
+    def walk(items, where):
+        if items is None:
+            return
+        if not isinstance(items, list):
+            problems.append(f"{where} must be a list of roadmap items")
+            return
+        for i, it in enumerate(items):
+            if isinstance(it, dict):
+                objects.append((f"{where}[{i}]", it))
+            elif not isinstance(it, (str, int, float)):
+                problems.append(f"{where}[{i}] must be a string or a {{text, signals}} mapping")
+
+    walk(spec_section.get("milestone1_items"), "spec.milestone1_items")
+    for j, ms in enumerate(spec_section.get("milestones") or []):
+        if isinstance(ms, dict):
+            walk(ms.get("items"), f"spec.milestones[{j}].items")
+    if not objects:
+        return problems
+    try:
+        routing = _load_routing()
+    except (OSError, ValueError) as exc:
+        problems.append("roadmap items use the {text, signals} object form but the os/routing "
+                        f"spec is unreadable — {exc}")
+        routing = None
+    vocab = _routing_signal_vocabulary(routing) if routing is not None else None
+    for where, it in objects:
+        for key in sorted(it):
+            if key not in _ITEM_KEYS:
+                problems.append(f"{where}.{key} is not a recognized key (expected one of: "
+                                f"{', '.join(sorted(_ITEM_KEYS))})")
+        if not str(it.get("text") or "").strip():
+            problems.append(f"{where}.text is missing or empty — the item's pre-numbered "
+                            "task line")
+        sigs = it.get("signals")
+        if sigs is None:
+            continue
+        if not isinstance(sigs, list):
+            problems.append(f"{where}.signals must be a list of routing signals")
+            continue
+        for s in sigs:
+            sv = str(s).strip() if isinstance(s, (str, int, float)) else ""
+            if not sv:
+                problems.append(f"{where}.signals contains an empty or non-string entry")
+            elif vocab is not None and sv not in vocab:
+                problems.append(f"{where}.signals '{sv}' matches no os/routing rule or declared "
+                                f"flag — it is inert (known signals: {', '.join(sorted(vocab))})")
+    return problems
+
+
 def build_context(m):
     if not isinstance(m, dict):
         m = {}
@@ -150,14 +283,33 @@ def build_context(m):
         "IF_DOC_LANG_NONEN": scalars["DOC_DEFAULT_LANG"].strip().lower() not in ("", "en"),
     }
 
+    # #306 (ADR-0023): the advisory routing surface. The legend placeholders and the per-item
+    # route derivation both come from the os/routing spec. When it is unreadable, degradation is
+    # LOUD, never silent: the ROUTE_* scalars stay absent (an unresolved-placeholder hard error
+    # on any template that uses them) and object items stay raw (validate_manifest names the
+    # real cause; a raw object renders empty only on a path that skipped validation).
+    try:
+        routing = _load_routing()
+    except (OSError, ValueError):
+        routing = None
+    milestones = spec.get("milestones", []) or []
+    m1_items = spec.get("milestone1_items", []) or []
+    if routing is not None:
+        scalars.update(routing_scalars(routing))
+        milestones = [dict(ms, items=[routed_item(it, routing) for it in ms["items"]])
+                      if isinstance(ms, dict) and isinstance(ms.get("items"), list) else ms
+                      for ms in milestones]
+        if isinstance(m1_items, list):
+            m1_items = [routed_item(it, routing) for it in m1_items]
+
     sections = {
         "EACH_CI_CELL": ci.get("matrix", []) or [],
         "EACH_SCOPE": gov.get("scopes", []) or [],
         "EACH_FUNCTIONAL_REQ": spec.get("functional_reqs", []) or [],
         "EACH_NONFUNCTIONAL_REQ": spec.get("nonfunctional_reqs", []) or [],
         "EACH_PUBLIC_API": spec.get("public_api", []) or [],
-        "EACH_MILESTONE1_ITEM": spec.get("milestone1_items", []) or [],
-        "EACH_MILESTONE": spec.get("milestones", []) or [],
+        "EACH_MILESTONE1_ITEM": m1_items,
+        "EACH_MILESTONE": milestones,
         "EACH_PATTERN": spec.get("patterns", []) or [],   # #151: expected first-class patterns (name, why)
         "EACH_LAYER": spec.get("layers", []) or [],       # #152: layered package skeleton (name, purpose)
         "EACH_DOC_LANG": i18n.get("targets", []) or [],
@@ -397,6 +549,10 @@ def validate_manifest(m, scalars):
         problems.append("spec.milestones is empty — the roadmap is defined up front (interview "
                         "Phase 5): record at least one forward milestone (number, title, goal, "
                         "items)")
+    # #306 / ADR-0023: roadmap items may take the {text, signals[]} object form — an item that
+    # opts in gains a rendered advisory route, so a malformed object or an inert signal would
+    # silently misroute the plan artifact it feeds. Fail loud at --check instead.
+    problems += milestone_item_problems(spec)
     # #169: the interview provenance block is state with a fixed shape — a wrong value or a
     # dangling key would silently defeat the asked-vs-defaulted audit trail it exists to carry.
     # Optional (legacy manifests pass), but when present it must be honest.
