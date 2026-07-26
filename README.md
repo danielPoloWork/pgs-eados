@@ -334,10 +334,10 @@ The recommended (conversational) path needs an **`AGENTS.md`-aware AI coding age
 auto-loads `AGENTS.md` and adopts the Enterprise Project Architect persona, ready for the interview.
 
 **Which model?** EADOS leans on the agent's reasoning, so the strongest models do best. **As of
-2026-07**, it performs best with **Claude Opus 4.8 (high)**, followed by **OpenAI Codex 5.5** and
-**Gemini 3.5 Flash**; the rest of the Claude 5 family (including **Fable 5**) and **Mistral AI** /
-**Sakana AI** are not yet benchmarked for EADOS. *(Model rankings rotate fast — treat this as a
-dated snapshot, not a standing claim.)*
+2026-07**, it performs best with **Claude Opus 5**, followed by **Claude Opus 4.8 (high)**,
+**OpenAI Codex 5.5** and **Gemini 3.5 Flash**; the rest of the Claude 5 family (including
+**Fable 5**) and **Mistral AI** / **Sakana AI** are not yet benchmarked for EADOS. *(Model
+rankings rotate fast — treat this as a dated snapshot, not a standing claim.)*
 
 > **⚠ AI agents can hallucinate.** They draft confidently and are sometimes wrong — **review every
 > diff, RFC, and command** before acting on it. EADOS lowers the barrier for newcomers, but it is a
@@ -514,7 +514,7 @@ planned surface, but EADOS never provisions, deploys, or operates infra
 hand-downloaded bundle), and the deterministic render + gates need no network.
 
 **Which model works best?** See [Prerequisites](#prerequisites--getting-an-ai-coding-agent) — **as of
-2026-07**, **Claude Opus 4.8 (high)** leads, then Codex 5.5 and Gemini 3.5 Flash.
+2026-07**, **Claude Opus 5** leads, then Opus 4.8 (high), Codex 5.5 and Gemini 3.5 Flash.
 
 **Does EADOS send my code or data anywhere?** No — it is markdown / YAML / standard-library Python with
 no telemetry. Your AI agent is a separate tool with its own data policy.

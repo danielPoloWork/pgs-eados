@@ -17,17 +17,18 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   **Fable 5**, a model all three READMEs describe as *not yet benchmarked for EADOS*, while
   **Opus 4.8**, which the same READMEs rank first, sat one tier below at `standard`. Model names
   lived in two homes with no gate between them, and the two homes had drifted into direct
-  disagreement. The catalog now follows the measured assessment: `frontier-reasoning → Opus 4.8`,
-  with `standard → Sonnet 5` and `fast → Haiku 4.5` completing the ladder, and Fable 5 removed as
-  a routing target. Each mapping is annotated **MEASURED** (backed by the README benchmark) or
-  **ASSUMED** (relative capability within one vendor family, never assessed against this factory),
-  so the next reviewer can see what rests on evidence and what does not. Opus 5 is deliberately
-  *not* promoted: it is newer than Opus 4.8 and plausibly stronger, but "newer is better" is the
-  reasoning that put Fable 5 at the top tier in the first place — it goes in when it is measured.
-  `os/routing/delegation.md`'s worked relay is updated in lockstep. Generated repositories pick
-  the correction up automatically on their next render (the catalog is the `{{ROUTE_CATALOG}}`
-  source, ADR-0023). The *gate* that would have caught this — plus catalog staleness — is M19
-  19.5; this is the data half, which had no reason to wait.
+  disagreement. The catalog now reads `frontier-reasoning → Opus 5`, `standard → Sonnet 5`,
+  `fast → Haiku 4.5`, with Fable 5 removed as a routing target. Each mapping is annotated
+  **ASSESSED** (a dated maintainer judgment) or **ASSUMED** (relative capability within one vendor
+  family, never measured against this factory), so the next reviewer can see what rests on
+  evidence and what does not. **Opus 5 at the top tier is the maintainer's assessment of
+  2026-07-26**, and the README ranking (EN + zh-Hans + ja) was updated in the same change so the
+  two homes for this fact cannot disagree — putting a model in the catalog while the README calls
+  its family unbenchmarked is the precise shape of the bug being fixed, and re-creating it one
+  line lower would have been no better. `os/routing/delegation.md`'s worked relay is updated in
+  lockstep. Generated repositories pick the correction up automatically on their next render (the
+  catalog is the `{{ROUTE_CATALOG}}` source, ADR-0023). The *gate* that would have caught this —
+  plus catalog staleness — is M19 19.5; this is the data half, which had no reason to wait.
 - **A test that had silently stopped testing (#326).** `test_route_advice.py`'s CLI mismatch case
   hardcoded `Sonnet 5` as a below-floor model; the catalog correction moved Sonnet 5 up to
   `standard`, turning the mismatch assertion into a second passing OK case that still went green.

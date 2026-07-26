@@ -323,8 +323,8 @@ EADOS 是一座 markdown/YAML 工厂 —— 没有东西需要编译，几乎没
 `AGENTS.md` 并采用 Enterprise Project Architect（企业项目架构师）人格，准备开始访谈。
 
 **该用哪个模型？** EADOS 依赖智能体的推理能力，因此越强的模型表现越好。**截至 2026-07**，它在
-**Claude Opus 4.8（high）** 上表现最佳，其次是 **OpenAI Codex 5.5** 与 **Gemini 3.5 Flash**；
-Claude 5 家族的其余成员（包括 **Fable 5**）以及 **Mistral AI** / **Sakana AI** 尚未针对 EADOS
+**Claude Opus 5** 上表现最佳，其次是 **Claude Opus 4.8（high）**、**OpenAI Codex 5.5** 与
+**Gemini 3.5 Flash**；Claude 5 家族的其余成员（包括 **Fable 5**）以及 **Mistral AI** / **Sakana AI** 尚未针对 EADOS
 做基准测试。*（模型排名更替很快 —— 请把它当作一份带日期的快照，而非长期结论。）*
 
 > **⚠ AI 智能体可能产生幻觉。** 它们会自信地起草、有时却是错的 —— 在据此行动之前，请**审阅每一处
@@ -491,7 +491,7 @@ EADOS 把供应链与智能体边界视为一等公民：
 渲染与门禁都无需网络。
 
 **哪个模型最好？** 见[前置准备](#前置准备--获取一个-ai-编码智能体) —— **截至 2026-07**，
-**Claude Opus 4.8（high）** 领先，其次是 Codex 5.5 与 Gemini 3.5 Flash。
+**Claude Opus 5** 领先，其次是 Opus 4.8（high）、Codex 5.5 与 Gemini 3.5 Flash。
 
 **EADOS 会把我的代码或数据发往任何地方吗？** 不会 —— 它是 markdown / YAML / 标准库 Python，无遥测。
 你的 AI 智能体是独立工具，有其自己的数据策略。

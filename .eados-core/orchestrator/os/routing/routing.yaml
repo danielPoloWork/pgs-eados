@@ -80,15 +80,20 @@ rules:
 # tier below. The most consequential work in the factory was routed by an unverified claim.
 #
 # What each line below rests on, stated plainly so the next reviewer need not guess:
-#   * frontier-reasoning -> Opus 4.8  MEASURED. The README's top-ranked model for EADOS work.
+#   * frontier-reasoning -> Opus 5    ASSESSED by the maintainer, 2026-07-26 ("Opus 5 is very
+#                                     capable - use it in place of Opus 4.8"). A maintainer
+#                                     judgment, not a benchmark run: the distinction matters and
+#                                     is why it is recorded here rather than implied. The README's
+#                                     ranking was updated in the same change, so the two homes for
+#                                     this fact say the same thing.
 #   * standard / fast                 ASSUMED. A capability ladder within one vendor family, not
 #                                     an EADOS benchmark. Neither has been assessed against this
 #                                     factory; they are placed by relative capability alone.
 #   * Fable 5                         REMOVED. Unbenchmarked, so it is not a routing target.
-#   * Opus 5                          PENDING the maintainer's assessment. Newer than Opus 4.8 and
-#                                     plausibly stronger, but promoting it on "newer is better" is
-#                                     the exact reasoning that put Fable 5 at the top tier. It goes
-#                                     in when it is measured, not when it is noticed.
+#   * Opus 4.8                        The previously measured best (README, 2026-07). Superseded at
+#                                     the top tier by the maintainer's Opus 5 assessment; kept in
+#                                     the README ranking as the runner-up rather than dropped,
+#                                     since it is the entry with an actual benchmark behind it.
 #
 # The MEASURED/ASSUMED/PENDING distinction lives in a comment because schema v1 has nowhere to put
 # it. M19 19.2 (#323) gives every model an `assessed:` field and 19.3 (#324) excludes unassessed
@@ -98,7 +103,7 @@ catalog:
   hosts:
     - host: claude-code
       models:
-        frontier-reasoning: "Opus 4.8"   # MEASURED - README's best-for-EADOS (2026-07)
+        frontier-reasoning: "Opus 5"     # ASSESSED - maintainer's call, 2026-07-26
         standard: "Sonnet 5"             # ASSUMED  - capability ladder, unbenchmarked
         fast: "Haiku 4.5"                # ASSUMED  - capability ladder, unbenchmarked
       effort_aliases:
