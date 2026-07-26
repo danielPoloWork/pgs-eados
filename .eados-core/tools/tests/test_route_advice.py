@@ -8,6 +8,8 @@ normalization, and the advisory boundary. The `gh` shell is not touched. Depende
     python .eados-core/tools/tests/test_route_advice.py
 """
 
+import contextlib
+import io
 import os
 import sys
 
@@ -221,8 +223,18 @@ def main():
     # --- the CLI --check path: always exit 0, whatever the verdict ---
     check("--check OK exits 0",
           ra.main(["--labels", "severity:medium", "--check", "--current-model", "Opus 4.8"]) == 0, failures)
-    check("--check MISMATCH still exits 0 (advisory, never a gate)",
-          ra.main(["--labels", "severity:medium", "--check", "--current-model", "Sonnet 5"]) == 0, failures)
+    # The mismatch case must keep BEING a mismatch. Hardcoding a model name here made this test
+    # silently stop testing anything when the catalog was corrected in #326 ('Sonnet 5' moved from
+    # fast to standard, so it matched the standard floor and this became a second OK case). Derive
+    # the below-floor model from the live catalog, and assert the verdict rather than only the
+    # exit code, so a future catalog reshuffle turns this red instead of quiet.
+    live_fast = (ra.load_routing()["catalog"]["hosts"][0]["models"]["fast"])
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = ra.main(["--labels", "severity:medium", "--check", "--current-model", live_fast])
+    check("--check MISMATCH still exits 0 (advisory, never a gate)", rc == 0, failures)
+    check("--check MISMATCH actually reports a mismatch (not a silently-passing OK)",
+          "ROUTE-MISMATCH" in buf.getvalue(), failures)
     check("--check unknown-model still exits 0",
           ra.main(["--labels", "severity:medium", "--check", "--current-model", "gpt-4"]) == 0, failures)
     check("--check without --current-model is a usage error (exit 2)",

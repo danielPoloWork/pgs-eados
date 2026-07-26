@@ -70,14 +70,37 @@ rules:
 
 # The ONLY place model names live. `as_of` is refreshed whenever a mapping changes - a stale
 # date is the review cue. Hosts with their own effort words map them via effort_aliases.
+#
+# BENCHMARK PROVENANCE (#326). The README's dated assessment is the source of truth for what has
+# actually been measured against EADOS: as of 2026-07 it ranks **Opus 4.8 (high)** first, then
+# Codex 5.5 and Gemini 3.5 Flash, and states that the rest of the Claude 5 family - Fable 5
+# included - plus Mistral AI / Sakana AI are NOT yet benchmarked. Until 2026-07-26 this catalog
+# contradicted that: it routed every ADR / security / foundational-decision unit of work (the
+# frontier-reasoning tier) to Fable 5, an unbenchmarked model, while the measured best sat one
+# tier below. The most consequential work in the factory was routed by an unverified claim.
+#
+# What each line below rests on, stated plainly so the next reviewer need not guess:
+#   * frontier-reasoning -> Opus 4.8  MEASURED. The README's top-ranked model for EADOS work.
+#   * standard / fast                 ASSUMED. A capability ladder within one vendor family, not
+#                                     an EADOS benchmark. Neither has been assessed against this
+#                                     factory; they are placed by relative capability alone.
+#   * Fable 5                         REMOVED. Unbenchmarked, so it is not a routing target.
+#   * Opus 5                          PENDING the maintainer's assessment. Newer than Opus 4.8 and
+#                                     plausibly stronger, but promoting it on "newer is better" is
+#                                     the exact reasoning that put Fable 5 at the top tier. It goes
+#                                     in when it is measured, not when it is noticed.
+#
+# The MEASURED/ASSUMED/PENDING distinction lives in a comment because schema v1 has nowhere to put
+# it. M19 19.2 (#323) gives every model an `assessed:` field and 19.3 (#324) excludes unassessed
+# models from selection, at which point this comment becomes data a gate can enforce.
 catalog:
-  as_of: "2026-07-09"
+  as_of: "2026-07-26"
   hosts:
     - host: claude-code
       models:
-        frontier-reasoning: "Fable 5"
-        standard: "Opus 4.8"
-        fast: "Sonnet 5"
+        frontier-reasoning: "Opus 4.8"   # MEASURED - README's best-for-EADOS (2026-07)
+        standard: "Sonnet 5"             # ASSUMED  - capability ladder, unbenchmarked
+        fast: "Haiku 4.5"                # ASSUMED  - capability ladder, unbenchmarked
       effort_aliases:
         ultracode: max
         ultrathink: max

@@ -67,10 +67,10 @@ per-role constant — the point of routing is that the *work*, not the *seat*, s
 
 | # | Role (persona) | Sub-task | Signals | Route → model / effort |
 |---|---|---|---|---|
-| 1 | **architect** — `enterprise-architect` | Decide the architecture / author the ADR | `flag:decision-heavy`, `label:adr` | **frontier-reasoning / high** → Fable 5 |
-| 2 | **engineer** — `tech-lead` | Implement the RFC the architect set (`src/**`) | `label:severity:high` (pattern-following) | **standard / high** → Opus 4.8 |
-| 3 | **reviewer** — `reviewer` | Return structured findings on the change | `label:severity:high` | **standard / high** → Opus 4.8 |
-| 4 | **optimizer** — `tech-lead` under [`/eados optimize`](../../commands/optimize.md) | Measure-first tune to a numeric NFR budget | `label:severity:medium` | **standard / medium** → Opus 4.8 |
+| 1 | **architect** — `enterprise-architect` | Decide the architecture / author the ADR | `flag:decision-heavy`, `label:adr` | **frontier-reasoning / high** → Opus 4.8 |
+| 2 | **engineer** — `tech-lead` | Implement the RFC the architect set (`src/**`) | `label:severity:high` (pattern-following) | **standard / high** → Sonnet 5 |
+| 3 | **reviewer** — `reviewer` | Return structured findings on the change | `label:severity:high` | **standard / high** → Sonnet 5 |
+| 4 | **optimizer** — `tech-lead` under [`/eados optimize`](../../commands/optimize.md) | Measure-first tune to a numeric NFR budget | `label:severity:medium` | **standard / medium** → Sonnet 5 |
 
 Each row's route is exactly what `route_advice.py --labels … [--flags …]` returns for that row's
 signals — the table is not hand-assigned. On claude-code the run **applies** it: delegation 1 is
@@ -82,7 +82,7 @@ measure-first `/eados optimize` discipline; the reviewer holds **no** final auth
 findings, it does not approve), exactly as the relay's reviewer recommends but never merges.
 
 Run the same relay on codex or gemini and step 3 is skipped: the run **states** each sub-task's
-route ("architect sub-task → frontier-reasoning / high → Fable 5 (advisory — this host has no
+route ("architect sub-task → frontier-reasoning / high → Opus 4.8 (advisory — this host has no
 per-delegation model control; proceeding at the session model)") and delegates at the session
 model. Same advice, no bypass.
 
