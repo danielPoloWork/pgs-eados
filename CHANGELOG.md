@@ -5,22 +5,19 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
-### Fixed
+## [2.11.0] - 2026-07-26
 
-- **Factory CI pinned a mislabeled `actions/checkout` commit (#309 fallout).** Merging `main`
-  into the Dependabot branch resolved two lines of `.github/workflows/ci.yml` to `main`'s SHA
-  while keeping the branch's version comment, landing `9c091bb21b…` (the **v7.0.0** commit)
-  under a `# v7.0.1` label — a pin that lied about its own version, the one property ADR-0009's
-  SHA-pinning model asks a human to be able to read. Both lines now pin the true v7.0.1 commit
-  `3d3c42e5aa…`, restoring lockstep with the workflow templates and turning the `action-pins`
-  gate (red on `main` since the merge) green. Note for the record: `sync_action_pins.py --fix`
-  would **not** have been the right remedy — it copies the factory CI's SHA into the templates,
-  so it would have propagated the wrong commit under the v7.0.1 label and made the gate pass on
-  a uniformly incorrect pin set.
+Scaffold routing parity — a minor, additive release driven by a field report. A repository
+rendered by the factory now carries the model/effort routing surface the OS already governed
+internally: a `ROADMAP.md` routing legend with the dated model catalog, and a per-item advisory
+route derived from the intake signals recorded in the manifest (ADR-0023). Tiers, never model
+names; advisory throughout — the human keeps model authority. Backward compatible by
+construction: a manifest whose roadmap items are plain strings renders byte-identical apart from
+the legend. Also restores a factory CI action pin that claimed a version its SHA did not match.
 
 ### Added
 
@@ -45,6 +42,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
 - **README star callout.** A brief `> [!TIP]` note under the badges invites readers to star the
   repository — mirrored across the zh-Hans and ja translations with the i18n source hash refreshed
   in lockstep. Placed below the badges (not above the title) to keep the enterprise framing intact.
+
+### Fixed
+
+- **Factory CI pinned a mislabeled `actions/checkout` commit (#310, #309 fallout).** Merging
+  `main` into the Dependabot branch resolved two lines of `.github/workflows/ci.yml` to `main`'s
+  SHA while keeping the branch's version comment, landing `9c091bb21b…` (the **v7.0.0** commit)
+  under a `# v7.0.1` label — a pin that lied about its own version, the one property ADR-0009's
+  SHA-pinning model asks a human to be able to read. Both lines now pin the true v7.0.1 commit
+  `3d3c42e5aa…`, restoring lockstep with the workflow templates and turning the `action-pins`
+  gate (red on `main` since the merge) green. Note for the record: `sync_action_pins.py --fix`
+  would **not** have been the right remedy — it copies the factory CI's SHA into the templates,
+  so it would have propagated the wrong commit under the v7.0.1 label and made the gate pass on
+  a uniformly incorrect pin set.
 
 ## [2.10.0] - 2026-07-12
 
