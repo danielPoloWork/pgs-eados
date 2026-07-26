@@ -11,6 +11,24 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ### Added
 
+- **The loader differential now sweeps the repository's own tracked YAML, not one file (#317).**
+  `tests/test_loader.py` pinned `yamlmini` to PyYAML across ~25 hand-written cases plus exactly one
+  real file (`reference.yaml`). Every one of those cases was written by someone who already knew
+  what the loader supports — which is the blind spot, not the coverage: the two silent-data-loss
+  defects found in the 2026-07-26 audit (#315, #316) each sat one character outside the synthetic
+  corpus and stayed invisible behind a green gate, live on shipped files. The sweep enumerates
+  tracked `.eados-core/**` and `.github/**` YAML through `git ls-files` (so a new data file is
+  covered the moment it is staged) and compares both parsers on each: **47 files — 44 agree, 1 is
+  loudly rejected at the documented subset boundary, 2 are known-divergent.** Three properties make
+  it a gate rather than a report: an **undeclared** divergence fails; a file listed as
+  known-divergent that starts **agreeing** also fails, so the exception list cannot outlive the
+  bugs it documents; and the one deliberate divergence — PyYAML's YAML-1.1 coercion of bare keys
+  like `on:` to booleans, where yamlmini is intentionally the 1.2 side — is a **declared deviation
+  normalized before comparison with its reason recorded**, not an opaque exclusion, because a
+  skip-list would have hidden `lessons.yaml` exactly as well as no sweep at all. Degrades honestly
+  in both directions: no PyYAML, or no git checkout, reports a skip with the reason and never a
+  false pass. #315 and #316 remain listed as known-divergent with their issue numbers until fixed.
+
 - **ADR-0024 — provider-agnostic, capability-driven model & effort routing (M19 19.1, #322).**
   The decision the rest of M19 builds on, extending (never superseding) ADR-0017. Six sub-decisions:
   a **two-level catalog** — `providers[] → models[]` for what exists and what it can do,
