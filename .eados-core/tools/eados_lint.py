@@ -268,22 +268,32 @@ def check_lessons(fail):
     ledger = os.path.join(ROOT, "learning", "lessons.yaml")
     if not os.path.exists(ledger):
         return
-    text = read(ledger)
-    # Each entry begins with "- id:"; validate required keys + scope vocabulary per block.
-    blocks = re.split(r"\n(?=- id:)", text)
+    # The ledger is a sequence-root document. It used to be split with a regex here because
+    # load_yaml returned {} for that shape (#315); now that the loader reads it, this validates the
+    # PARSED entries — so a field the old `[a-z_]+` regex could not even name (a kebab key, a
+    # nested value) is seen, and only one parser reads this file.
+    try:
+        entries = render.load_yaml(read(ledger))
+    except Exception as exc:                  # a broken hand-edit: data-file-validity reports the
+        fail(name, f"lessons.yaml does not parse — {exc!r}")   # syntax, this states the effect
+        return
+    if not isinstance(entries, list):
+        fail(name, f"lessons.yaml must be a YAML sequence of entries, got "
+                   f"{type(entries).__name__}")
+        return
     seen_ids = set()
-    for block in blocks:
-        if "id:" not in block:
+    for pos, entry in enumerate(entries, 1):
+        if not isinstance(entry, dict):
+            fail(name, f"lessons.yaml entry #{pos} is a {type(entry).__name__}, not a mapping")
             continue
-        fields = dict(re.findall(r"^\s*-?\s*([a-z_]+):\s*(.+?)\s*$", block, re.MULTILINE))
+        lid = str(entry.get("id", "") or "")
         for key in LESSON_REQUIRED:
-            if key not in fields:
-                fail(name, f"lessons.yaml entry missing '{key}': {fields.get('id', '?')}")
-        lid = fields.get("id", "")
+            if not str(entry.get(key, "") or "").strip():
+                fail(name, f"lessons.yaml entry missing '{key}': {lid or '?'}")
         if lid in seen_ids:
             fail(name, f"lessons.yaml duplicate id '{lid}'")
         seen_ids.add(lid)
-        scope = fields.get("scope", "").strip().strip('"')
+        scope = str(entry.get("scope", "") or "").strip()
         if scope and not scope.startswith(LESSON_SCOPES_PREFIX):
             fail(name, f"lessons.yaml entry '{lid}': scope '{scope}' not global|lang:*|kind:*")
 
@@ -798,15 +808,37 @@ def check_manifest_template(fail):
 #     parsed inside the self-lint — questionnaire.yaml, config/defaults.yaml, the reference manifest
 #     — so a syntax slip in any data file fails here rather than at a consumer's render.
 # ---------------------------------------------------------------------------
+def _has_yaml_content(text):
+    """True when the file carries at least one line of actual data — blank lines, comments and
+    the document markers do not count."""
+    for raw in (text or "").split("\n"):
+        stripped = raw.strip()
+        if stripped and not stripped.startswith("#") and stripped not in ("---", "..."):
+            return True
+    return False
+
+
 def data_file_problems(items):
     """items: (relpath, text) pairs for every tracked .eados-core YAML. Returns a problem per file
-    that does not parse — empty == all data files are syntactically valid."""
+    that does not parse, or that parses to NOTHING despite having content — empty == all data files
+    are syntactically valid AND were actually read.
+
+    The second half closes a fail-open (#315): this gate treated "did not raise" as "valid", so
+    `learning/lessons.yaml` passed for months while the loader discarded all eight of its entries
+    and returned `{}`. A gate that cannot fail is not coverage, and reporting a file as valid when
+    its content vanished is the worst version of that — it is a gate asserting the opposite of the
+    truth."""
     problems = []
     for rel, text in items:
         try:
-            render.load_yaml(text)
+            data = render.load_yaml(text)
         except Exception as exc:                       # a hand-edit that breaks YAML must be caught
             problems.append(f"{rel}: not valid YAML — {exc!r}")
+            continue
+        if _has_yaml_content(text) and not data:
+            problems.append(f"{rel}: parsed to an empty {type(data).__name__} although the file has "
+                            "content — the loader read nothing and did not say so (#315 class); "
+                            "'did not raise' is not 'was read'")
     return problems
 
 

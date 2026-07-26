@@ -20,6 +20,7 @@ Two corpora, two jobs (#317):
     python .eados-core/tools/tests/test_loader.py
 """
 
+import datetime
 import os
 import sys
 
@@ -55,6 +56,12 @@ CASES = [
     ("block seq deeper indent",    "scopes:\n  - api\n  - build\n"),
     ("nested mapping",             "language:\n  lang: cpp\n  group_path: it/d4np\n"),
     ("block-style map items",      "matrix:\n  - os: ubuntu-24.04\n    toolchain: gcc\n"),
+    # #315: a SEQUENCE-ROOT document. parse_map broke on the first `- ` item and returned {},
+    # silently discarding the whole file — live on learning/lessons.yaml, which is exactly this
+    # shape. PyYAML reads it fine, so returning {} was a misparse, not a subset boundary.
+    ("sequence-root of mappings",  "- id: L-0001\n  scope: global\n- id: L-0002\n  scope: global\n"),
+    ("sequence-root of scalars",   "- alpha\n- beta\n"),
+    ("sequence-root after a comment + '---'", "# ledger\n---\n- id: L-0001\n  scope: global\n"),
     ("hash inside quotes",         'hint: "#include <memory_pool.h>"'),
     ("leading '---' tolerated",    "---\nname: acme\n"),
     # A leading UTF-8 BOM (Windows Notepad / PowerShell 5.1 Out-File) is stripped, exactly
@@ -94,6 +101,11 @@ SUBSET_REJECTIONS = [
     ("folded scalar >- (strip)", "note: >-\n  folded\n  then stripped\n"),
     ("folded scalar >+ (keep)",  "note: >+\n  folded\n  then kept\n"),
     ("folded scalar in a seq",   "objectives:\n  - >\n    fold this item\n"),
+    # A sequence item whose value lives on the FOLLOWING lines ("-" alone). parse_list only reads
+    # "- <content>", so parse_map swallowed the dash as a KEY and produced {'-': {...}} — the same
+    # silent-misparse class, found while fixing #315. Legal YAML; now rejected loudly.
+    ("bare-dash item, nested",   "k:\n  -\n    a: 1\n"),
+    ("bare-dash item, at root",  "-\n  a: 1\n"),
 ]
 
 # Documented deviations where load_yaml deliberately differs from PyYAML — asserted
@@ -102,6 +114,10 @@ DEVIATIONS = [
     ("leading-zero int stays string", "code: 08540", {"code": "08540"}),
     ("decimal stays string",          "ver: 1.20",   {"ver": "1.20"}),
     ("norway: yes is not bool",       "flag: yes",   {"flag": "yes"}),
+    # PyYAML resolves this to datetime.date(2026, 7, 26); yamlmini keeps the string, consistent
+    # with its no-coercion rule for decimals and versions (#315 — surfaced by the corpus sweep the
+    # moment lessons.yaml started parsing at all).
+    ("ISO date stays string",         "date: 2026-07-26", {"date": "2026-07-26"}),
 ]
 
 
@@ -123,6 +139,10 @@ DECLARED_DEVIATIONS = [
      "yamlmini keeps them strings — deliberately the YAML 1.2 side, the same 'Norway problem' rule "
      "the module already documents for VALUES. Live on .github/workflows/*.yml (`on:`) and "
      "os/contribution/contribution.yaml (`escalation.on`)."),
+    ("ISO dates stay strings", "PyYAML resolves `2026-07-26` to a datetime.date; yamlmini keeps the "
+     "string, consistent with its no-coercion rule for decimals and versions. Every consumer "
+     "compares, sorts or renders these as text, so one representation end to end avoids a "
+     "round trip back to string. Live on learning/lessons.yaml (`date:`)."),
 ]
 
 # Files whose reading is KNOWN to diverge, each bound to its open defect. The suite stays green so
@@ -130,17 +150,18 @@ DECLARED_DEVIATIONS = [
 # starts AGREEING is itself a failure, so the list cannot quietly outlive the bugs it documents
 # (the L-0008 discipline — an assertion that stops asserting must go red, not quiet).
 KNOWN_DIVERGENT = {
-    ".eados-core/learning/lessons.yaml":
-        "#315 — a sequence-root document loads as {} instead of the 8 entries",
     ".github/dependabot.yml":
         "#316 — a block-seq item whose first key is kebab-cased degrades to a string",
 }
 
 
-def _normalize_y11_keys(node):
-    """Apply the declared YAML-1.1-boolean-key deviation so both parsers can be compared on
-    everything else: a bool key from PyYAML and its string spelling from yamlmini both collapse to
-    one marker. Nothing else about the document is touched."""
+def _normalize(node):
+    """Apply the DECLARED_DEVIATIONS so both parsers can be compared on everything else:
+      * a bool key from PyYAML and its string spelling from yamlmini collapse to one marker;
+      * a date/datetime value from PyYAML collapses to its ISO string, which is what yamlmini
+        already produces.
+    Nothing else about the document is touched — this normalizes the two named divergences, it
+    does not exclude any file or any other field."""
     if isinstance(node, dict):
         out = {}
         for k, v in node.items():
@@ -148,10 +169,12 @@ def _normalize_y11_keys(node):
                 k = "<y11-true>"
             elif k is False or (isinstance(k, str) and k.lower() in Y11_FALSE):
                 k = "<y11-false>"
-            out[k] = _normalize_y11_keys(v)
+            out[k] = _normalize(v)
         return out
     if isinstance(node, list):
-        return [_normalize_y11_keys(x) for x in node]
+        return [_normalize(x) for x in node]
+    if isinstance(node, (datetime.date, datetime.datetime)):
+        return node.isoformat()
     return node
 
 
@@ -205,7 +228,7 @@ def sweep_corpus(repo_root, failures, notes):
         except Exception as exc:  # noqa: BLE001 — anything else is a crash, and a crash is a bug
             failures.append(f"{rel}: load_yaml raised {exc!r} (expected a parse or a ValueError)")
             continue
-        norm_mine, norm_ref = _normalize_y11_keys(mine), _normalize_y11_keys(ref)
+        norm_mine, norm_ref = _normalize(mine), _normalize(ref)
         if norm_mine != norm_ref:
             deviated += 1
             if rel in KNOWN_DIVERGENT:
