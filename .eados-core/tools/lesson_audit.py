@@ -59,17 +59,23 @@ def keywords(text):
 
 
 def parse_lessons(text):
-    """The ledger's entries as dicts (id/scope/context/rule/…), read textually — the file's
-    root is a YAML sequence the minimal loader does not read. Mirrors check_lessons's split."""
-    lessons = []
-    for block in re.split(r"\n(?=- id:)", text):
-        if "id:" not in block:
-            continue
-        fields = dict(re.findall(r"^\s*-?\s*([a-z_]+):\s*(.+?)\s*$", block, re.MULTILINE))
-        fields = {k: v.strip().strip('"') for k, v in fields.items()}
-        if fields.get("id"):
-            lessons.append(fields)
-    return lessons
+    """The ledger's entries as dicts (id/scope/context/rule/…).
+
+    Read through the one loader since #315 taught it sequence-root documents; this used to be a
+    regex split because load_yaml returned {} for that shape, and the workaround quietly capped
+    what could be read to `[a-z_]+` field names. A malformed ledger degrades to [] rather than
+    raising — the auditor is advisory and must not abort a run (the #198 posture)."""
+    try:
+        entries = load_yaml(text)
+    except Exception:  # noqa: BLE001 — data-file-validity owns reporting the syntax error
+        return []
+    if not isinstance(entries, list):
+        return []
+    out = []
+    for entry in entries:
+        if isinstance(entry, dict) and str(entry.get("id", "") or "").strip():
+            out.append({k: (v if isinstance(v, str) else str(v)) for k, v in entry.items()})
+    return out
 
 
 def scope_applies(scope, lang, kind):

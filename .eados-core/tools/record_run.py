@@ -279,10 +279,18 @@ def emit_record_yaml(record):
 
 
 def known_lesson_ids(lessons_text):
-    """The ids in lessons.yaml, taken textually from the '- id:' entry heads — the ledger's
-    root is a YAML sequence, which the minimal loader does not read (same approach as
-    eados_lint's check_lessons)."""
-    return set(re.findall(r"(?m)^-\s+id:\s*(L-\d{4})\s*$", lessons_text))
+    """The ids in lessons.yaml. Read through the one loader since #315 taught it sequence-root
+    documents; this used to be a regex over the '- id:' entry heads because load_yaml returned {}
+    for that shape. A ledger that will not parse yields no ids — the caller reports the reference
+    as unknown, which is the safe direction."""
+    try:
+        entries = render.load_yaml(lessons_text)
+    except Exception:  # noqa: BLE001 — data-file-validity owns reporting the syntax error
+        return set()
+    if not isinstance(entries, list):
+        return set()
+    return {str(e["id"]).strip() for e in entries
+            if isinstance(e, dict) and str(e.get("id", "") or "").strip()}
 
 
 def provenance_gaps(manifest):

@@ -7,13 +7,18 @@ perturbed by renderer changes (and vice versa). `render.load_yaml` remains a re-
 callers are unchanged.
 
 Supported subset (validated against PyYAML by tools/tests/test_loader.py): block/flow mappings
-and sequences, block-style mapping items, double-quoted scalars WITH escapes
+and sequences — including a SEQUENCE-ROOT document (#315), which used to load as an empty dict —
+block-style mapping items, double-quoted scalars WITH escapes
 (\\n \\t \\r \\0 \\" \\\\ \\/), single-quoted scalars with '' escaping, `|` (clip) and `|-`
 (strip) block scalars, and int / true / false / null / ~ literals.
 
 Deliberate deviations from YAML 1.1, kept because they are safer for a manifest:
   * yes/no/on/off are NOT booleans (avoids the "Norway problem"); only true/false are.
+    The same applies to a bare KEY (`on:` stays the string "on", where YAML 1.1 makes it True).
   * unquoted decimals/exponents stay strings (versions like 1.22 are not coerced).
+  * ISO dates stay strings — `2026-07-26` is "2026-07-26", not a datetime.date. Every consumer
+    here compares, sorts or renders these as text, and a date object would have to be turned back
+    into a string on the way out; keeping one representation end to end removes that round trip.
 
 A single leading UTF-8 BOM is stripped (utf-8-sig semantics, PyYAML-compatible) — Windows
 editors and PowerShell 5.1's `Out-File -Encoding utf8` write one, and it is not content.
@@ -251,6 +256,17 @@ def _reject_unsupported(text):
                              or len(lines[i]) - len(lines[i].lstrip(" ")) > base):
                 i += 1
             continue
+        if s == "-" or (s.startswith("-") and not s.startswith("- ") and not s[1:].strip()):
+            # A sequence item whose value lives on the FOLLOWING lines ("-" alone). parse_list
+            # only recognises "- <content>", so parse_map used to swallow the dash as a KEY and
+            # produce {'-': {...}} instead of a list — the #153 silent-misparse class again,
+            # found while fixing #315. Reject loudly; the inline form ("- key: value") is read
+            # correctly and is what every shipped file already uses.
+            raise ValueError(
+                f"line {num}: a block sequence item must carry its first key on the dash line "
+                "('- key: value') — a bare '-' with the value on the following lines is not "
+                "supported and used to parse as a mapping key named '-' (#315)"
+            )
         construct = _open_at_eol(value)
         if construct == "quote":
             raise ValueError(
@@ -377,4 +393,10 @@ def load_yaml(text):
         return items
 
     skip_blanks()
+    if pos[0] < n and lines[pos[0]].strip().startswith("- "):
+        # A SEQUENCE-ROOT document. parse_map breaks on the first `- ` item and returned {} —
+        # silently discarding the whole file (#315). It was live on learning/lessons.yaml, whose
+        # consumers each grew their own textual parser to work around it; supporting the root
+        # here is what lets them collapse back onto this one loader.
+        return parse_list(indent_of(lines[pos[0]]))
     return parse_map(0)

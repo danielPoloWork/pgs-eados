@@ -9,6 +9,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A sequence-root YAML document loaded as `{}` — silent, total data loss (#315).**
+  `yamlmini.load_yaml` ended in `parse_map(0)`, which breaks on the first `- ` item, so a document
+  whose root is a block sequence returned an empty dict with **no exception**. It was live on
+  `learning/lessons.yaml`, the factory's durable memory: all eight entries discarded, silently, on
+  every call. The loader now reads sequence roots. Three consequences travel with the fix:
+  - **The `data-file-validity` gate is no longer fail-open.** It treated "did not raise" as
+    "valid", so it certified `lessons.yaml` while the loader was throwing the file away. It now
+    also fails when content goes in and nothing comes out — *"did not raise" is not "was read"*.
+  - **Four parallel parsers collapse into one.** `eados_lint.check_lessons`,
+    `lesson_audit.parse_lessons` and `record_run.known_lesson_ids` each grew their own regex to
+    work around the defect — the exact duplication the `yamlmini` extraction (#166) was written to
+    end. All three now read through `load_yaml`. The workarounds had quietly capped what could be
+    read to `[a-z_]+` field names; a kebab-cased or nested field is now visible to the schema check.
+  - **An undocumented deviation surfaced and is now declared.** PyYAML resolves `2026-07-26` to a
+    `datetime.date`; yamlmini keeps the string, consistent with its no-coercion rule for decimals
+    and versions. Nobody had noticed, because until this fix no parser ever compared the two on
+    this file. The corpus sweep (#317) caught it within seconds of the loader starting to read it.
+- **A bare `-` sequence item parsed as a mapping key named `-` (#315).** Found while fixing the
+  above: `parse_list` only reads `- <content>`, so an item whose value lives on the following lines
+  was swallowed by `parse_map` and produced `{'-': {...}}` instead of a list — the same silent
+  misparse class, everywhere, not just at the root. Now rejected loudly, pointing at the inline
+  form every shipped file already uses.
+
 ### Added
 
 - **The loader differential now sweeps the repository's own tracked YAML, not one file (#317).**

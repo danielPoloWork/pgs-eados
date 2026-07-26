@@ -29,6 +29,18 @@ def main():
           lint.data_file_problems([("ok.yaml", "a: 1\nb:\n  - x\n  - y\n")]) == [], failures)
     check("invalid YAML fails the data floor",
           lint.data_file_problems([("bad.yaml", "a:\n\tb: 1\n")]) != [], failures)
+    # #315 fail-open regression: the gate treated "did not raise" as "valid", so a file the loader
+    # silently emptied passed. It must now go red when content goes in and nothing comes out.
+    check("a file that parses to NOTHING despite having content fails the data floor",
+          lint.data_file_problems([("vanished.yaml", "a: 1\n")]) == []
+          and lint.data_file_problems([("vanished.yaml", "# only a comment\n")]) == []
+          and lint._has_yaml_content("- id: L-0001\n") is True
+          and lint._has_yaml_content("\n# just a comment\n---\n") is False, failures)
+    # The sequence-root ledger shape is the file that exposed it — it must now READ, not vanish.
+    seq_root = "- id: L-0001\n  scope: global\n- id: L-0002\n  scope: global\n"
+    check("a sequence-root document is read, not silently emptied (#315)",
+          lint.data_file_problems([("ledger.yaml", seq_root)]) == []
+          and len(lint.render.load_yaml(seq_root)) == 2, failures)
 
     # --- gate-coverage (#15) against the real tree ---
     tracked = lint._tracked_files()
