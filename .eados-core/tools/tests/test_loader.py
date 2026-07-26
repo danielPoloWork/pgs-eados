@@ -61,6 +61,19 @@ CASES = [
     # shape. PyYAML reads it fine, so returning {} was a misparse, not a subset boundary.
     ("sequence-root of mappings",  "- id: L-0001\n  scope: global\n- id: L-0002\n  scope: global\n"),
     ("sequence-root of scalars",   "- alpha\n- beta\n"),
+    # #316: a block-seq item's FIRST key was probed with `[A-Za-z0-9_]+:`, so a hyphen, dot, space
+    # or quote made the whole item degrade to a STRING and silently dropped every continuation
+    # line. Only the first key was ever charset-restricted — which is why the key-order case below
+    # is the sharpest regression guard of the four: reordering keys is a YAML no-op.
+    ("kebab first key in a seq item",  "tiers:\n  - frontier-reasoning: true\n    id: x\n"),
+    ("dotted first key in a seq item", "items:\n  - foo.bar: 1\n    id: x\n"),
+    ("quoted first key in a seq item", 'items:\n  - "foo": bar\n    id: x\n'),
+    ("spaced first key in a seq item", "items:\n  - some text: v\n    id: x\n"),
+    # Quoted / colon-bearing keys at mapping level: `partition(":")` kept the quotes ('"foo"') and
+    # split `"a: b"` down the middle. `_split_key` applies YAML's real rule instead.
+    ("quoted key keeps no quotes",  '"foo": 1'),
+    ("quoted key containing ': '",  '"a: b": 1'),
+    ("plain key containing a colon", "a:b: c"),
     ("sequence-root after a comment + '---'", "# ledger\n---\n- id: L-0001\n  scope: global\n"),
     ("hash inside quotes",         'hint: "#include <memory_pool.h>"'),
     ("leading '---' tolerated",    "---\nname: acme\n"),
@@ -149,10 +162,11 @@ DECLARED_DEVIATIONS = [
 # this gate can guard everything else, but the binding runs BOTH ways: a file listed here that
 # starts AGREEING is itself a failure, so the list cannot quietly outlive the bugs it documents
 # (the L-0008 discipline — an assertion that stops asserting must go red, not quiet).
-KNOWN_DIVERGENT = {
-    ".github/dependabot.yml":
-        "#316 — a block-seq item whose first key is kebab-cased degrades to a string",
-}
+# Empty since #316: the audit's two loader defects are both fixed and every tracked file either
+# agrees or is loudly rejected at the documented subset boundary. Keep the mechanism — the next
+# defect of this class gets recorded here with its issue, and the sweep will force its removal the
+# day the fix lands (a listed file that starts agreeing is itself a failure).
+KNOWN_DIVERGENT = {}
 
 
 def _normalize(node):
@@ -276,6 +290,18 @@ def main():
     got = load_yaml(chr(0xFEFF) + chr(0xFEFF) + "identity: 1")
     if "identity" in got:
         failures.append(f"a double BOM must not be swallowed (one is content): got {got!r}")
+    # #316's sharpest guard, asserted directly rather than via the equality corpus: reordering two
+    # keys inside a block-seq item is a YAML no-op, so the parse must be identical. It was not —
+    # only the FIRST key was charset-checked, so moving a kebab key to the front destroyed the item
+    # and every line after it. A defect that a semantically null edit can introduce needs a test
+    # that speaks in those terms.
+    ordered = load_yaml("tiers:\n  - id: x\n    frontier-reasoning: true\n")
+    reordered = load_yaml("tiers:\n  - frontier-reasoning: true\n    id: x\n")
+    if ordered != reordered:
+        failures.append(f"key ORDER inside a block-seq item changed the parse: "
+                        f"{ordered!r} != {reordered!r}")
+    if not (isinstance(reordered.get("tiers", [None])[0], dict)):
+        failures.append(f"a block-seq item with a kebab first key is not a mapping: {reordered!r}")
     for label, text, expected in DEVIATIONS:
         got = load_yaml(text)
         if got != expected:

@@ -11,6 +11,25 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ### Fixed
 
+- **A block-sequence item whose first key was not `[A-Za-z0-9_]+` degraded to a string and dropped
+  every continuation line (#316).** `parse_list` probed for a mapping item with a charset guess, so
+  a first key carrying a hyphen, a dot, a space or quotes fell through to the scalar branch — the
+  item became a **string** and `parse_list` then broke on the next line, silently discarding the
+  rest of the entry. Only the *first* key was ever checked, which made the failure absurd in the
+  worst way: **reordering two keys inside an item — a no-op in YAML — changed the parse.**
+  Reproduced on the repo's own `.github/dependabot.yml`, where two `updates` blocks collapsed into
+  one string and every `directory`, `schedule`, `commit-message` and `labels` field vanished.
+  The charset guess is replaced by `_split_key`, which applies YAML's actual rule: a key ends at
+  the first `:` followed by a space or end-of-line, **outside** any quoted scalar or flow
+  collection. Three pre-existing key defects fall out with it, since `parse_map` now shares the
+  same scanner instead of `partition(":")`: a quoted key kept its quotes (`'"foo"'` instead of
+  `foo`), a quoted key containing `: ` was split down the middle (`"a: b": 1` → `{'"a': 'b": 1'}`),
+  and a plain key containing a colon lost its tail (`a:b: c` → `{'a': 'b: c'}`). A line in mapping
+  context with no `key:` at all now raises instead of inventing a key from the whole line.
+  With this the audit's loader trio is complete: the corpus sweep reports **46 of 47 tracked files
+  agreeing, one loudly rejected at the documented subset boundary, and zero known-divergent**; all
+  seven rendered `.github` YAML files parse identically to PyYAML.
+
 - **A sequence-root YAML document loaded as `{}` — silent, total data loss (#315).**
   `yamlmini.load_yaml` ended in `parse_map(0)`, which breaks on the first `- ` item, so a document
   whose root is a block sequence returned an empty dict with **no exception**. It was live on
