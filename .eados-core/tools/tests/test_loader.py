@@ -7,6 +7,16 @@ documented supported subset, so a future regression (the kind ADR-0006/0008 were
 fails loudly instead of silently corrupting a generated repo. PyYAML is a CI-only dependency;
 absent it, the test skips (exit 0).
 
+Two corpora, two jobs (#317):
+
+  * `CASES` / `MUST_RAISE` / `SUBSET_REJECTIONS` — synthetic, and pin the **subset boundary**:
+    what the loader promises to read, and what it must reject rather than guess at.
+  * `sweep_corpus` — the repository's own tracked YAML, and pins **reality**. Every synthetic case
+    was written by someone who already knew what the loader supports, which is precisely the blind
+    spot: the two defects this sweep was added for (#315 sequence-root, #316 kebab first key) each
+    sat one character outside the synthetic corpus and stayed invisible behind a green gate, live
+    on shipped files. A boundary corpus cannot find a construct nobody knew they had.
+
     python .eados-core/tools/tests/test_loader.py
 """
 
@@ -95,6 +105,128 @@ DEVIATIONS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Corpus sweep (#317) — the synthetic CASES above pin the SUBSET BOUNDARY; this sweeps the
+# REPOSITORY'S OWN tracked YAML and pins REALITY. Different jobs, both needed: every synthetic
+# case was written by someone who already knew what the loader supports, which is exactly the
+# blind spot — the two defects this sweep was written for (#315, #316) each sat one character
+# outside the corpus and stayed invisible through a green gate.
+# ---------------------------------------------------------------------------
+
+# Divergences the loader makes DELIBERATELY. Not exclusions — the file is still swept in full;
+# only the named divergence is normalized away before comparing, with its reason on the record.
+# An opaque skip-list would have hidden lessons.yaml exactly as well as no sweep at all.
+Y11_TRUE = ("on", "yes", "y", "true")
+Y11_FALSE = ("off", "no", "n", "false")
+DECLARED_DEVIATIONS = [
+    ("YAML 1.1 boolean KEYS", "PyYAML (YAML 1.1) coerces bare keys like `on:` / `yes:` to booleans; "
+     "yamlmini keeps them strings — deliberately the YAML 1.2 side, the same 'Norway problem' rule "
+     "the module already documents for VALUES. Live on .github/workflows/*.yml (`on:`) and "
+     "os/contribution/contribution.yaml (`escalation.on`)."),
+]
+
+# Files whose reading is KNOWN to diverge, each bound to its open defect. The suite stays green so
+# this gate can guard everything else, but the binding runs BOTH ways: a file listed here that
+# starts AGREEING is itself a failure, so the list cannot quietly outlive the bugs it documents
+# (the L-0008 discipline — an assertion that stops asserting must go red, not quiet).
+KNOWN_DIVERGENT = {
+    ".eados-core/learning/lessons.yaml":
+        "#315 — a sequence-root document loads as {} instead of the 8 entries",
+    ".github/dependabot.yml":
+        "#316 — a block-seq item whose first key is kebab-cased degrades to a string",
+}
+
+
+def _normalize_y11_keys(node):
+    """Apply the declared YAML-1.1-boolean-key deviation so both parsers can be compared on
+    everything else: a bool key from PyYAML and its string spelling from yamlmini both collapse to
+    one marker. Nothing else about the document is touched."""
+    if isinstance(node, dict):
+        out = {}
+        for k, v in node.items():
+            if k is True or (isinstance(k, str) and k.lower() in Y11_TRUE):
+                k = "<y11-true>"
+            elif k is False or (isinstance(k, str) and k.lower() in Y11_FALSE):
+                k = "<y11-false>"
+            out[k] = _normalize_y11_keys(v)
+        return out
+    if isinstance(node, list):
+        return [_normalize_y11_keys(x) for x in node]
+    return node
+
+
+def _tracked_yaml(repo_root):
+    """Tracked YAML under .eados-core/ and .github/, via `git ls-files` so a newly added data file
+    is covered the moment it is staged (the run-lint-after-`git add` discipline). Returns None when
+    git cannot answer — the sweep then reports a skip with the reason rather than a false pass."""
+    import subprocess
+    try:
+        out = subprocess.run(["git", "-c", "core.quotePath=false", "ls-files",
+                              ".eados-core", ".github"],
+                             cwd=repo_root, capture_output=True, text=True,
+                             encoding="utf-8", timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [p for p in (line.strip() for line in (out.stdout or "").splitlines())
+            if p.endswith((".yaml", ".yml"))]
+
+
+def sweep_corpus(repo_root, failures, notes):
+    """Compare load_yaml against PyYAML over the tracked corpus. Appends to `failures` / `notes`."""
+    import yaml as _yaml
+    paths = _tracked_yaml(repo_root)
+    if paths is None:
+        notes.append("corpus sweep SKIPPED — `git ls-files` unavailable (not a git checkout?); "
+                     "no file was compared")
+        return
+    swept = agreed = rejected = deviated = 0
+    stale = []
+    for rel in paths:
+        full = os.path.join(repo_root, rel)
+        try:
+            with open(full, encoding="utf-8-sig") as fh:
+                raw = fh.read()
+        except OSError:
+            continue
+        try:
+            ref = _yaml.safe_load(raw)
+        except Exception:  # noqa: BLE001 — not legal YAML at all; not this gate's business
+            continue
+        swept += 1
+        try:
+            mine = load_yaml(raw)
+        except ValueError as exc:
+            # A loud rejection is a PASS: the documented subset boundary, working as designed.
+            rejected += 1
+            notes.append(f"{rel}: loader rejects (subset boundary) — {str(exc)[:100]}")
+            continue
+        except Exception as exc:  # noqa: BLE001 — anything else is a crash, and a crash is a bug
+            failures.append(f"{rel}: load_yaml raised {exc!r} (expected a parse or a ValueError)")
+            continue
+        norm_mine, norm_ref = _normalize_y11_keys(mine), _normalize_y11_keys(ref)
+        if norm_mine != norm_ref:
+            deviated += 1
+            if rel in KNOWN_DIVERGENT:
+                notes.append(f"{rel}: KNOWN divergence — {KNOWN_DIVERGENT[rel]}")
+            else:
+                failures.append(f"{rel}: load_yaml disagrees with PyYAML and the divergence is "
+                                "neither declared nor a known defect — a silent misparse of a "
+                                "governed data file")
+        else:
+            agreed += 1
+            if rel in KNOWN_DIVERGENT:
+                stale.append(rel)
+    for rel in stale:
+        failures.append(f"{rel}: listed in KNOWN_DIVERGENT ({KNOWN_DIVERGENT[rel]}) but now AGREES "
+                        "with PyYAML — the defect is fixed, so remove the entry in the same PR; a "
+                        "stale known-failure entry hides the next real one")
+    notes.append(f"corpus sweep: {swept} tracked file(s) — {agreed} agree, {rejected} loudly "
+                 f"rejected (subset boundary), {deviated} known-divergent, "
+                 f"{len(DECLARED_DEVIATIONS)} declared deviation(s) normalized")
+
+
 def main():
     failures = []
 
@@ -165,6 +297,10 @@ def main():
     if load_yaml(raw) != yaml.safe_load(raw):
         failures.append("orchestrator/examples/reference.yaml: load_yaml != pyyaml (deep)")
 
+    # #317: the synthetic corpus pins the boundary; this pins reality.
+    notes = []
+    sweep_corpus(os.path.dirname(ROOT), failures, notes)
+
     if failures:
         print("test-loader: FAIL\n")
         for f in failures:
@@ -174,6 +310,8 @@ def main():
     print(f"test-loader: OK — agrees with PyYAML on {len(CASES)} cases + reference.yaml, "
           f"rejects {len(MUST_RAISE)} unsupported + {len(SUBSET_REJECTIONS)} truncation-class "
           f"inputs, honours {len(DEVIATIONS)} deviations.")
+    for note in notes:
+        print(f"  {note}")
     return 0
 
 
