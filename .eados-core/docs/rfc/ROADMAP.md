@@ -47,6 +47,7 @@ The **single source of truth** for EADOS's own delivery plan, from start to fini
 | **v2.9.0 release** | ✅ published 2026-07-11 — M15 command surface + M16 model/effort routing + M17 interaction contract |
 | **M18 — consumer-side routing & model checkpoint** | ✅ **done** — items 18.1–18.3 (#296–#298; roadmap routes + advisory `--check` checkpoint, milestone #18 closed) |
 | **v2.10.0 release** | ✅ published 2026-07-12 — M18 consumer-side routing & model checkpoint |
+| **v2.11.0 release** | ✅ published 2026-07-26 — scaffold routing parity (#306/#307, ADR-0023): the generated ROADMAP carries the routing legend + per-item advisory routes |
 
 Legend: ⏳ not started · 🚧 in progress · ✅ done.
 
