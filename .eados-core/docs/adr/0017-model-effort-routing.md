@@ -4,6 +4,12 @@
 
 Accepted (2026-07-09)
 
+**Extended by [ADR-0024](0024-provider-agnostic-capability-routing.md) (2026-07-26)** —
+provider-agnostic capability routing. Everything below remains in force; ADR-0024 adds what this
+record is silent on (host identification, multi-provider catalogs, cost as a resolution input) and
+replaces the flat per-host `tier → model name` catalog with a two-level provider/host catalog
+resolved by capability. Read them together.
+
 ## Context
 
 EADOS had no notion of *which class of model* or *how much effort* a unit of work deserves: the
