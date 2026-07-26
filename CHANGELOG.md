@@ -38,8 +38,23 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   instead of quiet. Same failure shape as the bug above: something that reads as verified while
   resting on a hardcoded assumption nobody re-checked.
 
+- **Three lessons had silently lost their provenance to a YAML comment (#326).** In
+  `learning/lessons.yaml`, a bare `#` preceded by a space starts a comment, so `source: audit #153;
+  fix #166 (…)` parses as just `audit` under a real YAML parser. L-0003, L-0004 and L-0007 each
+  lost everything after their first issue reference. Nothing caught it because the ledger is read
+  two different ways: the hand-rolled regex parsers in `eados_lint.check_lessons` /
+  `lesson_audit.parse_lessons` capture the whole line and see the full text, while
+  `data-file-validity` runs it through `load_yaml`, which returns `{}` for a sequence-root document
+  (#315) and therefore never inspects a field at all. The three values are now quoted, and both
+  parsers agree on every entry. `(#277)`-style parenthesised references were never affected — the
+  `#` follows `(`, not whitespace — which is why L-0005 and L-0006 survived.
+
 ### Added
 
+- **Lessons ledger entry L-0008 (#326).** *"A test whose expected outcome depends on data owned
+  elsewhere must derive its fixture from that data and assert the classification it is named for,
+  never a proxy that every branch satisfies."* Drawn from the two `--check` cases above, which
+  decayed the same way twice in one PR.
 - **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
   `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
   longer Anthropic-only, and generated repositories render both. This also clears half of a live
