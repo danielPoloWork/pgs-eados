@@ -77,8 +77,10 @@ placeholder is a hard error, never a guess.
   dissent, evidence-first pushback, rendered into the agent contract and gated for congruence;
   *instructed + artifact-gated + re-grounded*, never claimed as a guarantee on live chat.
 - **Model & effort routing as data** — each roadmap item carries a capability tier + effort
-  (*tiers, not model names*); a checkpoint warns when the session model is off the route. Advisory —
-  the human keeps model authority; an agent never switches its own session model.
+  (*tiers, not model names*); a scaffolded repo gets the same surface — a `ROADMAP.md` routing
+  legend with a dated catalog plus per-item advisory routes derived from intake signals — and a
+  checkpoint warns when the session model is off the route. Advisory — the human keeps model
+  authority; an agent never switches its own session model.
 - **Guided installer** — a cross-platform `setup.{sh,command,ps1,bat}` with **fail-closed SHA256**
   verification and additive, no-clobber extraction.
 - **Self-improvement, versioned & human-gated** — a lessons ledger, an auto-tuner, and self-review.

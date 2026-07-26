@@ -7,6 +7,23 @@ its section with a fresh `<milestone>.<task>` number; never renumber.
 - **Versioning start:** {{VERSION_START}}.
 - **Session journal:** see [`docs/journal/`](docs/journal/). Latest checkpoint: _none yet_.
 
+## Model & effort routing (advisory)
+
+An item may carry an advisory **route** — `route: <tier> / <effort>` — derived from its intake
+signals through the `os/routing` policy's only-raise resolution (ADR-0017: start at the floor;
+matched signals only ever raise, never lower). Tiers, cheapest → most capable: {{ROUTE_TIERS}}.
+Efforts: {{ROUTE_EFFORTS}}. An item with no route takes the floor ({{ROUTE_FLOOR}}). The route
+*recommends*; **the human keeps final model authority** — switch with your host's own model
+control, never mid-session by the agent.
+
+Tiers map to concrete models only through the dated catalog (as of {{ROUTE_CATALOG_AS_OF}};
+a stale date is the review cue):
+
+{{ROUTE_CATALOG}}
+
+Where the EADOS core is vendored (`.eados-core/`), the authoritative per-issue call once tracker
+labels exist is `python .eados-core/tools/route_advice.py --issue <N>`.
+
 ---
 
 ## Milestone 1 — Project bootstrap & CI
