@@ -8,6 +8,8 @@ normalization, and the advisory boundary. The `gh` shell is not touched. Depende
     python .eados-core/tools/tests/test_route_advice.py
 """
 
+import contextlib
+import io
 import os
 import sys
 
@@ -219,10 +221,26 @@ def main():
         check(f"{label} states the advisory boundary", "advisory" in txt.lower(), failures)
 
     # --- the CLI --check path: always exit 0, whatever the verdict ---
-    check("--check OK exits 0",
-          ra.main(["--labels", "severity:medium", "--check", "--current-model", "Opus 4.8"]) == 0, failures)
-    check("--check MISMATCH still exits 0 (advisory, never a gate)",
-          ra.main(["--labels", "severity:medium", "--check", "--current-model", "Sonnet 5"]) == 0, failures)
+    #
+    # These two cases must keep BEING an OK and a mismatch. Hardcoding model names here made them
+    # decay silently every time the catalog moved (#326): 'Sonnet 5' rose from fast to standard and
+    # the mismatch case became a second OK, then 'Opus 4.8' left the catalog entirely and the OK
+    # case became an unknown-model. Both stayed green while testing nothing. So: derive the models
+    # from the live catalog, and assert the VERDICT rather than only the exit code — a future
+    # reshuffle turns these red instead of quiet.
+    live_models = ra.load_routing()["catalog"]["hosts"][0]["models"]
+    verdicts = {}
+    for slot in ("standard", "fast"):                    # standard == the floor, fast == below it
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            verdicts[slot] = (ra.main(["--labels", "severity:medium", "--check",
+                                       "--current-model", live_models[slot]]), buf.getvalue())
+    check("--check OK exits 0", verdicts["standard"][0] == 0, failures)
+    check("--check OK actually reports a match (not a silently-passing unknown-model)",
+          "ROUTE-OK" in verdicts["standard"][1], failures)
+    check("--check MISMATCH still exits 0 (advisory, never a gate)", verdicts["fast"][0] == 0, failures)
+    check("--check MISMATCH actually reports a mismatch (not a silently-passing OK)",
+          "ROUTE-MISMATCH" in verdicts["fast"][1], failures)
     check("--check unknown-model still exits 0",
           ra.main(["--labels", "severity:medium", "--check", "--current-model", "gpt-4"]) == 0, failures)
     check("--check without --current-model is a usage error (exit 2)",

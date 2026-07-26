@@ -9,6 +9,47 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The routing catalog no longer contradicts the benchmark it is supposed to encode (#326).**
+  `os/routing/routing.yaml` routed the factory's most consequential work — every `label:adr`,
+  `label:security` and `flag:decision-heavy` unit, i.e. the whole `frontier-reasoning` tier — to
+  **Fable 5**, a model all three READMEs describe as *not yet benchmarked for EADOS*, while
+  **Opus 4.8**, which the same READMEs rank first, sat one tier below at `standard`. Model names
+  lived in two homes with nothing forcing them to agree, and the home that executes was the wrong
+  one. The catalog now carries the
+  maintainer's assessment of 2026-07-26 as an explicit **flagship / balanced / economical** ladder
+  per host — `claude-code`: Fable 5 · Opus 5 · Sonnet 5 — and the README ranking (EN + zh-Hans +
+  ja) was rewritten **in the same change**, reframed as a snapshot that points at the catalog as
+  the source of truth rather than an independent claim that can drift from it. That coupling is
+  the actual fix: the bug was never that one name was wrong, it was that nothing forced the two
+  documents to agree. Entries are annotated **ASSESSED** (a dated maintainer judgment, explicitly
+  not a benchmark run) so the next reviewer can see what rests on evidence and what does not.
+  `os/routing/delegation.md`'s worked relay is updated in lockstep, and generated repositories
+  pick the change up on their next render (the catalog is the `{{ROUTE_CATALOG}}` source,
+  ADR-0023). The *gate* that makes the coupling mechanical, plus catalog staleness, is M19 19.5.
+
+- **A test that had silently stopped testing (#326).** `test_route_advice.py`'s CLI `--check`
+  cases hardcoded model names, so each catalog move quietly disarmed one of them: `Sonnet 5` rose
+  from `fast` to `standard` and the mismatch case became a second passing OK, then `Opus 4.8` left
+  the catalog entirely and the OK case became an unknown-model. Both stayed green while asserting
+  nothing. They now derive their models from the live catalog and assert the `ROUTE-OK` /
+  `ROUTE-MISMATCH` verdict rather than only the exit code, so a future reshuffle turns them red
+  instead of quiet. Same failure shape as the bug above: something that reads as verified while
+  resting on a hardcoded assumption nobody re-checked.
+
+### Added
+
+- **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
+  `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
+  longer Anthropic-only, and generated repositories render both. This also clears half of a live
+  inconsistency: `os/routing/delegation.md`'s application matrix has documented `codex` since M16,
+  while the catalog listed `claude-code` alone, so `route_advice.py --host codex` failed with
+  `unknown host` on a host the documentation said was supported. `--host codex` now resolves. The
+  GPT model names are **maintainer-supplied and not independently verified in-repo**, recorded as
+  such in the catalog. `gemini` remains documented-but-uncatalogued — the remaining half of #327,
+  which also needs the two-way lint, since the one-way check cannot see that direction at all.
+
 ## [2.11.0] - 2026-07-26
 
 Scaffold routing parity — a minor, additive release driven by a field report. A repository

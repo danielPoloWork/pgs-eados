@@ -70,17 +70,47 @@ rules:
 
 # The ONLY place model names live. `as_of` is refreshed whenever a mapping changes - a stale
 # date is the review cue. Hosts with their own effort words map them via effort_aliases.
+#
+# PROVENANCE (#326). Until 2026-07-26 this catalog and the README disagreed outright: the catalog
+# routed every ADR / security / foundational-decision unit of work - the whole frontier-reasoning
+# tier, the most consequential work the factory does - to a model the README listed among those NOT
+# benchmarked for EADOS, while the one it ranked first sat a tier below. Model names lived in two
+# homes with nothing forcing them to agree, and the home that executes was the wrong one.
+#
+# The fix is the COUPLING, not any particular name: the ladder below and the README ranking are now
+# written in the same change and must be changed in the same change. M19 19.5 (#326) adds the
+# `routing-model-lockstep` gate that makes that mechanical instead of a habit.
+#
+# What the entries rest on:
+#   * ASSESSED   - the maintainer's dated judgment (2026-07-26): flagship / balanced / economical
+#                  per host. A judgment, not a benchmark run. The distinction is written down
+#                  rather than implied, because the bug being fixed here existed precisely because
+#                  an unverified claim was indistinguishable from a verified one.
+#   * codex host - the GPT model names were supplied by the maintainer on 2026-07-26 and are NOT
+#                  independently verified in-repo. Adding this host also clears a live
+#                  inconsistency (#327): delegation.md's matrix has always documented `codex`,
+#                  while the catalog listed claude-code alone - so `route_advice.py --host codex`
+#                  errored on a host the documentation said was supported.
+#
+# M19 19.2 (#323) replaces this comment with data: a two-level provider/host catalog where every
+# model carries `assessed:`, a context window, a relative cost and its own verification date;
+# 19.3 (#324) then excludes unassessed models from selection instead of trusting a comment.
 catalog:
-  as_of: "2026-07-09"
+  as_of: "2026-07-26"
   hosts:
     - host: claude-code
       models:
-        frontier-reasoning: "Fable 5"
-        standard: "Opus 4.8"
-        fast: "Sonnet 5"
+        frontier-reasoning: "Fable 5"    # flagship   - ASSESSED, maintainer 2026-07-26
+        standard: "Opus 5"               # balanced   - ASSESSED, maintainer 2026-07-26
+        fast: "Sonnet 5"                 # economical - ASSESSED, maintainer 2026-07-26
       effort_aliases:
         ultracode: max
         ultrathink: max
+    - host: codex
+      models:
+        frontier-reasoning: "GPT Sol"    # flagship   - maintainer-supplied, unverified in-repo
+        standard: "GPT Terra"            # balanced   - maintainer-supplied, unverified in-repo
+        fast: "GPT Luna"                 # economical - maintainer-supplied, unverified in-repo
 
 # Worked-example decision surface (#224) - the judgment call is WHICH TIER a unit of work
 # deserves. Shape-checked by the `examples` gate; drawn from the maintainer-reviewed M15
