@@ -9,6 +9,19 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.10.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Factory CI pinned a mislabeled `actions/checkout` commit (#309 fallout).** Merging `main`
+  into the Dependabot branch resolved two lines of `.github/workflows/ci.yml` to `main`'s SHA
+  while keeping the branch's version comment, landing `9c091bb21b…` (the **v7.0.0** commit)
+  under a `# v7.0.1` label — a pin that lied about its own version, the one property ADR-0009's
+  SHA-pinning model asks a human to be able to read. Both lines now pin the true v7.0.1 commit
+  `3d3c42e5aa…`, restoring lockstep with the workflow templates and turning the `action-pins`
+  gate (red on `main` since the merge) green. Note for the record: `sync_action_pins.py --fix`
+  would **not** have been the right remedy — it copies the factory CI's SHA into the templates,
+  so it would have propagated the wrong commit under the v7.0.1 label and made the gate pass on
+  a uniformly incorrect pin set.
+
 ### Added
 
 - **Scaffold routing surface — advisory model/effort routes rendered into the generated ROADMAP
