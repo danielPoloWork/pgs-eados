@@ -22,14 +22,14 @@
   scope: global
   context: The hand-rolled YAML loader silently truncated constructs outside its subset (unclosed flow collections and quoted scalars at end-of-line) in the questionnaire, so a maintainer's input could vanish with no error.
   rule: A hand-rolled parser must loudly reject any construct it cannot represent instead of silently truncating it, and prove its supported subset with a differential against a reference parser.
-  source: audit #153; fix #166 (yamlmini loud rejection; ADR-0006/0008)
+  source: "audit #153; fix #166 (yamlmini loud rejection; ADR-0006/0008)"
 
 - id: L-0004
   date: 2026-06-28
   scope: global
   context: A re-audit flagged profile CI actions shipping version-tag pins (vs the factory's SHA pins) as an inconsistency, but ADR-0009 §3 had already decided it — profile actions stay tag-pinned and Dependabot-managed by design.
   rule: Before filing an apparent inconsistency as a gap, check whether the governing ADR already decided it; a re-discovered trade-off is an addendum, not a new issue.
-  source: audit #132; ADR-0009 §3 addendum (PR #137)
+  source: "audit #132; ADR-0009 §3 addendum (PR #137)"
 
 - id: L-0005
   date: 2026-07-11
@@ -50,4 +50,11 @@
   scope: global
   context: The OS routed model/effort per unit of work (os/routing, ADR-0017) and the plan phase attached routes to roadmap items, but the scaffold's rendered ROADMAP carried none of it — the maintainer's first post-hand-off question was which model to use per step, answered by hand-annotating the generated artifact.
   rule: A delivery surface the OS governs must be visible in the artifact the maintainer actually plans from — when a policy layer gains a consumer-facing effect, extend template parity to it in the same milestone, or record the deliberate omission as an ADR.
-  source: field run egl-utils-js 2026-07-16 (local lesson L-0008, maintainer-approved); upstreamed by #306 / ADR-0023
+  source: "field run egl-utils-js 2026-07-16 (local lesson L-0008, maintainer-approved); upstreamed by #306 / ADR-0023"
+
+- id: L-0008
+  date: 2026-07-26
+  scope: global
+  context: Two CLI --check cases in test_route_advice.py hardcoded model names copied from the routing catalog and asserted only the process exit code, which is 0 for every verdict by design; correcting the catalog moved 'Sonnet 5' from fast to standard so the mismatch case silently became a second passing OK, and dropping 'Opus 4.8' turned the OK case into an unknown-model — both stayed green while asserting nothing.
+  rule: A test whose expected outcome depends on data owned elsewhere must derive its fixture from that data and assert the classification it is named for, never a proxy that every branch satisfies (an exit code, a non-empty result) — a copied value that drifts out of its intended case leaves the test green and vacuous, so the assertion must be one the drift can falsify.
+  source: "#326 / PR #330 — the same decay disarmed two cases in one PR"
