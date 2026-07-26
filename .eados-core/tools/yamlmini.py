@@ -19,6 +19,9 @@ Deliberate deviations from YAML 1.1, kept because they are safer for a manifest:
   * ISO dates stay strings — `2026-07-26` is "2026-07-26", not a datetime.date. Every consumer
     here compares, sorts or renders these as text, and a date object would have to be turned back
     into a string on the way out; keeping one representation end to end removes that round trip.
+  * mapping KEYS are never type-coerced: a bare `123:` is the string "123", where YAML 1.1 makes
+    it the integer 123. A quoted key is unquoted (`"foo":` -> foo), which is not a deviation but
+    the rule; only the coercion is skipped, consistently with the scalar rules above.
 
 A single leading UTF-8 BOM is stripped (utf-8-sig semantics, PyYAML-compatible) — Windows
 editors and PowerShell 5.1's `Out-File -Encoding utf8` write one, and it is not content.
@@ -142,6 +145,50 @@ def _scalar(s):
             return s
         return int(s)
     return s
+
+
+def _split_key(text):
+    """`(raw_key, value)` for a block-mapping line, or None when the line is not a mapping entry.
+
+    YAML's own rule, which the old `partition(":")` and the old `[A-Za-z0-9_]+:` probe both only
+    approximated: the key ends at the first ':' that is **followed by a space or end-of-line** and
+    lies **outside** any quoted scalar or flow collection. So a ':' inside a URL, a quoted string
+    or a `{...}` flow map is not a separator, while `a:b: c` splits after `a:b` (#316).
+    """
+    depth, quote, i = 0, None, 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if quote == '"' and c == "\\":
+                i += 2
+                continue
+            if c == quote:
+                if quote == "'" and i + 1 < len(text) and text[i + 1] == "'":
+                    i += 2                       # '' inside single quotes is an escaped quote
+                    continue
+                quote = None
+        elif c in "\"'":
+            quote = c
+        elif c in "[{":
+            depth += 1
+        elif c in "]}":
+            depth -= 1
+        elif c == ":" and depth == 0 and (i + 1 == len(text) or text[i + 1] == " "):
+            return text[:i].strip(), text[i + 1:].strip()
+        i += 1
+    return None
+
+
+def _key_text(raw):
+    """A mapping key as YAML reads it: a quoted key loses its quotes and escapes; a plain key is
+    used verbatim. Keys are deliberately NOT type-coerced — a bare `123:` stays the string "123",
+    the same no-coercion rule this loader applies to scalars."""
+    raw = raw.strip()
+    if len(raw) >= 2 and raw[0] == '"' and raw[-1] == '"':
+        return _unescape_double(raw[1:-1])
+    if len(raw) >= 2 and raw[0] == "'" and raw[-1] == "'":
+        return raw[1:-1].replace("''", "'")
+    return raw
 
 
 _DOC_MARKERS = ("---", "...")
@@ -346,8 +393,15 @@ def load_yaml(text):
             ind = indent_of(line)
             if ind != indent or line.strip().startswith("- "):
                 break
-            key, _, val = _strip_comment(line.strip()).partition(":")
-            key, val = key.strip(), val.strip()
+            split = _split_key(_strip_comment(line.strip()))
+            if split is None:
+                # A line in mapping context that carries no `key:` — malformed YAML (PyYAML
+                # rejects it too). `partition(":")` used to invent a key from the whole line.
+                raise ValueError(
+                    f"line {pos[0] + 1}: expected a 'key: value' mapping entry, got "
+                    f"{line.strip()[:60]!r}"
+                )
+            key, val = _key_text(split[0]), split[1]
             pos[0] += 1
             if val in ("|", "|-", "|+"):
                 result[key] = parse_block_scalar(indent, val[1:])  # "" clip, "-" strip, "+" keep
@@ -383,9 +437,16 @@ def load_yaml(text):
             after_dash = line[indent + 1:]                       # everything past the '-'
             key_col = indent + 1 + (len(after_dash) - len(after_dash.lstrip(" ")))
             content = line[key_col:]
-            if re.match(r"[A-Za-z0-9_]+\s*:(\s|$)", content):
+            if _split_key(_strip_comment(content)) is not None:
                 # Block-style mapping item ("- key: value" + aligned continuation lines).
                 # Feed the dash-stripped first line to parse_map (no buffer mutation).
+                #
+                # This probe used to be `[A-Za-z0-9_]+\s*:`, which missed any first key carrying a
+                # hyphen, a dot, a space or quotes — the item then fell through to _scalar and
+                # became a STRING, and parse_list broke on the next line, silently dropping every
+                # continuation (#316). Only the FIRST key was ever charset-restricted, so merely
+                # reordering two keys inside an item changed the parse. `_split_key` applies YAML's
+                # real rule instead of a charset guess.
                 items.append(parse_map(key_col, first_line=" " * key_col + content))
             else:
                 items.append(_scalar(_strip_comment(content.strip())))
