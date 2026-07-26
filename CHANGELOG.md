@@ -9,6 +9,36 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **ADR-0024 — provider-agnostic, capability-driven model & effort routing (M19 19.1, #322).**
+  The decision the rest of M19 builds on, extending (never superseding) ADR-0017. Six sub-decisions:
+  a **two-level catalog** — `providers[] → models[]` for what exists and what it can do,
+  `hosts[] → providers[]` for what a runtime can reach, which is what finally makes model-agnostic
+  hosts representable; **resolution by capability rather than by name**, split into escalation
+  (which computes the quality floor, unchanged and still monotonic) and selection (which picks the
+  cheapest reachable model that clears it); **quality-first with cost awareness as a structural
+  invariant** — *cost may only choose among models that already clear the earned floor, and can
+  never lower it*, so a security or ADR route cannot be degraded to save tokens because cost never
+  touches the floor at all; **host identity from environment evidence with a loud unknown**, never
+  from asking the agent what model it is, reconciled explicitly with M18's self-report provenance
+  decision; the **`extra`** effort level; and **enforceable catalog freshness**, with unassessed
+  models catalogued but excluded from selection. Records the rejected alternatives, in particular
+  the two most likely to be re-litigated: model self-report and API-driven catalog refresh.
+- **Lessons ledger entry L-0008 (#326).** *"A test whose expected outcome depends on data owned
+  elsewhere must derive its fixture from that data and assert the classification it is named for,
+  never a proxy that every branch satisfies."* Drawn from the two `--check` cases below, which
+  decayed the same way twice in one PR.
+- **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
+  `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
+  longer Anthropic-only, and generated repositories render both. This also clears half of a live
+  inconsistency: `os/routing/delegation.md`'s application matrix has documented `codex` since M16,
+  while the catalog listed `claude-code` alone, so `route_advice.py --host codex` failed with
+  `unknown host` on a host the documentation said was supported. `--host codex` now resolves. The
+  GPT model names are **maintainer-supplied and not independently verified in-repo**, recorded as
+  such in the catalog. `gemini` remains documented-but-uncatalogued — the remaining half of #327,
+  which also needs the two-way lint, since the one-way check cannot see that direction at all.
+
 ### Fixed
 
 - **The routing catalog no longer contradicts the benchmark it is supposed to encode (#326).**
@@ -48,22 +78,6 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   (#315) and therefore never inspects a field at all. The three values are now quoted, and both
   parsers agree on every entry. `(#277)`-style parenthesised references were never affected — the
   `#` follows `(`, not whitespace — which is why L-0005 and L-0006 survived.
-
-### Added
-
-- **Lessons ledger entry L-0008 (#326).** *"A test whose expected outcome depends on data owned
-  elsewhere must derive its fixture from that data and assert the classification it is named for,
-  never a proxy that every branch satisfies."* Drawn from the two `--check` cases above, which
-  decayed the same way twice in one PR.
-- **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
-  `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
-  longer Anthropic-only, and generated repositories render both. This also clears half of a live
-  inconsistency: `os/routing/delegation.md`'s application matrix has documented `codex` since M16,
-  while the catalog listed `claude-code` alone, so `route_advice.py --host codex` failed with
-  `unknown host` on a host the documentation said was supported. `--host codex` now resolves. The
-  GPT model names are **maintainer-supplied and not independently verified in-repo**, recorded as
-  such in the catalog. `gemini` remains documented-but-uncatalogued — the remaining half of #327,
-  which also needs the two-way lint, since the one-way check cannot see that direction at all.
 
 ## [2.11.0] - 2026-07-26
 
