@@ -9,7 +9,21 @@ branch_naming:
 
 commit:
   convention: conventional-commits
-  scopes: [interview, profiles, templates, lint, agent, docs, adr, ci, os, workflow, authority, git, rfc, plan, risk, contribution, commands, traceability, tools, setup, release]
+  # The subsystem vocabulary, and the SINGLE source of truth for it — `AGENTS.md` §6 restates this
+  # list and the `git-scope-lockstep` gate holds the two together (#365). They had drifted to 8 vs
+  # 21 with nothing watching, so the surface an agent reads first was the most wrong.
+  #
+  # Widened 2026-07-27 from 21 to 34. The rule for what earned a place: it names a real top-level
+  # subsystem or artifact AND was used more than once on `main`. 98 of 227 scoped commits used a
+  # scope NEITHER surface declared — not typos, but real subsystems (`render`, `learning`,
+  # `roadmap`, `orchestrator`, `routing`) nobody added. A vocabulary 43% of commits ignore is not
+  # being enforced, it is being worked around. Coverage of `main`: 57% -> 87%.
+  #
+  # Deliberately NOT added: `install` (a synonym of `setup` — a vocabulary with two words for one
+  # thing invites the next split), `loader`/`generate` (covered by `tools`/`orchestrator`), and
+  # `refactor` (a commit TYPE, not a subsystem). Kept as ONE LINE: the loader's multi-line flow
+  # support is untested, and this list is read by every gate.
+  scopes: [interview, profiles, templates, lint, agent, docs, adr, ci, os, workflow, authority, git, rfc, plan, risk, contribution, commands, traceability, tools, setup, release, render, readme, learning, roadmap, orchestrator, routing, interaction, issues, changelog, manifest, bundle, i18n, maintenance]
   # Max length of the subject line the AUTHOR writes (#363). Data, not a constant in git_check.py —
   # it was the one numeric threshold of this policy that lived in code, in an OS whose rule is that
   # knowledge is data; a generated repo could not change it without editing a vendored tool.
