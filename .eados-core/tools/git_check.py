@@ -20,7 +20,15 @@ as the cross-cutting `git-policy` gate (`wired: external`, like `traceability-li
 runs it pre-PR, CI may gate on it; `--advisory` reports without failing the exit code (the
 "advisory locally, gating in CI" split is the caller's flag, not two tools).
 
-    python .eados-core/tools/git_check.py [--repo DIR] [--advisory]
+**Whose policy?** (#358) The policy is *discovered*, not hardcoded. In a **generated** repo it is
+that repo's own `docs/workflow/git-policy.yaml`, rendered from its manifest; in **EADOS itself** it
+is `os/git/git.yaml`; in a repo that has neither, the check narrows to what is identical in every
+EADOS contract and **says so** rather than borrowing someone else's scope list. This tool used to
+read the factory spec unconditionally, so after `scaffold` it judged a project's commits against
+EADOS's own scopes — rejecting the project's valid ones and, more quietly, accepting scopes it had
+never declared.
+
+    python .eados-core/tools/git_check.py [--repo DIR] [--advisory] [--policy PATH]
         [--branch NAME] [--message SUBJECT]     # overrides for testing / CI contexts
 
 Pure helpers (branch_problems / commit_problems) + a thin CLI shell, per the pr_review.py
@@ -46,6 +54,12 @@ GH_TIMEOUT = 30    # network-bound
 GIT_TIMEOUT = 15   # local, but git can block on a credential helper or a remote
 
 GIT_POLICY = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+# Where a GENERATED repo keeps its own policy (rendered from its manifest — #358). Relative to the
+# repo root, next to the prose it makes machine-readable.
+PROJECT_POLICY = os.path.join("docs", "workflow", "git-policy.yaml")
+# The factory's own marker. `.eados-dev` is how `eados_lint` already tells "I am EADOS" from
+# "I am a bundle inside someone else's repo"; reusing it keeps one answer to that question.
+DEV_MARKER = ".eados-dev"
 
 _KEBAB = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*\Z")
 _SUBJECT = re.compile(r"(?P<type>[a-z]+)(\((?P<scope>[^)]*)\))?(?P<bang>!)?: (?P<desc>.+)\Z")
@@ -55,6 +69,56 @@ _SUBJECT_MAX = 72
 def load_policy(path=GIT_POLICY):
     with open(path, encoding="utf-8") as handle:
         return render.load_yaml(handle.read()) or {}
+
+
+def resolve_policy(repo=".", explicit=None):
+    """`(path, origin)` for the policy that governs `repo` — or `(None, reason)`.
+
+    The bug this replaces (#358) was not a wrong path but an unaskable question: `GIT_POLICY` was
+    hardcoded and `main()` exposed no way to change it, so after `scaffold` handed governance to a
+    generated repo's own `AGENTS.md`, this tool still judged that repo's commits against **EADOS's**
+    scope list. On a real consumer the two lists overlapped in 2 of 13 entries — it rejected 11 valid
+    project scopes and would have waved through `fix(profiles):` in a Java library that has neither.
+
+    The ladder, and the reason each rung exists:
+
+      1. `--policy PATH` — an explicit answer always wins.
+      2. `<repo>/docs/workflow/git-policy.yaml` — the generated repo's own, rendered from its
+         manifest. First, because in a consumer repo the vendored `.eados-core/` is present and its
+         factory spec is exactly the wrong answer.
+      3. the factory's `os/git/git.yaml`, **only** when `<repo>` is EADOS itself (`.eados-dev`).
+         Gated rather than used as a fallback: an ungated fallback is the original defect.
+      4. nothing. Repos generated before this shipped have no rendered policy and are never
+         re-rendered (ADR-0003), so this is a permanent, expected state — not an error."""
+    if explicit:
+        return explicit, "--policy"
+    project = os.path.join(repo, PROJECT_POLICY)
+    if os.path.exists(project):
+        return project, f"this repository's own {PROJECT_POLICY.replace(os.sep, '/')}"
+    if os.path.exists(os.path.join(repo, DEV_MARKER)) and os.path.exists(GIT_POLICY):
+        return GIT_POLICY, "the EADOS factory's os/git/git.yaml (this IS the factory)"
+    return None, (f"no {PROJECT_POLICY.replace(os.sep, '/')} in {repo} — and this is not the EADOS "
+                  "factory, so its policy does not apply here")
+
+
+def universal_policy(spec_path=GIT_POLICY):
+    """What can still be checked in a repo that declares no policy of its own.
+
+    Not "the factory's policy minus a bit" — the two fields kept are the ones that are **the same
+    in every EADOS contract by construction**: the Conventional Commit convention and its type
+    vocabulary. `commit.scopes` is deliberately dropped, because scopes are exactly what differs per
+    project, and applying the factory's is the defect (#358).
+
+    Checking less, honestly, beats checking more, wrongly: the loud half of that defect rejected
+    valid commits, but the quiet half **accepted** `fix(profiles):` in a repo with no profiles —
+    and nobody ever notices a check that passes."""
+    try:
+        spec = load_policy(spec_path)
+    except (OSError, ValueError):
+        return {}
+    return {"branch_naming": {"pattern": (spec.get("branch_naming") or {}).get("pattern"),
+                              "types": (spec.get("branch_naming") or {}).get("types") or []},
+            "commit": {"convention": (spec.get("commit") or {}).get("convention")}}
 
 
 def branch_problems(branch, policy):
@@ -150,13 +214,23 @@ def main(argv=None):
     ap.add_argument("--message", help="commit subject to check (default: HEAD's subject)")
     ap.add_argument("--advisory", action="store_true",
                     help="report violations but exit 0 (the local pre-flight mode; CI omits it)")
+    ap.add_argument("--policy", help="the git policy to evaluate against (default: this "
+                                     "repository's docs/workflow/git-policy.yaml)")
     args = ap.parse_args(argv)
 
-    try:
-        policy = load_policy()
-    except (OSError, ValueError) as exc:
-        print(f"git-check: ERROR — cannot read git.yaml policy: {exc}", file=sys.stderr)
-        return 2
+    policy_path, origin = resolve_policy(args.repo, args.policy)
+    degraded = None
+    if policy_path is None:
+        # NOT an error, and never a silent substitution of someone else's contract: a repo
+        # generated before #358 has no rendered policy and is never re-rendered (ADR-0003).
+        policy, degraded = universal_policy(), origin
+    else:
+        try:
+            policy = load_policy(policy_path)
+        except (OSError, ValueError) as exc:
+            print(f"git-check: ERROR — cannot read the git policy at {policy_path}: {exc}",
+                  file=sys.stderr)
+            return 2
 
     branch = args.branch if args.branch is not None else _git(args.repo, "rev-parse",
                                                               "--abbrev-ref", "HEAD")
@@ -179,6 +253,17 @@ def main(argv=None):
             problems.append(f"{count} PRs are open — git.yaml commit.one_pr_at_a_time allows one")
 
     print(f"git-policy check ({args.repo}) — branch: {branch or '?'}")
+    print(f"  policy: {origin if policy_path else 'NONE'}")
+    if degraded:
+        # Stated, never inferred from silence: what is checked here is a strict subset, and a
+        # reader must be able to tell "your commits are fine" from "I could not judge them" (L-0006).
+        print(f"  [PARTIAL] {degraded}.")
+        print("            Checking only what is identical in every EADOS contract: branch shape "
+              "and the Conventional Commit type vocabulary.")
+        print("            NOT checked: commit SCOPES (they are this project's, declared in "
+              "AGENTS.md §6) and one-PR-at-a-time.")
+        print(f"            To enable them, add {PROJECT_POLICY.replace(os.sep, '/')} — see the "
+              "EADOS template of the same name — or pass --policy PATH.")
     for s in skips:
         print(f"  [SKIP] {s}")
     if problems:
@@ -189,7 +274,8 @@ def main(argv=None):
             print("  (advisory mode — reporting only, exit 0)")
             return 0
         return 1
-    print("  OK — branch, commit subject, and PR count meet the git.yaml policy.")
+    print("  OK — branch, commit subject, and PR count meet "
+          + ("the checkable subset above." if degraded else "this repository's policy."))
     return 0
 
 

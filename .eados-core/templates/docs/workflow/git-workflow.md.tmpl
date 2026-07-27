@@ -32,6 +32,16 @@ chore, ci}`. Lowercase kebab, ≤40 chars, describe the *what* not the issue num
 - One logical change per commit; imperative subject; the body adds the *why*.
 - Rebase/squash before opening the PR if intermediate commits are noisy.
 
+The same rules live as data in [`git-policy.yaml`](git-policy.yaml), so a check can read **this**
+project's contract rather than someone else's. Verify a commit before you push:
+
+```bash
+python .eados-core/tools/git_check.py --advisory
+```
+
+Adding a subsystem means adding its scope in **both** places — here (and `AGENTS.md` §6) for the
+reader, and `git-policy.yaml` for the check.
+
 ## 4. Pull Requests
 
 ### 4.1 Title & body — the squash-merge commit

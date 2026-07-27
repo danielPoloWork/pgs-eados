@@ -96,6 +96,8 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | Placeholder | Meaning | Example |
 |---|---|---|
 | `{{#EACH_SCOPE}}` | Loop over the project's commit scopes | `api`, `build`, `tests`, `docs`, `ci` |
+| `{{GIT_COMMIT_SCOPES}}` | The same scopes as a single-line YAML flow body, for the rendered `docs/workflow/git-policy.yaml` the checks read (#358) | `api, build, tests, docs, ci` |
+| `{{GIT_BRANCH_TYPES}}` | The Conventional Commit branch/commit types as a single-line YAML flow body — derived from the factory's `os/git/git.yaml`, **not** the manifest: the vocabulary is identical in every contract, so deriving it keeps the rendered policy in lockstep by construction | `feat, fix, refactor, perf, docs, test, build, chore, ci` |
 
 ## 7. Spec (from the interview)
 

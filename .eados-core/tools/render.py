@@ -92,6 +92,34 @@ def routing_scalars(routing):
     }
 
 
+GIT_SPEC = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+
+
+def git_policy_scalars(manifest, spec_path=GIT_SPEC):
+    """The two lists a generated repo's `git-policy.yaml` needs, as single-line YAML flow bodies.
+
+    The split is the point (#358). **Scopes are the project's** — they come from the manifest's
+    `governance.scopes` and are what `git_check.py` was getting catastrophically wrong downstream,
+    where it read EADOS's own 21 factory scopes instead (2 of 13 overlapping, so it rejected the
+    project's valid scopes and waved through `fix(profiles):` in a Java library). **Branch/commit
+    types are not** — they are the Conventional Commit set, identical in both contracts, so they
+    are derived from the factory spec at render time rather than retyped into the template, which
+    keeps them in lockstep with `os/git/git.yaml` by construction.
+
+    Flow style on ONE line deliberately: the hand-rolled loader's multi-line flow support is
+    untested, and this file exists to be read by that loader in a repo nobody will re-render."""
+    types = []
+    try:
+        with open(spec_path, encoding="utf-8") as handle:
+            spec = load_yaml(handle.read()) or {}
+        types = [str(t) for t in ((spec.get("branch_naming") or {}).get("types") or [])]
+    except (OSError, ValueError):
+        types = []                 # absent -> the placeholder stays empty and render.py's
+        # unresolved-placeholder guard turns it into a hard error, never a silent empty policy
+    scopes = [str(s) for s in ((manifest.get("governance") or {}).get("scopes") or [])]
+    return {"GIT_BRANCH_TYPES": ", ".join(types), "GIT_COMMIT_SCOPES": ", ".join(scopes)}
+
+
 def routed_item(item, routing):
     """One roadmap item, route-suffixed. A plain string (the legacy form) passes through
     untouched; a `{text, signals[]}` object gains the advisory route its signals earn under the
@@ -319,6 +347,9 @@ def build_context(m):
                       for ms in milestones]
         if isinstance(m1_items, list):
             m1_items = [routed_item(it, routing) for it in m1_items]
+    # #358: the generated repo's own git policy as data. The manifest is gitignored downstream, so
+    # `governance.scopes` survives a clone only if it is RENDERED somewhere committed.
+    scalars.update(git_policy_scalars(m))
 
     sections = {
         "EACH_CI_CELL": ci.get("matrix", []) or [],
