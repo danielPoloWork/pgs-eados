@@ -42,6 +42,60 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
   > repo *does* have (`AGENTS.md`), and the manifest block is recorded rather than auto-written.
   > Recording it is a job for the scaffold procedure, the same split `record_run.py` already is.
 
+### Changed
+
+- **The factory's own CI now runs on the platforms its users and its maintainer actually use
+  (#318).** It was `ubuntu-24.04` + Python 3.12 — **one cell** — while EADOS ships a cross-platform
+  installer and its maintainer develops on Windows with Python 3.14, a version CI never touched.
+  That gap had already cost twice: #128 (a `UnicodeEncodeError` crash across 20 CLI tools on a
+  cp1252 console) and the UTF-8 BOM strip were both **Windows-specific defects found by hand under
+  a green CI**, and 19.4's host-detection test passed locally and failed on the runner precisely
+  because the feature reads its environment. One platform cannot validate code that reads its
+  platform.
+  - The self-lint / test job is now a **7-cell matrix** — Linux × 3.12/3.13/3.14, Windows ×
+    3.12/**3.14**, macOS × 3.12/3.14 — with `fail-fast: false`, so one red cell cannot hide the
+    state of the others. The advisory readouts (auto-tuner, lesson audit) stay on the baseline
+    cell: they never fail the build, and seven copies of the same advice is not seven signals.
+  - **`setup.ps1` is now exercised under Windows PowerShell 5.1 on a Windows runner.** It targets
+    Windows, whose default shell is 5.1 — a different engine from `pwsh` 7, with no `&&`/`||`
+    chain operators, no ternary, and `Set-Content` defaulting to the ANSI codepage. Testing it
+    only under `pwsh` on a Linux runner proved it worked *somewhere other than where its users
+    are*. The job asserts it really is on 5.x before running, and `EADOS_PS_EXE` pins the engine
+    so the cell cannot silently become a second `pwsh` run.
+  - **`setup.bat` is executed rather than parsed** — it never ran anywhere before. Its trailing
+    `pause` is fed `NUL` on stdin so it returns immediately.
+  - Installer static analysis (shellcheck + the PowerShell parse check) moved to its own
+    Linux-only job, since `shellcheck` is not on the Windows/macOS runners and a parse check is
+    platform-independent anyway.
+  - **One stable required context.** A matrix job reports a check *per cell*, so the
+    `protect-main` ruleset's `self-lint / factory integrity` context stopped existing the moment
+    the job was matrixed — and a required check that never reports blocks merging forever. A small
+    aggregator job carries that exact name, `needs:` every cell plus both installer jobs, and fails
+    if any of them did. The ruleset needs no edit, and the check now means strictly more than the
+    single-cell one it replaces: adding or removing a matrix cell can never break merging again.
+  - **The supported range is now a claim the matrix proves**: `CONTRIBUTING.md` states Python
+    3.12–3.14 on Linux, macOS and Windows, and every one of those is a cell.
+
+### Fixed
+
+- **The guided Windows installer could not verify a checksum on a machine with pwsh installed
+  (#318).** `setup.ps1` called `Get-FileHash`, which is *"not recognized"* on a Windows PowerShell
+  5.1 process whose `PSModulePath` was set up for pwsh 7 — what a GitHub Windows runner hands you,
+  and what any user with pwsh installed can hit. Since the checksum is the installer's **only**
+  integrity control and it is fail-closed, that turned every verified install on such a machine
+  into a hard failure. It now computes the hash through .NET when the cmdlet cannot be reached,
+  keeping the cmdlet as the fast path — the fallback is proven by pulling the shipped function out
+  of `setup.ps1` with the PowerShell parser and driving it in a process where `Get-FileHash`
+  genuinely raises, rather than by asserting it works. **Found by the broadened matrix within
+  minutes of it existing**, on a job that had never run before.
+- **The i18n freshness gate reported a false STALE on every CRLF checkout (#318).** `_source_hash`
+  hashed raw bytes, so any clone git had given CRLF line endings — every Windows clone with the
+  default `core.autocrlf=true` — computed a different hash and failed the lint. A Windows
+  contributor could not run the self-lint at all. ADR-0010 calls this a *content* hash, and a line
+  ending is a checkout convention rather than content (the same reasoning the loader applies to a
+  UTF-8 BOM), so line endings are now normalized before hashing. Every recorded hash stays valid,
+  and the gate is green in both an LF and a CRLF checkout.
+
 ## [2.12.0] - 2026-07-27
 
 Provider-agnostic routing, and a loader that no longer loses data quietly — a minor release with

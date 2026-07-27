@@ -26,7 +26,15 @@ TOOLS = os.path.dirname(HERE)
 REPO_ROOT = os.path.dirname(os.path.dirname(TOOLS))
 SETUP_PS1 = os.path.join(REPO_ROOT, "setup", "setup.ps1")
 
-PWSH = shutil.which("pwsh") or shutil.which("powershell")
+# Which PowerShell to drive. `pwsh` (7.x, cross-platform) by default — but setup.ps1 TARGETS
+# Windows, where the default shell is Windows PowerShell 5.1, a different engine with materially
+# different behaviour (no `&&`/`||` chain operators, no ternary, `Set-Content` defaulting to the
+# ANSI codepage). Testing only under pwsh on a Linux runner therefore proves the script parses and
+# runs somewhere other than where its users are. EADOS_PS_EXE lets CI pin the interpreter so the
+# 5.1 cell is a real cell rather than a second pwsh run (#318).
+PWSH = (shutil.which(os.environ.get("EADOS_PS_EXE", "").strip())
+        if os.environ.get("EADOS_PS_EXE", "").strip()
+        else (shutil.which("pwsh") or shutil.which("powershell")))
 HAVE_GIT = shutil.which("git") is not None
 
 
@@ -40,6 +48,13 @@ def run(*args, cwd=None, stdin=""):
     paths so tar reads them on Windows (bsdtar) and Linux/pwsh (GNU tar) alike."""
     proc = subprocess.run([PWSH, "-NoProfile", "-File", SETUP_PS1, *args],
                           capture_output=True, text=True, cwd=cwd, input=stdin)
+    if os.environ.get("EADOS_PS_VERBOSE", "").strip():
+        # The suite reports assertion LABELS, which is unhelpful when a whole class of them fails
+        # on a machine you cannot reach. Echo what the installer actually said (#318).
+        print(f"--- setup.ps1 {' '.join(map(str, args))} -> rc={proc.returncode}")
+        for stream, text in (("out", proc.stdout), ("err", proc.stderr)):
+            for line in (text or "").splitlines():
+                print(f"    [{stream}] {line}")
     return proc.returncode, proc.stdout, proc.stderr
 
 
@@ -83,6 +98,34 @@ def main():
     if not os.path.exists(SETUP_PS1):
         print(f"test-setup-ps1: FAIL — setup.ps1 not found at {SETUP_PS1}")
         return 1
+
+    # #318: the checksum is the installer's ONLY integrity control, and it must not depend on
+    # cmdlet auto-loading. On a Windows PowerShell 5.1 process whose PSModulePath was set up for
+    # pwsh 7 — what a GitHub windows runner hands you, and what any user with pwsh installed can
+    # hit — `Get-FileHash` is simply "not recognized". Pull the SHIPPED helper out of setup.ps1
+    # with the PowerShell parser (no copy, no regex) and drive it in a process where the cmdlet
+    # genuinely raises, so the fallback is proven rather than assumed.
+    probe = (
+        "$e=$null;$t=$null;"
+        f"$a=[System.Management.Automation.Language.Parser]::ParseFile('{SETUP_PS1}',"
+        "[ref]$t,[ref]$e);"
+        "$f=$a.FindAll({param($n) $n -is "
+        "[System.Management.Automation.Language.FunctionDefinitionAst] -and "
+        "$n.Name -eq 'Get-Sha256'},$true);"
+        "if(-not $f){Write-Output 'MISSING';exit};"
+        "Invoke-Expression $f[0].Extent.Text;"
+        "$tmp=[System.IO.Path]::GetTempFileName();"
+        "[System.IO.File]::WriteAllBytes($tmp,[byte[]](1,2,3));"
+        "$ok=(Get-Sha256 $tmp);"
+        "function Get-FileHash { throw 'not recognized' };"
+        "$broken=(Get-Sha256 $tmp);"
+        "Remove-Item $tmp -Force;"
+        "Write-Output ($(if($ok -eq $broken -and $ok.Length -eq 64){'SAME'}else{'DIFF'}))"
+    )
+    p = subprocess.run([PWSH, "-NoProfile", "-Command", probe],
+                       capture_output=True, text=True)
+    check("setup.ps1 hashes identically with Get-FileHash available and unavailable",
+          "SAME" in (p.stdout or ""), failures)
 
     # -Help
     rc, out, _ = run("-Help")

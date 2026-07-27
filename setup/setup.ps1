@@ -45,6 +45,24 @@ function Info([string]$m) { [Console]::Out.WriteLine($m) }
 function Warn([string]$m) { [Console]::Error.WriteLine("setup.ps1: warning: $m") }
 function Fail([int]$code, [string]$m) { [Console]::Error.WriteLine("setup.ps1: error: $m"); exit $code }
 function Die([string]$m) { Fail 1 $m }       # user / safety error
+
+# SHA-256 of a file, lowercase hex. Get-FileHash is the obvious call and is NOT always reachable:
+# on a Windows PowerShell 5.1 process launched with a PSModulePath set up for pwsh 7 — which is
+# exactly what a GitHub windows runner hands you, and what any user with pwsh installed can hit —
+# Microsoft.PowerShell.Utility fails to auto-load and the cmdlet is simply "not recognized" (#318).
+# The checksum is the installer's ONLY integrity control (fail-closed), so it must not depend on
+# module auto-loading. .NET is always there; use it and keep the cmdlet as the fast path.
+function Get-Sha256([string]$path) {
+  # try/catch rather than probing with Get-Command: when module auto-loading is the thing that is
+  # broken, a probe can still resolve the name while the call fails. Catching covers both.
+  try { return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower() } catch { }
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $stream = [System.IO.File]::OpenRead($path)
+    try { return ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '').ToLower() }
+    finally { $stream.Dispose() }
+  } finally { $sha.Dispose() }
+}
 function Offline([string]$m) { Fail 2 $m }   # environmental: offline / asset unavailable
 
 function Ask([string]$promptText, [string]$default) {
@@ -265,7 +283,7 @@ try {
       }
       if (-not $expected) { Die "$SumsName ($sumsSrc) has no entry for $BundleName; pass -Sha256 or -NoVerify" }
     }
-    $actual = (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash.ToLower()
+    $actual = (Get-Sha256 $bundle)
     if ($actual -ne $expected.ToLower()) { Die "checksum mismatch: expected $expected, got $actual" }
     Info "checksum OK ($actual)"
   }

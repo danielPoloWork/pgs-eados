@@ -19,7 +19,9 @@ humans and AI agents alike).
 4. **Write [Conventional Commits](https://www.conventionalcommits.org/)** — e.g.
    `feat(profiles): seed a Zig toolchain profile`. Scopes: `interview`, `profiles`,
    `templates`, `lint`, `agent`, `docs`, `adr`, `ci`.
-5. **Run the gates locally** (dependency-free, Python 3.12+ stdlib):
+5. **Run the gates locally** (dependency-free, standard library only). **Supported: Python 3.12,
+   3.13 and 3.14 on Linux, macOS and Windows** — every one of those is a CI cell, so the range is
+   a claim the matrix proves rather than an assumption (#318):
 
    ```bash
    python .eados-core/tools/eados_lint.py                                   # factory integrity

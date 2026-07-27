@@ -331,9 +331,20 @@ def check_action_pins(fail):
 #    (ADR-0010). Git-independent. Opt-in: skipped when no manifest exists.
 # ---------------------------------------------------------------------------
 def _source_hash(path):
-    """First 12 hex of the SHA-256 of the file's bytes — the stable content fingerprint."""
+    """First 12 hex of the SHA-256 of the file's CONTENT — line endings normalized to LF first.
+
+    It hashed raw bytes, which made the gate report a false STALE on any checkout git had given
+    CRLF line endings — i.e. every Windows clone with the default `core.autocrlf=true`, including
+    the windows-2022 CI runner (#318). The recorded hash was only ever valid on an LF checkout, so
+    a Windows contributor could not run the lint at all.
+
+    ADR-0010 calls this a *content* hash, and a line ending is a checkout convention rather than
+    content — the same reasoning the loader applies to a UTF-8 BOM. Normalizing here keeps every
+    recorded hash valid (they were all recorded from LF sources) and makes the gate portable. A
+    stray CR inside a line is left alone; only the line terminator is normalized."""
     with open(path, "rb") as handle:
-        return hashlib.sha256(handle.read()).hexdigest()[:12]
+        raw = handle.read()
+    return hashlib.sha256(raw.replace(b"\r\n", b"\n")).hexdigest()[:12]
 
 
 def check_i18n_freshness(fail):
