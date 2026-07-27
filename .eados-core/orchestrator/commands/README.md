@@ -44,12 +44,18 @@ authority, and the session model is never switched by the agent.
 | `/eados refactor` | — (any) | **available** (M15 W2) | [`refactor.md`](refactor.md) | Behavior-preserving code-quality refactoring: a green suite on both sides, guided by the patterns catalogue. |
 | `/eados optimize` | — (any) | **available** (M15 W2) | [`optimize.md`](optimize.md) | Measure-first performance work against a numeric NFR budget: baseline → one change → re-measure. |
 | `/eados testcases` | — (any) | **available** (M15 W2) | [`testcases.md`](testcases.md) | QA-owned test generation against spec §6: a green suite, or an `xfail` with a linked defect. |
+| `/eados upgrade` | — (any) | **available** (#320) | [`upgrade.md`](upgrade.md) | Read-only advisory for an already-generated repo: what changed upstream since the version that produced it, filtered to the surfaces it carries — **reports, never rewrites**. |
 
-`/eados status`, `/eados review`, `/eados debug`, `/eados refactor`, `/eados optimize`, and
-`/eados testcases` are **cross-cutting** — not phases that advance. `/eados status` is a
+`/eados status`, `/eados review`, `/eados upgrade`, `/eados debug`, `/eados refactor`,
+`/eados optimize`, and `/eados testcases` are **cross-cutting** — not phases that advance.
+`/eados status` is a
 **read-only doctor** (current phase, legal moves, traceability coverage at a glance; roadmap 6.4);
 `/eados review` evaluates an **inbound PR** against the contribution policy and drafts a
-recommended disposition (M8) — it **recommends, never merges**; `/eados debug` (#242) is the first
+recommended disposition (M8) — it **recommends, never merges**; `/eados upgrade` (#320) is the
+**factory→consumer** channel ADR-0003's 2026-07-27 addendum admits — run from the factory against
+an already-generated repo, it reports what changed upstream since that repo's provenance stamp,
+filtered to the surfaces it actually carries, and **writes nothing** (the tree is asserted
+byte-identical after a run); `/eados debug` (#242) is the first
 cross-cutting **code** command — governed defect investigation (reproduce → root-cause →
 one-change fix + regression test → bug-ledger record); `/eados refactor` (#243) is
 **behavior-preserving** code-quality refactoring (a green test suite on both sides of the change,
@@ -126,7 +132,10 @@ takes an ADR:
    phase rename has vacated the name; behavior-preserving restructuring), and `optimize` (#244 —
    the wishlist's `optimizecode`; measure-first performance work against a numeric NFR budget),
    and `testcases` (#246 — governed test generation against spec §6, the first command owned by
-   the `qa-engineer` rather than the tech-lead). This completes M15 Wave 2's cross-cutting class.
+   the `qa-engineer` rather than the tech-lead). This completed M15 Wave 2's cross-cutting class;
+   `upgrade` (#320) joins it as the first **read-only** member since `status` — the advisory
+   factory→consumer channel admitted by ADR-0003's 2026-07-27 addendum, which is the ADR this
+   class requires for a new member.
 4. **Adapters + aliases** — the surfacing mechanism (#239). An alias routes a verb to its class
    target; it never adds behavior.
 

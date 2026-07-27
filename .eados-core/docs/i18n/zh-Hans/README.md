@@ -137,7 +137,7 @@ EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统
 manifest，使 `init → audit` / `init → migrate` 成为合法且需人工把关的路径。
 
 完整细节见 [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) 与
-[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。六个跨切面命令在任何阶段都可用：
+[命令手册](../../../../.eados-core/orchestrator/commands/README.md)。七个跨切面命令在任何阶段都可用：
 [`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)（只读体检）、
 [`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)（入站 PR 分流）、
 [`/eados debug`](../../../../.eados-core/orchestrator/commands/debug.md)（受治理的缺陷调查：
@@ -147,7 +147,9 @@ manifest，使 `init → audit` / `init → migrate` 成为合法且需人工把
 [`/eados optimize`](../../../../.eados-core/orchestrator/commands/optimize.md)（度量优先的
 性能工作：数值化 NFR 预算、基准基线、单次改动、再度量）与
 [`/eados testcases`](../../../../.eados-core/orchestrator/commands/testcases.md)（QA 拥有的、
-针对规格 §6 的测试生成：绿色测试套件，或带关联缺陷的 `xfail`）。
+针对规格 §6 的测试生成：绿色测试套件，或带关联缺陷的 `xfail`）与
+[`/eados upgrade`](../../../../.eados-core/orchestrator/commands/upgrade.md)（自仓库生成以来
+上游发生了什么变化，并过滤到该仓库实际承载的面——只读；它只报告，绝不改写仓库）。
 
 ---
 
@@ -256,6 +258,7 @@ pgs-eados/
 | `rfc_check.py` | 依据评审协议校验 RFC |
 | `sync_action_pins.py` | 使渲染出的工作流 pin 与工厂 CI 保持锁步 |
 | `cleanup_installer.py` | 在 `init` 后清除引导安装器的残留 |
+| `upgrade_advice.py` | `/eados upgrade` —— 自仓库生成以来上游发生了什么变化 |
 
 **Verify —— 保持诚实的门禁**
 

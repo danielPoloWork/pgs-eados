@@ -154,7 +154,7 @@ placeholder は推測ではなくハードエラーです。
 `init → audit` / `init → migrate` が合法かつ人間のゲート付きのルートになります。
 
 詳細は [`USAGE.md`](../../../../.eados-core/docs/USAGE.md) と
-[コマンド・プレイブック](../../../../.eados-core/orchestrator/commands/README.md) に。横断的な六つの
+[コマンド・プレイブック](../../../../.eados-core/orchestrator/commands/README.md) に。横断的な七つの
 コマンドはどのフェーズでも使えます：[`/eados status`](../../../../.eados-core/orchestrator/commands/status.md)
 （読み取り専用ドクター）、[`/eados review`](../../../../.eados-core/orchestrator/commands/review.md)
 （入力 PR の分流）、[`/eados debug`](../../../../.eados-core/orchestrator/commands/debug.md)
@@ -164,7 +164,10 @@ placeholder は推測ではなくハードエラーです。
 [`/eados optimize`](../../../../.eados-core/orchestrator/commands/optimize.md)（計測優先の
 パフォーマンス作業：数値の NFR 予算、ベンチマークのベースライン、単一の変更、再計測）、そして
 [`/eados testcases`](../../../../.eados-core/orchestrator/commands/testcases.md)（QA 所有の、
-仕様 §6 に対するテスト生成：緑のスイート、または関連欠陥付きの `xfail`）。
+仕様 §6 に対するテスト生成：緑のスイート、または関連欠陥付きの `xfail`）、そして
+[`/eados upgrade`](../../../../.eados-core/orchestrator/commands/upgrade.md)（リポジトリが生成
+されて以降に上流で何が変わったかを、そのリポジトリが実際に持つ面だけに絞って——読み取り専用で、
+報告するだけでリポジトリを書き換えることは決してありません）。
 
 ---
 
@@ -274,6 +277,7 @@ pgs-eados/
 | `rfc_check.py` | レビュープロトコルに照らして RFC を検証 |
 | `sync_action_pins.py` | レンダリングされたワークフローの pin を工場 CI とロックステップに保つ |
 | `cleanup_installer.py` | `init` 後にガイド付きインストーラの残骸を除去 |
+| `upgrade_advice.py` | `/eados upgrade` —— リポジトリ生成以降に上流で何が変わったか |
 
 **Verify —— 誠実さを保つゲート**
 
