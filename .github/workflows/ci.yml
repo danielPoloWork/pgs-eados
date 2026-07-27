@@ -65,6 +65,33 @@ jobs:
         run: python .eados-core/tools/lesson_audit.py
 
   # ---------------------------------------------------------------------------
+  # The single stable context branch protection requires. A matrix job reports one check PER CELL
+  # (`self-lint / ubuntu-24.04 / py3.12`, …), so making the matrix the required check would pin the
+  # `protect-main` ruleset to today's cell list — every cell added or removed would silently break
+  # merging until someone edited repo settings. This job's name never changes, it fails when any
+  # cell fails, and it means strictly more than the single-cell check it replaces: all 7 cells plus
+  # both installer jobs.
+  # ---------------------------------------------------------------------------
+  self-lint-gate:
+    name: self-lint / factory integrity
+    needs: [self-lint, installer-static, installer-windows]
+    if: always()        # must still report when a dependency failed — that is the point
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every matrix cell and installer job must have succeeded
+        run: |
+          echo "self-lint matrix   : ${{ needs.self-lint.result }}"
+          echo "installer-static   : ${{ needs.installer-static.result }}"
+          echo "installer-windows  : ${{ needs.installer-windows.result }}"
+          # A matrix job's result is `success` only when EVERY cell succeeded.
+          [ "${{ needs.self-lint.result }}" = "success" ] \
+            && [ "${{ needs.installer-static.result }}" = "success" ] \
+            && [ "${{ needs.installer-windows.result }}" = "success" ] \
+            || { echo "::error::at least one cell or installer job did not succeed"; exit 1; }
+          echo "all cells green"
+
+  # ---------------------------------------------------------------------------
   # Installer static analysis. Linux-only by nature: shellcheck is not on the Windows/macOS
   # runners, and a parse check is platform-independent anyway.
   # ---------------------------------------------------------------------------

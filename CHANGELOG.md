@@ -54,6 +54,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
   - Installer static analysis (shellcheck + the PowerShell parse check) moved to its own
     Linux-only job, since `shellcheck` is not on the Windows/macOS runners and a parse check is
     platform-independent anyway.
+  - **One stable required context.** A matrix job reports a check *per cell*, so the
+    `protect-main` ruleset's `self-lint / factory integrity` context stopped existing the moment
+    the job was matrixed — and a required check that never reports blocks merging forever. A small
+    aggregator job carries that exact name, `needs:` every cell plus both installer jobs, and fails
+    if any of them did. The ruleset needs no edit, and the check now means strictly more than the
+    single-cell one it replaces: adding or removing a matrix cell can never break merging again.
   - **The supported range is now a claim the matrix proves**: `CONTRIBUTING.md` states Python
     3.12–3.14 on Linux, macOS and Windows, and every one of those is a cell.
 
