@@ -5,9 +5,31 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
 
-## [Unreleased]
+## [2.13.0] - 2026-07-27
+
+The consumer-experience release. Seven consecutive issues had been found by a **downstream
+consumer** and none by CI, and the reason was structural: no test ever ran a factory tool inside a
+rendered repository, so "correct in the factory, wrong in a generated repo" was a defect class that
+could only surface in the field. All seven are closed here, together with the gate that catches the
+eighth — and with the first channel that lets an already-generated repository find out what changed
+upstream at all.
+
+**For a generated repo.** `/eados upgrade` reports what has landed since the version that produced
+it, filtered to the surfaces it actually carries — read-only, and it will never rewrite that
+repository (ADR-0003's 2026-07-27 addendum admits the advisory third branch its original two
+rejected). It works because every render now carries a provenance stamp. Alongside it: the tools a
+consumer runs read **that repo's** contract instead of EADOS's, its run records survive a clone, its
+bot PRs no longer break its own git policy on day one, and `init → scaffold` no longer walks past
+the roles it needs.
+
+**For the factory.** A pin's `# vX.Y.Z` comment must now be *true* of its SHA, the commit-scope
+vocabulary has one source of truth, the subject cap is data rather than a constant nobody met, every
+CLI bounds its child processes, and CI runs on Linux, macOS and Windows across Python 3.12–3.14.
+
+Additive throughout: a new cross-cutting command, three new gates, two ADRs, and no breaking change
+to any existing surface.
 
 ### Added
 
