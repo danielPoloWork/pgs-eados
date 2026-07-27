@@ -418,15 +418,18 @@ def main():
     # case became an unknown-model. Both stayed green while testing nothing. So: derive the models
     # from the live catalog, and assert the VERDICT rather than only the exit code — a future
     # reshuffle turns these red instead of quiet.
-    # The CLI resolves its own host through the 19.4 ladder, so read the catalog through the
-    # same host it will pick — otherwise this compares against a different host's models.
+    # The CLI resolves its own host through the 19.4 ladder, which is ENVIRONMENT-dependent: on a
+    # developer box it detects claude-code, on a CI runner it resolves to nothing and there are no
+    # models to compare against. This test is about the --check verdicts, not about detection
+    # (which has its own cases above), so it pins the host on both sides.
     _live = ra.load_routing()
-    live_models = ra.models_by_tier(_live, ra.resolve_host(_live)["host"])
+    _host = "claude-code"
+    live_models = ra.models_by_tier(_live, _host)
     verdicts = {}
     for slot in ("standard", "fast"):                    # standard == the floor, fast == below it
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            verdicts[slot] = (ra.main(["--labels", "severity:medium", "--check",
+            verdicts[slot] = (ra.main(["--labels", "severity:medium", "--check", "--host", _host,
                                        "--current-model", live_models[slot]]), buf.getvalue())
     check("--check OK exits 0", verdicts["standard"][0] == 0, failures)
     check("--check OK actually reports a match (not a silently-passing unknown-model)",
