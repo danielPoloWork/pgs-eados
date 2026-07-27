@@ -105,6 +105,28 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **Eight `gh` / `git` calls could hang forever (#321).** `subprocess.run` without a `timeout`
+  waits indefinitely, and the tools most exposed were the ones written to degrade gracefully
+  offline: `derive_links`, `pr_review`, `route_advice`, `pr_metadata_check`, `lesson_sweep`,
+  `seed_milestones` and `git_check` all handle *"gh is missing"* and *"gh returned an error"*
+  carefully — and none handled *"gh never returns"*, which is the failure a stalled network, a
+  rate-limit backoff, or an auth prompt with no stdin actually produces. The call then blocked
+  until the CI job's own timeout and surfaced as a generic job timeout rather than as the hung
+  network call it was.
+  - Budgets follow the two sites that already had them (`eados_lint`, `preflight`): 30s for
+    network-bound `gh`, 15s for local `git`.
+  - **A budget nobody catches only converts a hang into a traceback**, and `TimeoutExpired` is not
+    an `OSError` — so it would have slipped past every one of these tools' existing `except`
+    clauses. Each now degrades onto the path it *already* has: the `gh`-backed tools raise the same
+    `RuntimeError` their callers turn into a clean skip, with a message naming the timeout rather
+    than blaming a missing `gh`; `git_check`'s helpers return `None` as they already do.
+  - A new **`subprocess-timeouts`** self-lint keeps the ninth from being added silently. It parses
+    with `ast` rather than grepping — a call spanning several lines is exactly the shape a textual
+    check misses, and this gate exists because of a silent omission. Scoped to the shipped CLIs:
+    `tools/tests/*` drive local `sys.executable` runs with no network or credential path, and CI's
+    own job timeout already covers a genuinely stuck test.
+
+
 - **A generated repository gitignored its own run records, so the #250 audit trail did not survive
   a clone (#353).** Every phase procedure appends a run record under `.eados-core/learning/runs/`,
   and the generated `.gitignore` excluded that whole tree — the shipped default from
