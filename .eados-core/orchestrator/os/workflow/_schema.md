@@ -15,7 +15,9 @@ in M2; the lint guarantees the file parses and is structurally present.
 
 ```yaml
 version:            # integer schema version (manifest pins the version it was written against)
-states:             # the phases, in canonical order
+states:             # the phases, in canonical order; each declares `role` (authors the
+                    # artifact) and `state_writer` (records delivery_state + the run
+                    # record). They differ for design/plan/audit — ADR-0025, #346
 transitions:        # legal, gated moves between states; never automatic
 gates:              # the gate registry — lint/test/security/build/human checks, uniform shape
 domain_overlays:    # per-domain adaptations (insert/remove states, add gates, reorder)

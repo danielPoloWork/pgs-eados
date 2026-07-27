@@ -53,6 +53,16 @@ def status_report(manifest, workflow, roadmap_text=None, links=None):
         return lines, False
     lines.append(f"phase: {phase}   (role: {st.get('role', '-')}; "
                  f"produces: {', '.join(st.get('produces') or []) or '-'})")
+    # #346: the acting role AUTHORS the artifact; the state writer RECORDS the outcome. Naming
+    # both is the point — when they differ, following the procedure as one role is an authority
+    # violation, and that was invisible until the gate refused.
+    writer = str(st.get("state_writer") or "").strip()
+    if writer:
+        same = writer == st.get("role")
+        lines.append(f"state writer: {writer}"
+                     + ("   (same role — no handoff)" if same else
+                        f"   (records delivery_state + the run record; the acting role "
+                        f"'{st.get('role')}' may not)"))
 
     # #165: an applied domain overlay is surfaced — visibility is the minimum viable enforcement.
     # apply_overlay records it only when it changed something, so a software/base project keeps

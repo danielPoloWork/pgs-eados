@@ -38,6 +38,11 @@ product-facing RFC). Protocol: [`../os/rfc/review-protocol.md`](../os/rfc/review
    ```
 6. **Record the cross-link** — add the RFC id to `delivery_state.refs.rfcs` (feeds the
    traceability graph, M3/M4) — references, not content.
+   > **Who writes this:** the phase's **`state_writer`** (`enterprise-architect`), not the
+   > acting role. `authority.yaml` grants `orchestrator/project.yaml` and `.eados-core/**`
+   > to the architect alone, so the acting role doing it is an authority violation this
+   > project's own gate catches (#346, ADR-0025). Hand off, or act as the state writer for
+   > this step — `/eados status` names both roles.
 7. **Propose the transition** — emit the checkpoint for `design → plan` (human-gated):
    ```bash
    python .eados-core/tools/phase_runner.py <manifest> --propose plan

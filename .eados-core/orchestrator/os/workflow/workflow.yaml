@@ -4,24 +4,40 @@
 version: 1
 
 # The phases, in canonical order. `role` is the owner from ../authority/authority.yaml.
+# `role` AUTHORS the phase's artifact. `state_writer` RECORDS the phase's outcome — the
+# delivery_state refs + transition checkpoint in the manifest, and the run record under
+# learning/runs/ (#250's uniform audit trail). They are the same role for the phases the architect
+# already owns, and deliberately different for design / plan / audit (#346, ADR-0025).
+#
+# The split is not bureaucracy: authority.yaml grants `orchestrator/project.yaml` and
+# `.eados-core/**` to the architect alone, so a procedure that told the tech-lead to write the
+# manifest was instructing an authority violation its own gate catches. Naming the writer in DATA
+# turns behaviour that was folklore — an unstated role switch, or splitting a phase across two PRs
+# — into something the tools can state and check.
 states:
   - id: init
     role: enterprise-architect
+    state_writer: enterprise-architect
     produces: [manifest]
   - id: design
     role: tech-lead
+    state_writer: enterprise-architect
     produces: [rfc]
   - id: plan
     role: producer
+    state_writer: enterprise-architect
     produces: [roadmap]
   - id: scaffold
     role: enterprise-architect
+    state_writer: enterprise-architect
     produces: [repository]
   - id: audit
     role: security-auditor
+    state_writer: enterprise-architect
     produces: [risk-register]
   - id: migrate
     role: enterprise-architect
+    state_writer: enterprise-architect
     produces: [migration-prs]
 
 # Legal transitions. Every move is gated; every move that changes committed direction is

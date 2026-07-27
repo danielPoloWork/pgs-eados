@@ -1800,6 +1800,55 @@ def check_routing_model_lockstep(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 23. Phase state-writer authority (#346, ADR-0025). Every workflow state names the role that
+#     RECORDS its outcome — the manifest's delivery_state and the run record under learning/runs/.
+#     Declaring a writer is worthless if the writer cannot actually write those paths, which is the
+#     exact failure this issue was: three procedures instructed the PHASE role to write paths
+#     `authority.yaml` denies it, so following the procedure literally tripped the project's own
+#     gate. This keeps the declaration honest — a state_writer that is undeclared, or that authority
+#     would deny on the state paths, fails here rather than at a consumer's keyboard.
+# ---------------------------------------------------------------------------
+STATE_PATHS = ("orchestrator/project.yaml", ".eados-core/learning/runs/2026-01-01-x.yaml")
+
+
+def state_writer_problems(workflow, authority):
+    """Pure: every state declares a `state_writer` that is a declared role AND is authorized to
+    write the paths recording a phase outcome requires. Returns problem strings (empty == sound)."""
+    import authority_check
+    problems = []
+    for state in (workflow or {}).get("states") or []:
+        if not isinstance(state, dict):
+            continue
+        sid = state.get("id")
+        writer = str(state.get("state_writer") or "").strip()
+        if not writer:
+            problems.append(f"workflow state '{sid}' declares no `state_writer` — who records its "
+                            "delivery_state and run record is then folklore (#346)")
+            continue
+        globs = authority_check.role_globs(authority, writer)
+        if globs is None:
+            problems.append(f"workflow state '{sid}': state_writer '{writer}' is not a role in "
+                            "authority.yaml")
+            continue
+        denied = authority_check.denied_paths(authority, writer, list(STATE_PATHS))
+        if denied:
+            problems.append(f"workflow state '{sid}': state_writer '{writer}' may not write "
+                            f"{', '.join(denied)} — a declared writer that authority denies is the "
+                            "#346 defect with an extra step")
+    return problems
+
+
+def check_state_writer(fail):
+    name = "state-writer-authority"
+    workflow = _load_spec("workflow")
+    authority = _load_spec("authority")
+    if not isinstance(workflow, dict) or not isinstance(authority, dict):
+        return  # a partial checkout — other gates report the missing spec
+    for problem in state_writer_problems(workflow, authority):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1827,6 +1876,7 @@ CHECKS = [
     check_interaction_lockstep,
     check_catalog_freshness,
     check_routing_model_lockstep,
+    check_state_writer,
 ]
 
 

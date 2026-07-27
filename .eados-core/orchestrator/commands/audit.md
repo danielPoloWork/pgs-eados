@@ -50,6 +50,11 @@ The maintainer's `security` wishlist verb is a **sub-mode of `audit`** — no ne
 state, no new authority; the alias adapter (`/eados:security`) and the `commands/README.md` alias
 table route here. Invoked directly (or whenever step 3's deep audit runs), the `security-auditor`:
 
+   > **Who writes this:** the phase's **`state_writer`** (`enterprise-architect`), not the
+   > acting role. `authority.yaml` grants `orchestrator/project.yaml` and `.eados-core/**`
+   > to the architect alone, so the acting role doing it is an authority violation this
+   > project's own gate catches (#346, ADR-0025). Hand off, or act as the state writer for
+   > this step — `/eados status` names both roles.
 1. **Maps the trust boundaries** — every edge an attacker could stand on either side of, the
    untrusted inputs crossing it, and the design's assumptions about it.
 2. **Runs the STRIDE pass** — Spoofing / Tampering / Repudiation / Information disclosure /
