@@ -9,6 +9,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Per-step routing, plus the surfaces that make provider-agnostic routing discoverable (M19 19.7,
+  #328 — the milestone capstone).** Routing resolved per *issue*, which is the right grain for an
+  issue and not the grain the work is done at: the steps inside one item all inherited the item's
+  route, over-routing the mechanical ones and under-routing the design of a nominally simple item.
+  **`step:`** is now a third signal kind alongside `label:` and `flag:`, with a closed vocabulary
+  (`design` / `implement` / `test` / `review` / `optimize`) and `--step` on the CLI.
+  - Steps **raise like every other signal and can never lower a route**, and two consequences fall
+    out of that single rule — both shipped as worked `examples:` cases and asserted directly:
+    a trivial item's **design** step earns real thinking while its **test** step does not, and a
+    **protected** item routes identically in *every* step, including the most mechanical. There is
+    no "this step is cheap" shortcut to be had, by construction rather than by care.
+  - Only steps that genuinely earn more carry a rule: `implement` and `test` route on their item's
+    own signals, which is the point — the cheap steps of an expensive item stop paying for the
+    whole item's tier. An undeclared step is a typo and is rejected loudly, like an undeclared flag.
+  - **Surfaces:** `/eados status` now reports the resolved host, the evidence that decided it, and
+    whether the catalog is **within its freshness budget** (a date alone does not say that);
+    `delegation.md`'s four-role relay resolves each seat as a step instead of hand-assigning it;
+    `USAGE.md` §9 and the Why-EADOS bullet in all three READMEs document what provider-agnostic
+    routing means for a consumer — any LLM, evidence-based host detection, honest degradation, and
+    the cost invariant — with the i18n source hash refreshed and 19.5's lockstep gate green over
+    the new prose; `.issues/README.md` reflects the five-level scale, the two-level catalog and the
+    `step:` vocabulary.
+
 ### Fixed
 
 - **`routing-delegation` was a one-way registry check (M19 19.6, #327).** It verified that every

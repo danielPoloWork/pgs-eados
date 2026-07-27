@@ -138,6 +138,13 @@ def main():
         mutate(s)
         return ra.spec_problems(s)
 
+    def broken_with(base, mutate):
+        """`broken`, but starting from an already-extended spec rather than the bare fixture."""
+        import copy
+        s = copy.deepcopy(base)
+        mutate(s)
+        return ra.spec_problems(s)
+
     check("a rule with an unknown min_tier is a problem",
           broken(lambda s: s["rules"][0].update(min_tier="huge")), failures)
     check("a rule with an unknown min_effort is a problem",
@@ -316,6 +323,55 @@ def main():
     check("the reason points at the two explicit rungs",
           "--host" in adv["unresolved_reason"] and "routing.host" in adv["unresolved_reason"],
           failures)
+
+    # --- 19.7 per-step routing: a third signal kind that can only ever RAISE ----------------
+    stepped = fixture_spec()
+    stepped["steps"] = {"design": "decide the shape", "test": "exercise it"}
+    stepped["rules"].append({"id": "step-design", "when": ["step:design"],
+                             "min_tier": "standard", "min_effort": "high", "why": "shape"})
+    check("a step signal is accepted by the spec validator",
+          ra.spec_problems(stepped) == [], failures)
+    check("an undeclared step in a rule is a problem",
+          broken_with(stepped, lambda s: s["rules"][-1].update(when=["step:nope"])), failures)
+    try:
+        ra.signals_for([], [], stepped, step="desgin")
+        failures.append("a typo'd step must be rejected loudly, like a typo'd flag")
+    except ValueError:
+        pass
+
+    # The point of per-step: one item, different steps, different routes.
+    low = ["severity:low"]
+    d = ra.advise(ra.signals_for(low, [], stepped, step="design"), stepped, host="claude-code")
+    t = ra.advise(ra.signals_for(low, [], stepped, step="test"), stepped, host="claude-code")
+    check("the design step of a cheap item earns more than its test step",
+          (d["tier"], d["effort"]) == ("standard", "high")
+          and (t["tier"], t["effort"]) == ("fast", "low"), failures)
+
+    # THE invariant: a step may raise, never lower. Checked over every step against the no-step
+    # baseline, for a protected item and a trivial one alike — a protected floor must survive even
+    # the most mechanical step, which is where a "this step is cheap" shortcut would bite.
+    tier_rank2 = {t_: i for i, t_ in enumerate(stepped["tiers"])}
+    effort_rank2 = {e: i for i, e in enumerate(stepped["efforts"])}
+    for labels in (["security", "severity:high"], ["severity:low"], []):
+        base = ra.advise(ra.signals_for(labels, [], stepped), stepped, host="claude-code")
+        for step in stepped["steps"]:
+            a = ra.advise(ra.signals_for(labels, [], stepped, step=step), stepped,
+                          host="claude-code")
+            if (tier_rank2[a["tier"]] < tier_rank2[base["tier"]]
+                    or effort_rank2[a["effort"]] < effort_rank2[base["effort"]]):
+                failures.append(f"step '{step}' LOWERED the route for {labels}: "
+                                f"{base['tier']}/{base['effort']} -> {a['tier']}/{a['effort']}")
+
+    # The shipped policy declares the full step vocabulary and routes it.
+    check("the shipped spec declares a step vocabulary",
+          set(shipped.get("steps") or {}) >= {"design", "implement", "test", "review", "optimize"},
+          failures)
+    sec = ["security", "severity:high"]
+    base = ra.advise(ra.signals_for(sec, [], shipped), shipped, host="claude-code")
+    for step in shipped["steps"]:
+        a = ra.advise(ra.signals_for(sec, [], shipped, step=step), shipped, host="claude-code")
+        if (a["tier"], a["effort"]) != (base["tier"], base["effort"]):
+            failures.append(f"shipped: a protected item changed route on step '{step}'")
 
     # --- host + effort-alias resolution ---
     adv = ra.advise([], spec, host="other-host")

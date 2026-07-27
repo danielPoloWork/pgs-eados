@@ -16,6 +16,7 @@ traceability / render tools — one source of truth, never a re-implementation).
     python .eados-core/tools/doctor.py <manifest> [--root DIR] [--roadmap PATH] [--links PATH]
 """
 
+import datetime
 import os
 import sys
 
@@ -172,7 +173,16 @@ def main(argv=None):
                 spec, manifest_host=route_advice.manifest_routing_host())
             print(f"    host: {resolved['host'] or 'unresolved'} "
                   f"({resolved['source']}: {resolved['evidence']})")
-            print(f"    catalog as of {(spec.get('catalog') or {}).get('as_of')}")
+            # Freshness is reported, not just the date: a stale catalog routes today's work by
+            # last quarter's assessment, and the number alone does not say that (19.5/19.7).
+            cat = spec.get("catalog") or {}
+            try:
+                import eados_lint
+                stale = eados_lint.catalog_freshness_problems(spec, datetime.date.today())
+            except Exception:  # noqa: BLE001 — the readout must never break the doctor
+                stale = []
+            print(f"    catalog as of {cat.get('as_of')} "
+                  + ("(STALE — re-verify)" if stale else "(within its freshness budget)"))
             issues = route_advice.fetch_milestone_issues(args.routing_milestone)
             out = routing_lines(issues, spec, host=resolved["host"]) or \
                 [f"no open issues in milestone '{args.routing_milestone}'"]
