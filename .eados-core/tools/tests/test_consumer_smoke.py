@@ -177,6 +177,40 @@ def main():
             check(f"the rendered policy scopes '{key}' to authored PRs",
                   (holder or {}).get(key) == "authored", failures)
 
+        # --- self_check front-runs the gate that will actually run (#368) --------------------
+        # It read the factory spec unconditionally, so inside a generated repo it described EADOS's
+        # PR contract. The fix is a MERGE, not a swap: the rendered policy carries only what varies
+        # per project, so replacing would have dropped every item it does not mention — a
+        # pre-flight that quietly stops asking about PR metadata is worse than one asking with the
+        # wrong repo's values, and both look identical from the outside.
+        import self_check
+        rc, here = run(["self_check.py"], cwd=os.path.dirname(ROOT))
+        rc, there = run(["self_check.py"], cwd=consumer)
+        check(f"self_check names the policy it used\n{there[-200:]}",
+              "docs/workflow/git-policy.yaml" in there, failures)
+        check("...the project's, merged over the vendored spec — not instead of it",
+              "merged over" in there, failures)
+        n_here = here.count("  [ ] ")
+        n_there = there.count("  [ ] ")
+        check(f"...and the checklist does NOT get shorter in a consumer ({n_here} vs {n_there})",
+              n_here == n_there and n_there >= 7, failures)
+
+        merged, _ = self_check.resolve_git_policy(consumer)
+        check("the merge takes the PROJECT's value where it declares one",
+              [str(s) for s in ((merged.get("commit") or {}).get("scopes") or [])]
+              == project_scopes, failures)
+        check("...and keeps the factory's where the project is silent (the four items a naive "
+              "swap would have dropped)",
+              all((merged.get("pr") or {}).get(k) for k in
+                  ("metadata", "required_crosslinks", "opened_by", "merged_by")), failures)
+        # The merge itself: a project declaring PART of a block keeps the rest.
+        part = self_check._merge({"pr": {"metadata": {"a": 1, "b": 2}, "x": 9}},
+                                 {"pr": {"metadata": {"b": 3}}})
+        check(f"a partial block override keeps its siblings ({part})",
+              part == {"pr": {"metadata": {"a": 1, "b": 3}, "x": 9}}, failures)
+        check("a list replaces rather than concatenates",
+              self_check._merge({"s": [1, 2]}, {"s": [3]}) == {"s": [3]}, failures)
+
         # --- a WRITING tool is exercised separately, and only where it is meant to write -----
         rc, out = run(["record_run.py", manifest, "--phase", "init", "--outcome", "success",
                        "--note", "consumer smoke"], cwd=consumer)

@@ -222,6 +222,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **`self_check` front-ran the FACTORY's PR contract inside a generated repo (#368).** #358 gave
+  "whose git policy applies" a discovery ladder, and `git_check` and `pr_metadata_check` went through
+  it; `self_check` kept a hardcoded `ROOT`-relative path to the factory spec and exposed no
+  `--repo`/`--policy`. So the one tool whose entire purpose is to *front-run the gate that will
+  actually run* was describing a different repository's contract — the last tool with that shape.
+  - **Latent, not wrong — which is why it survived.** Every field it reads is identical in both
+    contracts today, so the checklist happened to agree and nothing would have said when it stopped.
+    #350 already added `pr.metadata_applies_to` as a project-scopable key; the first project to scope
+    its own metadata contract would have got a checklist quietly describing somebody else's.
+  - **The fix is a merge, not a swap**, and that is the whole design question. The rendered
+    `git-policy.yaml` deliberately carries only what varies per project (#358), so *replacing* the
+    factory spec with it drops **3 of the 8** checklist items — PR metadata, required cross-links,
+    and the draft/merge boundary — because each is guarded on its field being present. Measured, by
+    driving the naive version: 8 items → 5. A pre-flight that quietly stops asking about PR metadata
+    is worse than one asking with the wrong repo's values, and the two look identical from outside.
+  - The merge recurses into mappings, so a project declaring *part* of a block keeps the rest instead
+    of blanking its siblings. The readout now **names the policy it used**, because a checklist
+    front-running the wrong contract is indistinguishable from one front-running the right one.
+  - `authority` and `interaction` stay vendored-spec-relative **on purpose**, and it is stated: the
+    `ownership_map` globs are already project-shaped (`src/**`, `docs/rfc/**`), and how an agent
+    communicates is universal. Only the `git` read was misanchored.
+  - Asserted in the consumer-smoke (#359) rather than a new test file, as the issue asked — including
+    that the checklist does not get shorter, verified by making it shorter on purpose.
+
+
 - **`AGENTS.md` listed 8 commit scopes, `git.yaml` declared 21, and `main` used 52 (#365).** Three
   surfaces, three answers — and the one an agent reads **first** was the most wrong, which is the
   worst direction for a contract to be stale in. Nothing watched, because `git-policy` is advisory
