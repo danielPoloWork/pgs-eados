@@ -58,3 +58,10 @@
   context: Two CLI --check cases in test_route_advice.py hardcoded model names copied from the routing catalog and asserted only the process exit code, which is 0 for every verdict by design; correcting the catalog moved 'Sonnet 5' from fast to standard so the mismatch case silently became a second passing OK, and dropping 'Opus 4.8' turned the OK case into an unknown-model — both stayed green while asserting nothing.
   rule: A test whose expected outcome depends on data owned elsewhere must derive its fixture from that data and assert the classification it is named for, never a proxy that every branch satisfies (an exit code, a non-empty result) — a copied value that drifts out of its intended case leaves the test green and vacuous, so the assertion must be one the drift can falsify.
   source: "#326 / PR #330 — the same decay disarmed two cases in one PR"
+
+- id: L-0009
+  date: 2026-07-27
+  scope: global
+  context: Two gates over two-sided relationships checked one side only. check_agent_registry verified that every persona had an index link (#202) and routing-delegation verified that every catalog host had a matrix row (#327); in both cases the UNCHECKED direction was where the rot actually was — a live index link to a deleted persona, and a matrix documenting hosts the catalog never had, so a supported-looking host errored on use. The second gate also matched by substring, so a host named in ordinary prose counted as a declaration and deleting its real row kept the gate green.
+  rule: A gate over a two-sided relationship must be walked in BOTH directions, and must match the declaration site structurally rather than by substring — a one-way check validates half a relationship and reports it as whole, and a name found anywhere in a file is evidence of a mention, not of a declaration.
+  source: "#202 / fix #212 (agent registry, one-way); #327 / fix #340 (routing delegation, one-way + substring)"

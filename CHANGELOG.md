@@ -33,6 +33,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
     the cost invariant — with the i18n source hash refreshed and 19.5's lockstep gate green over
     the new prose; `.issues/README.md` reflects the five-level scale, the two-level catalog and the
     `step:` vocabulary.
+- **Lessons ledger entry L-0009 (#327).** *"A gate over a two-sided relationship must be walked in
+  BOTH directions, and must match the declaration site structurally rather than by substring — a
+  one-way check validates half a relationship and reports it as whole, and a name found anywhere in
+  a file is evidence of a mention, not of a declaration."* Twice observed: `check_agent_registry`
+  (#202) and `routing-delegation` (#327), where in both cases the unchecked direction was where the
+  rot actually was.
 
 ### Fixed
 
