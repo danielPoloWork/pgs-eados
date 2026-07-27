@@ -143,7 +143,8 @@ def main(argv=None):
     import argparse
     ap = argparse.ArgumentParser(description="EADOS doctor - /eados status at-a-glance readout.")
     ap.add_argument("manifest", help="path to a project manifest (project.yaml)")
-    ap.add_argument("--root", help="project root for ROADMAP.md / links (default: the manifest's dir)")
+    ap.add_argument("--root", help="project root for ROADMAP.md / links "
+                         "(default: the nearest ancestor with .eados-core/ or .git/)")
     ap.add_argument("--roadmap", help="path to ROADMAP.md (default: <root>/ROADMAP.md)")
     ap.add_argument("--links", help="traceability links file (default: <root>/links.yaml if present)")
     ap.add_argument("--routing-milestone", metavar="TITLE",
@@ -159,7 +160,9 @@ def main(argv=None):
     workflow = phase_runner.apply_overlay(phase_runner.load_workflow(),
                                           phase_runner.manifest_domain(manifest))
 
-    root = args.root or os.path.dirname(os.path.abspath(args.manifest))
+    # #347: the project root, not the manifest's own directory — the prescribed manifest
+    # lives in orchestrator/ while ROADMAP.md and links.yaml live at the repo root.
+    root = args.root or render.project_root(args.manifest)
     roadmap_path = args.roadmap or os.path.join(root, "ROADMAP.md")
     roadmap_text = _read(roadmap_path) if os.path.isfile(roadmap_path) else None
     links_path = args.links or os.path.join(root, "links.yaml")
