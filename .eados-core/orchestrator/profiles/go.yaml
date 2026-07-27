@@ -1,8 +1,16 @@
 # go.yaml — Go toolchain profile
 #
 # Go's module path replaces the namespace; the race detector is a first-class sanitizer.
-# The flat-ish Go convention is reconciled with the cross-language tree by placing the
-# module under src/main/go/<group>/<slug> with the module path matching.
+#
+# LAYOUT — the module lives at the REPOSITORY ROOT, one package directory per feature.
+# In Go an import path *is* the directory path beneath the module root, so a module placed
+# under src/main/go/<group>/<slug> can only be imported as
+# <module>/src/main/go/<group>/<slug>/<pkg> — around 70 characters before the package name,
+# and nothing shortens it: a go-import meta tag maps a prefix onto a repository *root* and
+# the remaining elements stay directories, while a nested go.mod must carry the same suffix
+# in its module path. The cross-language tree and a usable consumer import cannot both hold,
+# so for Go the root layout wins. `namespace_pattern` below states the same thing from the
+# other side — nothing sits between the module path and the package directory.
 
 lang:             go
 display_name:     "Go"
@@ -21,7 +29,7 @@ toolchain:
   sanitizers:      "go test -race (data-race detector), go vet, govulncheck"
   coverage_tool:   "go test -coverprofile (go tool cover)"
   doc_tool:        "godoc / pkg.go.dev"
-  version_file:    "version.go"           # under src_main
+  version_file:    "version.go"           # at the module root, beside go.mod
   version_const_hint: "const Version = \"X.Y.Z\""
   package_ecosystem: "gomod"              # Dependabot ecosystem
 
