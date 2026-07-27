@@ -117,7 +117,15 @@ def git_policy_scalars(manifest, spec_path=GIT_SPEC):
         types = []                 # absent -> the placeholder stays empty and render.py's
         # unresolved-placeholder guard turns it into a hard error, never a silent empty policy
     scopes = [str(s) for s in ((manifest.get("governance") or {}).get("scopes") or [])]
-    return {"GIT_BRANCH_TYPES": ", ".join(types), "GIT_COMMIT_SCOPES": ", ".join(scopes)}
+    subject_max = ""
+    try:
+        with open(spec_path, encoding="utf-8") as handle:
+            cap = ((load_yaml(handle.read()) or {}).get("commit") or {}).get("subject_max")
+        subject_max = str(cap) if str(cap or "").strip().isdigit() else ""
+    except (OSError, ValueError):
+        subject_max = ""
+    return {"GIT_BRANCH_TYPES": ", ".join(types), "GIT_COMMIT_SCOPES": ", ".join(scopes),
+            "GIT_SUBJECT_MAX": subject_max}
 
 
 def routed_item(item, routing):

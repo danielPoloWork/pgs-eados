@@ -28,6 +28,9 @@ commit:
   # THIS project's subsystem nouns, from the manifest's `governance.scopes`. The list every other
   # repository has a different version of, and the reason this file exists.
   scopes: [{{GIT_COMMIT_SCOPES}}]
+  # Max length of the subject line YOU write. The squash-merge's trailing ` (#PR)` is excluded
+  # before measuring — you did not write it and cannot prevent it. Yours to change.
+  subject_max: {{GIT_SUBJECT_MAX}}
   one_logical_change_per_pr: true
   one_pr_at_a_time: true
   # WHOSE open PRs the limit counts: `authored` (human/agent) or `all`. The rule is about not

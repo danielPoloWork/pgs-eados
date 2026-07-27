@@ -10,6 +10,20 @@ branch_naming:
 commit:
   convention: conventional-commits
   scopes: [interview, profiles, templates, lint, agent, docs, adr, ci, os, workflow, authority, git, rfc, plan, risk, contribution, commands, traceability, tools, setup, release]
+  # Max length of the subject line the AUTHOR writes (#363). Data, not a constant in git_check.py —
+  # it was the one numeric threshold of this policy that lived in code, in an OS whose rule is that
+  # knowledge is data; a generated repo could not change it without editing a vendored tool.
+  #
+  # 80, not 72. 72 was never this repository's practice: 178 of 255 commits on `main` broke it, the
+  # median subject is 80, and a rule at 30% compliance is a decision about the rule. 80 is the
+  # classic line width, it still bites (~30% of history would fail it), and it leaves room for
+  # `type(scope): ` before the subject even starts. A cap nobody meets is not a stricter rule — it
+  # is an ignored one, which is how 178 violations accumulated in silence.
+  #
+  # It governs what the author WRITES: squash-merge appends ` (#PR)` (6-7 chars) that no author can
+  # prevent, and git_check excludes it before measuring. So a subject at the cap renders ~87 in
+  # `git log` — the honest trade for measuring only what someone can actually control.
+  subject_max: 80
   one_logical_change_per_pr: true
   one_pr_at_a_time: true
   # WHOSE open PRs the limit counts (#350). `authored` = human/agent PRs only; `all` = literally
