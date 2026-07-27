@@ -99,6 +99,34 @@ def main():
         print(f"test-setup-ps1: FAIL — setup.ps1 not found at {SETUP_PS1}")
         return 1
 
+    # #318: the checksum is the installer's ONLY integrity control, and it must not depend on
+    # cmdlet auto-loading. On a Windows PowerShell 5.1 process whose PSModulePath was set up for
+    # pwsh 7 — what a GitHub windows runner hands you, and what any user with pwsh installed can
+    # hit — `Get-FileHash` is simply "not recognized". Pull the SHIPPED helper out of setup.ps1
+    # with the PowerShell parser (no copy, no regex) and drive it in a process where the cmdlet
+    # genuinely raises, so the fallback is proven rather than assumed.
+    probe = (
+        "$e=$null;$t=$null;"
+        f"$a=[System.Management.Automation.Language.Parser]::ParseFile('{SETUP_PS1}',"
+        "[ref]$t,[ref]$e);"
+        "$f=$a.FindAll({param($n) $n -is "
+        "[System.Management.Automation.Language.FunctionDefinitionAst] -and "
+        "$n.Name -eq 'Get-Sha256'},$true);"
+        "if(-not $f){Write-Output 'MISSING';exit};"
+        "Invoke-Expression $f[0].Extent.Text;"
+        "$tmp=[System.IO.Path]::GetTempFileName();"
+        "[System.IO.File]::WriteAllBytes($tmp,[byte[]](1,2,3));"
+        "$ok=(Get-Sha256 $tmp);"
+        "function Get-FileHash { throw 'not recognized' };"
+        "$broken=(Get-Sha256 $tmp);"
+        "Remove-Item $tmp -Force;"
+        "Write-Output ($(if($ok -eq $broken -and $ok.Length -eq 64){'SAME'}else{'DIFF'}))"
+    )
+    p = subprocess.run([PWSH, "-NoProfile", "-Command", probe],
+                       capture_output=True, text=True)
+    check("setup.ps1 hashes identically with Get-FileHash available and unavailable",
+          "SAME" in (p.stdout or ""), failures)
+
     # -Help
     rc, out, _ = run("-Help")
     check("-Help exits 0", rc == 0, failures)

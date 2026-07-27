@@ -9,6 +9,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The guided Windows installer could not verify a checksum on a machine with pwsh installed
+  (#318).** `setup.ps1` called `Get-FileHash`, which is *"not recognized"* on a Windows PowerShell
+  5.1 process whose `PSModulePath` was set up for pwsh 7 — what a GitHub Windows runner hands you,
+  and what any user with pwsh installed can hit. Since the checksum is the installer's **only**
+  integrity control and it is fail-closed, that turned every verified install on such a machine
+  into a hard failure. It now computes the hash through .NET when the cmdlet cannot be reached,
+  keeping the cmdlet as the fast path — the fallback is proven by pulling the shipped function out
+  of `setup.ps1` with the PowerShell parser and driving it in a process where `Get-FileHash`
+  genuinely raises, rather than by asserting it works. **Found by the broadened matrix within
+  minutes of it existing**, on a job that had never run before.
+- **The i18n freshness gate reported a false STALE on every CRLF checkout (#318).** `_source_hash`
+  hashed raw bytes, so any clone git had given CRLF line endings — every Windows clone with the
+  default `core.autocrlf=true` — computed a different hash and failed the lint. A Windows
+  contributor could not run the self-lint at all. ADR-0010 calls this a *content* hash, and a line
+  ending is a checkout convention rather than content (the same reasoning the loader applies to a
+  UTF-8 BOM), so line endings are now normalized before hashing. Every recorded hash stays valid,
+  and the gate is green in both an LF and a CRLF checkout.
+
 ### Changed
 
 - **The factory's own CI now runs on the platforms its users and its maintainer actually use
