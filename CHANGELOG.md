@@ -78,6 +78,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **`/eados status` reported a `ROADMAP.md` that exists as missing, on the layout the factory
+  itself renders (#347).** `doctor.py` and `eados.py` defaulted `--root` to *the manifest's own
+  directory*, but the prescribed manifest lives at `orchestrator/project.yaml` while `ROADMAP.md`
+  and `links.yaml` live at the **repo root** — so both tools looked in `orchestrator/`, found
+  neither, and said so. Both lookups are `isfile`-guarded, which is why it stayed hidden: a miss
+  became *"not found"* rather than an error, and `needs-input` on a gate whose artifact you just
+  wrote reads like a gate that is not wired up yet, not like a path bug.
+  - Two gates degraded for a spurious reason as a result — `roadmap-covers-rfcs` and
+    `traceability-lint`, the latter `blocking: true` and an entry gate of `audit → migrate`.
+  - Both tools now discover the project root by ascending to the nearest ancestor carrying
+    `.eados-core/` or `.git/`, falling back to the manifest's directory when there is none. That is
+    the self-location convention `AGENTS.md` §4 already states the tooling uses, and it is correct
+    both for the prescribed layout and for a manifest kept somewhere unusual. An explicit `--root`
+    still wins, and the `--help` text now describes what actually happens.
+  - Verified against the reported layout: `no ROADMAP.md found` → `roadmap-covers-rfcs: OK
+    (RFC-0001 → M1)`, and `[needs-input] roadmap-covers-rfcs` → `[OK]`. The regression fixture puts
+    the manifest **one level down** — the shipped layout, and the case that was broken; a test with
+    the manifest beside the roadmap would have passed throughout.
+
+
 - **The guided Windows installer could not verify a checksum on a machine with pwsh installed
   (#318).** `setup.ps1` called `Get-FileHash`, which is *"not recognized"* on a Windows PowerShell
   5.1 process whose `PSModulePath` was set up for pwsh 7 — what a GitHub Windows runner hands you,

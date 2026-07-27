@@ -503,6 +503,35 @@ def _unsafe_path_value(value):
 
 CHANGELOG = os.path.join(os.path.dirname(ROOT), "CHANGELOG.md")
 
+# Markers that identify a project root, nearest-first. `.eados-core/` is the vendored factory —
+# the same self-location convention AGENTS.md §4 already states the tooling uses — and `.git/`
+# covers a repo that keeps the manifest elsewhere.
+_ROOT_MARKERS = (".eados-core", ".git")
+
+
+def project_root(manifest_path):
+    """The project root a manifest belongs to (#347).
+
+    The tools defaulted to `dirname(manifest)`, but the prescribed manifest location is
+    `orchestrator/project.yaml` while `ROADMAP.md` and `links.yaml` live at the REPO ROOT — so on
+    a correctly generated repo the default looked in `orchestrator/`, found neither, and reported
+    them absent. Both lookups are `isfile`-guarded, so the miss was silent: `/eados status` said a
+    roadmap that exists is missing, and two gates degraded to `needs-input` for a reason unrelated
+    to the project.
+
+    Ascend to the nearest ancestor carrying a root marker; fall back to the manifest's own
+    directory when there is none, which is the previous behaviour and the right answer for a
+    manifest sitting outside any project."""
+    start = os.path.dirname(os.path.abspath(manifest_path))
+    current = start
+    while True:
+        if any(os.path.isdir(os.path.join(current, m)) for m in _ROOT_MARKERS):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:          # filesystem root — no marker anywhere above
+            return start
+        current = parent
+
 
 def factory_provenance(manifest=None):
     """`{eados_version, eados_commit, rendered_at}` — which factory produced this render (#319).
