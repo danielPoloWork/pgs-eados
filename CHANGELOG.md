@@ -9,6 +9,39 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **A generated repository now records which EADOS produced it (#319).** Twelve minor releases have
+  shipped, several carrying security fixes, and a rendered repo recorded **nothing** about where it
+  came from — so a maintainer could not tell whether their `setup.*` predates the #129 tar-slip
+  hardening, or their CLI tools the #128 UTF-8 crash, without diffing against a guessed tag. The
+  factory could not answer the mirror question either: field reports like #306 and #313 arrived
+  with no reliable way to know which version produced the repo being described.
+  - The generated `AGENTS.md` now carries a **Provenance** line — version, commit and date —
+    rendered from `{{EADOS_PROVENANCE}}`. The version is **derived** from the CHANGELOG's latest
+    released heading, which the `version-lockstep` gate already holds the READMEs to, so a stamp
+    cannot claim a release it is not; the commit comes from git and degrades to absent in a bundle
+    install rather than being guessed.
+  - The manifest gains an optional, additive **`generated_by:`** block (provenance-exempt: it
+    records the environment, not an interview answer). **A recorded stamp wins over the running
+    factory** — that is the load-bearing property, and what makes the stamp provenance rather than
+    a clock: a repo rendered by v2.9.0 keeps saying v2.9.0 after the factory moves on. Asserted
+    end to end.
+  - `/eados status` reports it, and distinguishes *recorded* from *derived* explicitly — "rendered
+    by v2.9.0" and "rendered by whatever is checked out right now" are different facts and must not
+    read alike. An unknown version is **stated**, never omitted.
+  - This does not reopen ADR-0003: a generated repo still governs itself and is never re-rendered.
+    Recording where it started is the prerequisite for #320's advisory upgrade channel — *"do not
+    re-render"* was never *"do not tell them what changed"*.
+
+  > **Deviation from the issue, flagged rather than made quietly.** #319 asked for the block to be
+  > *written by the renderer at scaffold time*. A rendered repository does not contain a manifest —
+  > verified — so there is nothing there to stamp; and having `render.py` write back to the source
+  > manifest would be its first write outside the sandbox, into a user's file, which the
+  > `safe-write` gate exists to prevent. The stamp therefore lands in the artifact every generated
+  > repo *does* have (`AGENTS.md`), and the manifest block is recorded rather than auto-written.
+  > Recording it is a job for the scaffold procedure, the same split `record_run.py` already is.
+
 ## [2.12.0] - 2026-07-27
 
 Provider-agnostic routing, and a loader that no longer loses data quietly — a minor release with

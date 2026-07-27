@@ -86,6 +86,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{TIER1_PLATFORMS}}` | Human description of CI-gated platforms | `Linux x86_64, Windows x86_64, macOS arm64` |
 | `{{#EACH_CI_CELL}}` | Loop over CI matrix cells (`os`, `toolchain`, `preset`) | — |
 | `{{CI_SETUP_STEPS}}` | Profile-provided "set up the toolchain" YAML steps | — |
+| `{{EADOS_PROVENANCE}}` | Which factory produced this repo — version + commit + date, from the manifest's `generated_by:` when recorded, else derived from the CHANGELOG and git (#319) | `EADOS v2.12.0 (commit f6d487c) on 2026-07-27` |
 | `{{CI_BUILD_MANIFEST}}` | The file whose presence proves the build system exists (`ci.build_manifest`); a glob is legal (#313) | `CMakeLists.txt`, `package.json`, `*.rockspec` |
 | `{{CI_EXTRA_JOBS}}` | Profile-provided extra jobs (sanitizers, valgrind, …) | — |
 | `{{CI_RACE_JOB}}` | Profile-provided data-race/concurrency job (rendered only under `IF_THREADING`; blank if N/A) | — |

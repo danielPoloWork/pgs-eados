@@ -15,6 +15,16 @@ schema_version: 1
 manifest_rev: 0
 domain: software             # development target: software|web|game|mobile -> orchestrator/domains/<domain>.yaml
 # delivery_state holds STATE + cross-link REFS (ids), never content — Git stays the source of
+# Which EADOS produced this repository (#319). Optional and additive: absent, the renderer derives
+# it from the factory's CHANGELOG + git at render time. RECORD it — copy what a render printed —
+# and it becomes durable: the repo keeps saying where it started even after the factory moves on,
+# which is what makes it possible to ask what has changed upstream since (ADR-0003 refuses to
+# re-render a generated repo; it does not refuse to tell you what changed). -> {{EADOS_PROVENANCE}}
+# generated_by:
+#   eados_version: "2.12.0"
+#   eados_commit: f6d487c
+#   rendered_at: "2026-07-27"
+
 # Which agent RUNTIME this project is worked on, for model/effort routing (#325, ADR-0024 D4).
 # Optional and additive: absent, the OS detects the host from environment markers, and where it
 # cannot it says so and still gives you a tier + effort (those are vendor-neutral). Set it when
