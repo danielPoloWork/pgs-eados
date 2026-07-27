@@ -33,7 +33,7 @@ DELEGATION_OK = (
 )
 README_OK = "See [`../os/routing/delegation.md`](../os/routing/delegation.md) for the hook."
 SCHEMA_OK = "The applied path is specified in [`delegation.md`](./delegation.md)."
-SPEC = {"catalog": {"hosts": [{"host": "claude-code"}, {"host": "codex"}]}}
+SPEC = {"catalog": {"hosts": [{"id": "claude-code"}, {"id": "codex"}]}}
 
 
 def check(label, cond, failures):
@@ -70,11 +70,11 @@ def main():
           any("documents no advisory-only fallback" in p for p in nofb), failures)
 
     # --- a catalog host missing from the matrix (the anti-rot property) ---
-    three = {"catalog": {"hosts": [{"host": "claude-code"}, {"host": "codex"},
-                                    {"host": "gemini"}]}}
+    three = {"catalog": {"hosts": [{"id": "claude-code"}, {"id": "codex"},
+                                    {"id": "nowhere-host"}]}}
     miss = P(DELEGATION_OK, README_OK, SCHEMA_OK, three)
     check("a catalog host absent from the matrix is flagged",
-          any("does not account for catalog host 'gemini'" in p for p in miss), failures)
+          any("does not account for catalog host 'nowhere-host'" in p for p in miss), failures)
 
     # --- a None/parse-failed spec degrades quietly (data-file-validity owns that failure) ---
     check("a missing spec does not crash the host loop",

@@ -84,23 +84,75 @@ def spec_problems(spec):
         hosts = []
     if not str(catalog.get("as_of", "")).strip():
         problems.append("`catalog.as_of` is missing — the dated catalog is the review cue")
-    for h in hosts:
-        if not isinstance(h, dict) or not str(h.get("host", "")).strip():
-            problems.append("every catalog host entry needs a `host` id")
+    # --- schema v2 (ADR-0024): providers describe capability, hosts declare reach ---
+    provider_ids = set()
+    for i, p in enumerate(catalog.get("providers") or []):
+        if not isinstance(p, dict) or not str(p.get("id", "")).strip():
+            problems.append(f"catalog.providers[{i}] needs an `id`")
             continue
-        hid = h["host"]
-        models = h.get("models") if isinstance(h.get("models"), dict) else {}
-        for tier in tiers:
-            if not str(models.get(tier, "")).strip():
-                problems.append(f"catalog host '{hid}' maps no model for tier '{tier}'")
-        for tier in models:
-            if tier not in tiers:
-                problems.append(f"catalog host '{hid}' maps unknown tier '{tier}'")
+        pid = p["id"]
+        if pid in provider_ids:
+            problems.append(f"catalog provider '{pid}' is declared twice")
+        provider_ids.add(pid)
+        models = p.get("models")
+        if models is None:
+            models = []
+        if not isinstance(models, list):
+            problems.append(f"provider '{pid}': `models` must be a list (use [] when none are "
+                            "catalogued)")
+            continue
+        for j, m in enumerate(models):
+            label = f"provider '{pid}' models[{j}]"
+            if not isinstance(m, dict) or not str(m.get("id", "")).strip():
+                problems.append(f"{label} needs an `id`")
+                continue
+            label = f"provider '{pid}' model '{m['id']}'"
+            assessed = bool(m.get("assessed"))
+            meets = m.get("meets_tier")
+            if assessed:
+                # An assessed model MUST say what it clears; an unassessed one must NOT claim it.
+                if meets is None:
+                    problems.append(f"{label}: assessed but declares no `meets_tier`")
+                elif meets not in tiers:
+                    problems.append(f"{label}: meets_tier {meets!r} is not a `tiers` entry")
+            elif meets is not None:
+                problems.append(f"{label}: not assessed, so it must not claim `meets_tier` "
+                                f"{meets!r} — an unverified capability claim is what #326 was")
+            if m.get("max_effort") is not None and m["max_effort"] not in efforts:
+                problems.append(f"{label}: max_effort {m['max_effort']!r} is not an `efforts` entry")
+
+    if not catalog.get("providers"):
+        problems.append("`catalog.providers` must be a non-empty list (schema v2)")
+
+    seen_hosts = set()
+    for h in hosts:
+        if not isinstance(h, dict) or not str(h.get("id", "")).strip():
+            problems.append("every catalog host entry needs an `id`")
+            continue
+        hid = h["id"]
+        if hid in seen_hosts:
+            problems.append(f"catalog host '{hid}' is declared twice")
+        seen_hosts.add(hid)
+        reach = h.get("providers")
+        if not isinstance(reach, list) or not reach:
+            problems.append(f"catalog host '{hid}': `providers` must be a non-empty list of "
+                            "provider ids — a host that reaches nothing can route nothing")
+            reach = []
+        for pid in reach:
+            if pid not in provider_ids:
+                problems.append(f"catalog host '{hid}' reaches unknown provider '{pid}'")
         aliases = h.get("effort_aliases") if isinstance(h.get("effort_aliases"), dict) else {}
         for alias, effort in aliases.items():
             if effort not in efforts:
                 problems.append(f"catalog host '{hid}' alias '{alias}' -> {effort!r} is not an "
                                 "`efforts` entry")
+
+    for sig in spec.get("protected") or []:
+        problems += _signal_problems(str(sig), flags, where="protected")
+    sel = spec.get("selection") if isinstance(spec.get("selection"), dict) else {}
+    for pref in sel.get("prefer") or []:
+        if pref not in ("lowest_cost", "lowest_latency"):
+            problems.append(f"selection.prefer '{pref}' is not a known criterion")
 
     ex = spec.get("examples") if isinstance(spec.get("examples"), dict) else {}
     for verdict in (ex.get("verdicts") or []):
@@ -177,8 +229,10 @@ def advise(signals, spec, host=None):
     return {
         "tier": tier,
         "effort": effort,
-        "model": entry["models"][tier],
-        "host": entry["host"],
+        # None when the host reaches no ASSESSED model for this tier — the tier/effort advice is
+        # vendor-neutral and still stands; only the name is unresolved (ADR-0024 D4/D6).
+        "model": models_by_tier(spec, host).get(tier),
+        "host": entry["id"],
         "catalog_as_of": (spec.get("catalog") or {}).get("as_of"),
         "matched": matched,
         "floor": dict(spec["defaults"]),
@@ -187,15 +241,52 @@ def advise(signals, spec, host=None):
 
 
 def _host_entry(spec, host=None):
-    """The catalog entry for `host` (default: the first host — the reference environment)."""
+    """The catalog entry for `host` (default: the first host — the reference environment).
+
+    NOTE (#325 / ADR-0024 D4): defaulting to the first host is the very behaviour 19.4 removes —
+    a caller that passes no host silently gets the reference environment's model names. It is left
+    here so this item stays a data+schema change; 19.4 replaces it with the evidence ladder and a
+    loud unknown."""
     hosts = (spec.get("catalog") or {}).get("hosts") or []
     if host is None:
         return hosts[0]
     for h in hosts:
-        if h.get("host") == host:
+        if h.get("id") == host:
             return h
-    known = ", ".join(str(h.get("host")) for h in hosts)
+    known = ", ".join(str(h.get("id")) for h in hosts)
     raise ValueError(f"unknown host '{host}' — catalog hosts: {known}")
+
+
+def models_by_tier(spec, host=None):
+    """`{tier: model name}` for `host` — the cheapest-first projection of the v2 catalog.
+
+    INTERIM (19.2 -> 19.3). ADR-0024 D2 splits resolution into escalation (the floor) and
+    selection (the cheapest reachable model that CLEARS the floor). This is only the projection
+    the v1 callers need to keep working: for each tier, the first *assessed* model that meets it,
+    in `selection.prefer` order across the host's reachable providers. 19.3 (#324) replaces it with
+    the real two-phase resolution — meets-or-exceeds matching, effort ceilings, alternatives, and a
+    loud failure when nothing clears the floor. A tier with no assessed reachable model is simply
+    absent here, which is the honest answer: the tier advice still stands, the model name does not.
+    """
+    entry = _host_entry(spec, host)
+    by_id = {p.get("id"): p for p in (spec.get("catalog") or {}).get("providers") or []
+             if isinstance(p, dict)}
+    prefer_cost = "lowest_cost" in ((spec.get("selection") or {}).get("prefer") or [])
+    out = {}
+    for tier in spec.get("tiers") or []:
+        candidates = []
+        for order, pid in enumerate(entry.get("providers") or []):
+            for rank, m in enumerate((by_id.get(pid) or {}).get("models") or []):
+                if isinstance(m, dict) and m.get("assessed") and m.get("meets_tier") == tier:
+                    cost = m.get("relative_cost")
+                    # Unrecorded cost falls back to declaration order (documented in routing.yaml),
+                    # so the choice stays deterministic instead of depending on a missing figure.
+                    candidates.append(((cost if prefer_cost and cost is not None else float("inf")),
+                                       order, rank, m))
+        if candidates:
+            best = min(candidates, key=lambda c: c[:3])[3]
+            out[tier] = str(best.get("name") or best.get("id"))
+    return out
 
 
 def normalize_effort(word, spec, host=None):
@@ -216,8 +307,11 @@ def format_advice(advice, heading=None):
     out = []
     if heading:
         out.append(heading)
+    # An unresolved model is stated, never printed as a bare None: the tier/effort half of the
+    # advice is vendor-neutral and fully actionable on its own (ADR-0024 D4).
+    model = advice["model"] or "<no assessed model for this tier on this host>"
     out.append(f"  route: tier={advice['tier']}  effort={advice['effort']}  "
-               f"-> {advice['model']} (host: {advice['host']}, catalog as of "
+               f"-> {model} (host: {advice['host']}, catalog as of "
                f"{advice['catalog_as_of']})")
     if advice["matched"]:
         for m in advice["matched"]:
@@ -247,7 +341,7 @@ def tier_of_model(model, spec, host=None):
     target = _norm_model(model)
     if not target:
         return None
-    models = _host_entry(spec, host).get("models") or {}
+    models = models_by_tier(spec, host)
     hits = [tier for tier, name in models.items()
             if (n := _norm_model(name)) and (n == target or n in target or target in n)]
     return hits[0] if len(hits) == 1 else None

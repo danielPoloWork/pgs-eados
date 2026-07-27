@@ -1523,8 +1523,8 @@ def routing_delegation_problems(delegation_text, readme_text, schema_text, routi
     if "advisory" not in (delegation_text or "").lower():
         problems.append("os/routing/delegation.md documents no advisory-only fallback — hosts "
                         "without per-delegation model control must have a stated posture (#255)")
-    hosts = [h.get("host") for h in ((routing_spec or {}).get("catalog") or {}).get("hosts") or []
-             if isinstance(h, dict) and h.get("host")]
+    hosts = [h.get("id") for h in ((routing_spec or {}).get("catalog") or {}).get("hosts") or []
+             if isinstance(h, dict) and h.get("id")]
     for host in hosts:
         if str(host) not in (delegation_text or ""):
             problems.append(f"os/routing/delegation.md does not account for catalog host "

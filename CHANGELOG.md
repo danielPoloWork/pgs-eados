@@ -9,6 +9,41 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Changed
+
+- **`os/routing` moves to schema v2 — a two-level provider/host catalog (M19 19.2, #323,
+  ADR-0024).** The catalog was a flat `host → {tier: model name}` map, which could represent
+  neither a vendor the factory does not run on nor a **model-agnostic runtime** (one host, many
+  vendors) without inventing a pseudo-host per host×provider pair. It is now two levels:
+  `providers[]` say what exists and what each model *clears*; `hosts[]` say what a runtime can
+  reach. Seeded with the seven vendors the maintainer named — Anthropic, OpenAI, Google, Mistral,
+  Qwen, Moonshot/Kimi, Sakana — and four hosts, including `opencode` reaching all seven, which is
+  the case v1 could not express at all. Adding any of them is now a data edit with no code change.
+  - **Provenance is structural, not prose.** `assessed: true` records a dated maintainer judgment
+    (explicitly *not* a benchmark run) and is the **only** way a model may carry a `meets_tier`.
+    An unassessed model is catalogued as reachable, carries no capability claim, and is skipped by
+    selection — the schema now *rejects* an unassessed model that claims a tier. This turns #326
+    into an invariant: that incident happened because an unverified claim was indistinguishable
+    from a verified one. Today 6 models are assessed, 2 are catalogued-but-not, and 4 providers
+    carry `models: []` — reachability recorded, nothing claimed.
+  - **`extra` joins the effort scale** (`low`/`medium`/`high`/`extra`/`max`). Inserting a level
+    changes what the existing ones *mean* relative to the ceiling, so all seven rules were re-read
+    rather than migrated: `security-surface`, `decision-heavy` and `adr-is-decision-heavy` **raised
+    high → extra** (each one's stated rationale asks for near-ceiling effort, which `high` no longer
+    is); `severity-medium`, `severity-high`, `sets-pattern` and `foundational-decision` **held**,
+    each with its reason recorded in the file. `sets-pattern` holding at `high` is what now
+    distinguishes *"amortized quality justifies the tier"* from *"depth is the deliverable"*.
+  - `protected:` and `selection:` are declared as data, so ADR-0024's cost invariant — *cost may
+    only choose among models that already clear the earned floor* — is checkable rather than a
+    property of the code that happens to hold.
+  - A host whose reachable providers have no assessed model for a tier now resolves **tier and
+    effort with no model name, and says so**, instead of printing a bare `None`; the rendered
+    ROADMAP legend shows `—`. That is today's honest state for `gemini`.
+  - `_schema.md` rewritten for v2. `route_advice` carries an interim tier→model **projection** so
+    every existing caller keeps working; 19.3 (#324) replaces it with the real two-phase
+    resolution. `delegation.md`'s host matrix gains a *Reaches* column and the `opencode` row —
+    the `routing-delegation` anti-rot gate caught its absence during this very change.
+
 ### Fixed
 
 - **A block-sequence item whose first key was not `[A-Za-z0-9_]+` degraded to a string and dropped
