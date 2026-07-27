@@ -9,6 +9,25 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`routing-delegation` was a one-way registry check (M19 19.6, #327).** It verified that every
+  catalog host appears in `os/routing/delegation.md`'s application matrix, and called that *"the
+  anti-rot property"*. The reverse went unchecked — and the reverse is where the rot actually was:
+  the matrix documented `codex` and `gemini` from M16 onward while the catalog had neither, so
+  `route_advice.py --host codex` failed with `unknown host` on a host the documentation said was
+  supported. This is the **#202 defect class** recurring: a registry walked in one direction
+  validates half a relationship and reports it as whole. Now checked both ways, with messages that
+  distinguish *add the catalog entry* from *drop the row*.
+- **Matrix rows are read structurally, not by substring (#327).** The old check asked whether a
+  host's name appeared anywhere in the file — but `delegation.md` legitimately names hosts in prose
+  (*"Run the same relay on codex or gemini…"*), so a host's name was present whether or not it had
+  a row. Deleting a real row kept the gate green. Rows are now matched as table lines whose first
+  cell bolds the host id, which also lets the gate require what the row exists for: a row stating
+  neither `applied` nor `advisory-only` is now flagged. With the spec absent or unparseable both
+  directions are skipped rather than flagging every row — a parse failure means *cannot check*,
+  not *everything is wrong*, and it is `data-file-validity`'s to report.
+
 ### Added
 
 - **Two gates so the routing catalog cannot rot or contradict the docs (M19 19.5, #326,
