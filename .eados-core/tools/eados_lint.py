@@ -19,6 +19,7 @@ asserted in prose:
 Each check runs independently; all failures are reported, then a non-zero exit on any.
 """
 
+import datetime
 import glob
 import hashlib
 import os
@@ -1616,6 +1617,131 @@ def check_interaction_lockstep(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 22. Routing catalog freshness + model-name lockstep (#326, M19 19.5, ADR-0024 D6).
+#
+#     `catalog.as_of` was documented as "the review cue" with nothing enforcing it, and model names
+#     lived in TWO homes — the dated catalog and the READMEs' ranking prose — with no gate between
+#     them. They drifted into direct disagreement: for weeks the catalog routed every ADR, security
+#     and foundational-decision unit of work to a model all three READMEs described as *not
+#     benchmarked*, while the one they ranked first sat a tier below. Nothing was red.
+#
+#     Two checks, both offline and dependency-free:
+#       * `catalog-freshness`      — the dated catalog is within its own staleness budget.
+#       * `routing-model-lockstep` — the prose and the catalog cannot contradict each other.
+#
+#     Deliberately NOT rendering the ranking from the catalog: the prose carries editorial nuance
+#     ("not yet benchmarked", the rotation caveat) that a generated table would flatten, and the
+#     ADR-0015/0016 honesty posture wants that nuance kept. So it is checked, not generated.
+# ---------------------------------------------------------------------------
+README_SURFACES = [
+    ("README.md", "not yet benchmarked"),
+    (os.path.join("docs", "i18n", "zh-Hans", "README.md"), "尚未针对 EADOS"),
+    (os.path.join("docs", "i18n", "ja", "README.md"), "まだベンチマーク"),
+]
+
+
+def catalog_freshness_problems(spec, today):
+    """Pure: is the dated catalog still within its own `max_age_days`? `today` is a date object.
+    Also flags a per-model `verified:` date OLDER than the catalog's own — a model nobody
+    re-checked while the catalog around it was refreshed."""
+    catalog = (spec or {}).get("catalog") if isinstance(spec, dict) else None
+    if not isinstance(catalog, dict):
+        return ["routing.yaml has no `catalog` block"]
+    as_of, budget = str(catalog.get("as_of") or "").strip(), catalog.get("max_age_days")
+    try:
+        stamped = datetime.date.fromisoformat(as_of)
+    except ValueError:
+        return [f"catalog.as_of {as_of!r} is not an ISO date (YYYY-MM-DD)"]
+    if not isinstance(budget, int) or budget <= 0:
+        return ["catalog.max_age_days must be a positive integer — the staleness budget is what "
+                "turns the review cue into a gate (ADR-0024 D6)"]
+    problems = []
+    age = (today - stamped).days
+    if age > budget:
+        problems.append(f"catalog.as_of {as_of} is {age} days old, past its {budget}-day budget — "
+                        "re-verify the ladder against the market and re-date it (a stale catalog "
+                        "routes today's work by last quarter's assessment)")
+    for p in catalog.get("providers") or []:
+        for m in (p.get("models") or []) if isinstance(p, dict) else []:
+            v = str(m.get("verified") or "").strip() if isinstance(m, dict) else ""
+            if not v:
+                continue
+            try:
+                when = datetime.date.fromisoformat(v)
+            except ValueError:
+                problems.append(f"model '{m.get('id')}': verified {v!r} is not an ISO date")
+                continue
+            if (today - when).days > budget:
+                problems.append(f"model '{m.get('id')}': verified {v} is {(today - when).days} "
+                                f"days old, past the {budget}-day budget")
+    return problems
+
+
+def model_lockstep_problems(spec, surfaces):
+    """Pure: the catalog and the prose that names models must agree.
+
+    `surfaces` are (label, text, unassessed_clause) triples. Two rules, both catalog-driven so they
+    hold in any language:
+
+      1. Every **assessed** model is a live routing target, so its name must appear in the prose.
+         A model the catalog routes to but the docs never mention is drift by omission.
+      2. No assessed model may be named in the paragraph that introduces the *not benchmarked*
+         list. That disagreement IS #326, and it is the one this gate exists to make impossible.
+    """
+    catalog = (spec or {}).get("catalog") if isinstance(spec, dict) else {}
+    assessed = [str(m.get("name") or m.get("id"))
+                for p in (catalog or {}).get("providers") or []
+                for m in (p.get("models") or []) if isinstance(p, dict)
+                if isinstance(m, dict) and m.get("assessed")]
+    problems = []
+    for label, text, clause in surfaces:
+        for name in assessed:
+            if name not in text:
+                problems.append(f"{label}: the catalog routes work to '{name}' but the prose never "
+                                "names it — one fact, one home (#326)")
+        if clause not in text:
+            continue          # this surface carries no not-benchmarked list; rule 2 does not apply
+        # The list of unbenchmarked things PRECEDES the phrase ("X and Y are not yet benchmarked"),
+        # so look backwards from it — but only to the nearest clause boundary, never the whole
+        # paragraph: in the shipped README the ladder and this phrase share one paragraph, and
+        # taking all of it would flag every model the ranking legitimately names.
+        start = text.index(clause)
+        cut = max((text.rfind(b, 0, start) for b in (". ", "; ", "。", "；", "\n")), default=-1)
+        segment = text[cut + 1:start]
+        for name in assessed:
+            if name in segment:
+                problems.append(f"{label}: '{name}' is named as NOT benchmarked, but the catalog "
+                                "marks it assessed and routes work to it — the catalog and the "
+                                "prose contradict each other (#326)")
+    return problems
+
+
+def check_catalog_freshness(fail):
+    name = "catalog-freshness"
+    spec = _load_spec("routing")
+    if not isinstance(spec, dict):
+        return  # routing spec absent or unparseable — other gates report that
+    for problem in catalog_freshness_problems(spec, datetime.date.today()):
+        fail(name, problem)
+
+
+def check_routing_model_lockstep(fail):
+    name = "routing-model-lockstep"
+    spec = _load_spec("routing")
+    if not isinstance(spec, dict):
+        return
+    surfaces = []
+    for rel, clause in README_SURFACES:
+        path = os.path.join(REPO_ROOT, rel) if rel == "README.md" else os.path.join(ROOT, rel)
+        if os.path.exists(path):
+            surfaces.append((rel.replace(os.sep, "/"), read(path), clause))
+    if not surfaces:
+        return  # a partial checkout without the READMEs
+    for problem in model_lockstep_problems(spec, surfaces):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1641,6 +1767,8 @@ CHECKS = [
     check_command_adapters,
     check_routing_delegation,
     check_interaction_lockstep,
+    check_catalog_freshness,
+    check_routing_model_lockstep,
 ]
 
 

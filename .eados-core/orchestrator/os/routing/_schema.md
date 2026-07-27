@@ -154,9 +154,17 @@ that re-read is recorded per rule in [`routing.yaml`](./routing.yaml).
   nothing can route nothing. Host and provider ids are unique.
 - `meets_tier` is present **iff** `assessed: true`, and is a `tiers` entry. `max_effort`, where
   present, is an `efforts` entry. Every `effort_aliases` value is an `efforts` entry.
-- `catalog.as_of` is refreshed whenever a mapping changes, and is within `max_age_days`.
+- `catalog.as_of` is refreshed whenever a mapping changes, and is within `max_age_days` — enforced
+  by the **`catalog-freshness`** self-lint, which also flags a per-model `verified:` date older
+  than that budget.
 - The policy never contains a model name outside `catalog.providers[].models[]`. Prose that names
-  models (the READMEs' ranking) must agree with the catalog — one fact, one home.
+  models (the READMEs' ranking) must agree with the catalog — one fact, one home — enforced by the
+  **`routing-model-lockstep`** self-lint across all three README languages. Two rules, both driven
+  from the catalog so they hold in any language: every **assessed** model must be named in the
+  prose (a routing target the docs never mention is drift by omission), and no assessed model may
+  appear in the clause that introduces the *not benchmarked* list. The second rule is #326 made
+  impossible: the catalog and the prose said opposite things about the same model for weeks, and
+  nothing was red.
 - Resolution is **deterministic** — same signals, same advice (no model/LLM in the loop). Selection
   ties break in declaration order, so a missing `relative_cost` cannot make the answer wobble.
 - The host is resolved from an explicit flag, a manifest declaration, or environment evidence —
