@@ -1503,6 +1503,26 @@ def check_command_adapters(fail):
         fail(name, problem)
 
 
+# A host matrix ROW: a table line whose first cell bolds the host id. Anchored to `|` + `**…**` so
+# a host named in ordinary prose is not mistaken for a declaration — the distinction the substring
+# test could not make.
+_MATRIX_ROW = re.compile(r"(?m)^\|\s*\*\*([a-z0-9][a-z0-9-]*)\*\*(.*)$")
+
+
+def matrix_hosts(text):
+    """`{host id -> posture}` from delegation.md's application matrix, where posture is
+    'applied' / 'advisory-only' / None (the row declares neither)."""
+    out = {}
+    for host, rest in _MATRIX_ROW.findall(text or ""):
+        low = rest.lower()
+        # `advisory-only` contains no 'applied', and the applied row says '**applied**' — check the
+        # more specific one first so a row mentioning both words still resolves deterministically.
+        posture = "advisory-only" if "advisory-only" in low else (
+            "applied" if "applied" in low else None)
+        out[host] = posture
+    return out
+
+
 def routing_delegation_problems(delegation_text, readme_text, schema_text, routing_spec):
     """Pure check of the 16.4 delegation-hook contract (#255). The advice policy is *applied* only
     in `os/routing/delegation.md`; this keeps that doc honest and wired. Fails when the doc is
@@ -1524,13 +1544,40 @@ def routing_delegation_problems(delegation_text, readme_text, schema_text, routi
     if "advisory" not in (delegation_text or "").lower():
         problems.append("os/routing/delegation.md documents no advisory-only fallback — hosts "
                         "without per-delegation model control must have a stated posture (#255)")
-    hosts = [h.get("id") for h in ((routing_spec or {}).get("catalog") or {}).get("hosts") or []
-             if isinstance(h, dict) and h.get("id")]
-    for host in hosts:
-        if str(host) not in (delegation_text or ""):
-            problems.append(f"os/routing/delegation.md does not account for catalog host "
-                            f"'{host}' — every host must be listed as applied or advisory-only so "
-                            "a new host cannot ship without a delegation posture")
+    # --- the host matrix, checked BOTH ways (#327) -------------------------------------------
+    # This ran one way only — catalog -> matrix — which is the #202 defect class: a registry check
+    # walked in a single direction validates half a relationship and reports it as whole. The
+    # reverse is where the rot actually was: the matrix documented `codex` and `gemini` for a
+    # milestone while the catalog had neither, so `route_advice.py --host codex` failed on a host
+    # the documentation said was supported.
+    #
+    # Rows are read STRUCTURALLY, not by substring. delegation.md legitimately names hosts in
+    # prose ("Run the same relay on codex or gemini…"), and a substring test reads those as
+    # declarations — so deleting a real matrix row would keep passing.
+    declared = matrix_hosts(delegation_text or "")
+    if routing_spec is not None:
+        # Both directions need both sides. With the spec absent or unparseable there is nothing to
+        # compare against — and the reverse loop would then flag EVERY row as undeclared, turning a
+        # parse failure into a wall of misleading errors. That failure is data-file-validity's to
+        # report; here it means "cannot check", not "everything is wrong".
+        hosts = [str(h.get("id"))
+                 for h in ((routing_spec.get("catalog") or {}).get("hosts") or [])
+                 if isinstance(h, dict) and h.get("id")]
+        for host in hosts:
+            if host not in declared:
+                problems.append(f"os/routing/delegation.md has no matrix ROW for catalog host "
+                                f"'{host}' — add one declaring applied or advisory-only, so a new "
+                                "host cannot ship without a stated delegation posture")
+        for host in declared:
+            if host not in hosts:
+                problems.append(f"os/routing/delegation.md declares a delegation posture for "
+                                f"'{host}', which is not a catalog host — add it to "
+                                "`routing.yaml` `catalog.hosts` or drop the row; documenting a host "
+                                "the evaluator cannot resolve is worse than not documenting it")
+    for host, posture in declared.items():
+        if posture is None:
+            problems.append(f"os/routing/delegation.md's row for '{host}' states neither "
+                            "'applied' nor 'advisory-only' — the posture is the point of the row")
     return problems
 
 

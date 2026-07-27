@@ -28,8 +28,8 @@ REPO_ROOT = os.path.dirname(lint.ROOT)
 DELEGATION_OK = (
     "# The delegation routing hook\n"
     "Resolve via route_advice.py and pass model + effort with the delegation.\n"
-    "| claude-code | yes | applied |\n"
-    "| codex | not today | advisory-only |\n"
+    "| **claude-code** | anthropic | yes | **applied** |\n"
+    "| **codex** | openai | not today | **advisory-only** |\n"
 )
 README_OK = "See [`../os/routing/delegation.md`](../os/routing/delegation.md) for the hook."
 SCHEMA_OK = "The applied path is specified in [`delegation.md`](./delegation.md)."
@@ -74,7 +74,40 @@ def main():
                                     {"id": "nowhere-host"}]}}
     miss = P(DELEGATION_OK, README_OK, SCHEMA_OK, three)
     check("a catalog host absent from the matrix is flagged",
-          any("does not account for catalog host 'nowhere-host'" in p for p in miss), failures)
+          any("no matrix ROW for catalog host 'nowhere-host'" in p for p in miss), failures)
+
+    # --- #327: the REVERSE direction, which the one-way check could not see at all ---
+    ghost = DELEGATION_OK + "| **cursor** | anthropic | not today | **advisory-only** |\n"
+    rev = P(ghost, README_OK, SCHEMA_OK, SPEC)
+    check("a matrix row for a host the catalog does not have is flagged",
+          any("declares a delegation posture for 'cursor'" in p for p in rev), failures)
+    check("the two directions carry distinguishable messages",
+          all("no matrix ROW" not in p for p in rev), failures)
+
+    # --- rows are read STRUCTURALLY: a host named in prose is not a declaration ---
+    # This is exactly what left the old substring test unable to notice a DELETED row: the shipped
+    # delegation.md legitimately says things like "Run the same relay on codex or gemini…", so the
+    # host's name was present in the file whether or not it had a row.
+    prose_only = ("# The delegation routing hook\n"
+                  "Resolve via route_advice.py; the advisory-only fallback applies.\n"
+                  "| **claude-code** | anthropic | yes | **applied** |\n"
+                  "Run the same relay on codex and it degrades to advisory-only.\n")
+    pr = P(prose_only, README_OK, SCHEMA_OK, SPEC)
+    check("a host named only in prose does not count as a declared row",
+          any("no matrix ROW for catalog host 'codex'" in p for p in pr), failures)
+    check("matrix_hosts reads rows, not prose",
+          set(lint.matrix_hosts(prose_only)) == {"claude-code"}, failures)
+
+    # --- the posture IS the point of the row, so a row without one is a hole ---
+    nopost = ("# hook\nroute_advice.py; advisory-only fallback documented.\n"
+              "| **claude-code** | anthropic | yes | **applied** |\n"
+              "| **codex** | openai | not today | tbd |\n")
+    check("a matrix row stating neither posture is flagged",
+          any("states neither 'applied' nor 'advisory-only'" in p
+              for p in P(nopost, README_OK, SCHEMA_OK, SPEC)), failures)
+    check("posture parsing distinguishes applied from advisory-only",
+          lint.matrix_hosts(DELEGATION_OK) == {"claude-code": "applied", "codex": "advisory-only"},
+          failures)
 
     # --- a None/parse-failed spec degrades quietly (data-file-validity owns that failure) ---
     check("a missing spec does not crash the host loop",
