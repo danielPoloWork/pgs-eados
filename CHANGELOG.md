@@ -11,6 +11,40 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Added
 
+- **`/eados upgrade` — an advisory channel to an already-generated repository (#320, ADR-0003
+  addendum 2026-07-27, ADR-0019 §3).** ADR-0003 weighed two branches — couple the generated repo to
+  the factory, or re-render it on every change — and rejected both. Both were about *writing*, so
+  the operative answer became *nothing*: twelve releases of fixes (a UTF-8 crash across the CLI
+  tools, installer tar-slip hardening, a pin that lied about its own version) reached new
+  repositories only, with no way to update an existing one and no way even to **tell** it. The
+  addendum admits the third branch — **tell them, never touch them** — and records it where a
+  reader will look for it rather than as a standalone ADR.
+  - `upgrade_advice.py` reads the repo's provenance stamp (#319 — the enabler), resolves the
+    releases newer than it from the factory CHANGELOG, filters to the surfaces that repo actually
+    carries, and prints a consequence class per entry. `.gitattributes` `export-ignore` is the
+    authority for what a consumer receives, read rather than re-stated — with **one stated
+    exception**: `setup/` is stripped *because it ships as separate release assets*, and
+    export-ignore alone would have silently dropped the tar-slip hardening (#129), exactly the class
+    of change this exists to surface. A `templates/**` change resolves through the renderer's own
+    `out_relpath`, so the report cannot name a file `render.py` would not have produced.
+  - **The class comes from the changelog section heading** (`Security`/`Fixed`/`Added`/`Changed`/…)
+    — data the maintainer already chose at write time — refined to `governance` only by paths the
+    entry itself names. Prose is never mined for a class it does not state, and semver is not a
+    consequence class: one MINOR carries both a security fix and a README tweak.
+  - Three refusals, each because a confident lie is worse than no channel: the stamp is **read,
+    never guessed** (no stamp → say what is missing and how to record it, exit 0); a missing
+    CHANGELOG is a **skip naming the cause**, never "you are up to date" inferred from absent data
+    (L-0006); an entry naming no path is shown as `unattributed`, **not dropped**.
+  - **It writes nothing** — no patches, no merges, no `git`, no manifest edits. Asserted by hashing
+    the target tree before and after a real run, not by convention: the moment it writes, ADR-0003's
+    rejected re-render branch is back through the side door, and that is one helpful patch away.
+  - Registered per ADR-0019 (command table + class-3 list + pointer adapter); the generated
+    `AGENTS.md` gains a pointer under its provenance stamp telling the maintainer the channel exists
+    and that it will never rewrite their repo. Run it **from a factory checkout**, not from the
+    repo's own vendored copy, which is pinned at the version whose staleness you are measuring.
+    Docs: `USAGE.md` §8, README ×3 (i18n hash refreshed).
+
+
 - **A workflow state now declares its `state_writer` — who records the phase's outcome
   (#346, ADR-0025).** Every phase command names one acting role, but every phase also has to write
   two architect-only paths: the manifest's `delivery_state` and a run record under `learning/runs/`

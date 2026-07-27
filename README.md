@@ -146,8 +146,8 @@ gap map, a goal menu (docs / retro-design / audit / migrate / bugfix), and a man
 `adoption:` record makes `init → audit` / `init → migrate` legal, human-gated routes.
 
 Full detail is in [`USAGE.md`](.eados-core/docs/USAGE.md) and the
-[command playbooks](.eados-core/orchestrator/commands/README.md). Six cross-cutting commands work
-in any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor),
+[command playbooks](.eados-core/orchestrator/commands/README.md). Seven cross-cutting commands
+work in any phase: [`/eados status`](.eados-core/orchestrator/commands/status.md) (a read-only doctor),
 [`/eados review`](.eados-core/orchestrator/commands/review.md) (inbound-PR triage),
 [`/eados debug`](.eados-core/orchestrator/commands/debug.md) (governed defect investigation:
 reproduce → root-cause → fix + regression test → bug ledger),
@@ -156,7 +156,10 @@ code-quality refactoring: a green suite on both sides, guided by the patterns ca
 [`/eados optimize`](.eados-core/orchestrator/commands/optimize.md) (measure-first performance work:
 a numeric NFR budget, a benchmark baseline, one change, a re-measure), and
 [`/eados testcases`](.eados-core/orchestrator/commands/testcases.md) (QA-owned test generation
-against spec §6: a green suite, or an `xfail` with a linked defect).
+against spec §6: a green suite, or an `xfail` with a linked defect), and
+[`/eados upgrade`](.eados-core/orchestrator/commands/upgrade.md) (what changed upstream since a
+repository was generated, filtered to the surfaces it carries — read-only; it reports and never
+rewrites the repo).
 
 ---
 
@@ -266,6 +269,7 @@ deterministic spine, grouped by what they do:
 | `rfc_check.py` | Verify an RFC against the review protocol |
 | `sync_action_pins.py` | Keep rendered workflow pins in lockstep with the factory CI |
 | `cleanup_installer.py` | Remove guided-installer leftovers after `init` |
+| `upgrade_advice.py` | `/eados upgrade` — what changed upstream since a repo was generated |
 
 **Verify — the gates that keep it honest**
 

@@ -104,3 +104,28 @@ a draft is not an authority.
 - M15 issues: #239 (adapters), #240 (design folds), #241 (security sub-mode), #242 (debug),
   #243 (refactor-cleanup), #244 (optimize), #245/#246 (QA persona + testcases), #247 (adopt),
   #236 (phase rename).
+
+---
+
+## Addendum — 2026-07-27: class 3 admits `/eados upgrade` (#320)
+
+Class 3 is closed — *"a new member requires an ADR, exactly like a new phase"*. The record admitting
+**`upgrade`** is the **2026-07-27 addendum to
+[ADR-0003](0003-generated-repos-are-self-governing.md)**, because the decision being made is
+substantive rather than taxonomic: ADR-0003's two rejected branches were both about *writing* into a
+generated repository, and the third branch — advisory notification — was never weighed. That is
+where a future reader will look for it, so it is recorded there and pointed at from here rather than
+duplicated.
+
+It satisfies this ADR's class-3 obligations the way `status` does: **read-only**, therefore
+advisory, non-state-advancing, and vacuously compliant with the "everything it writes is governed"
+clause — it writes nothing at all, asserted by hashing the target tree across a run.
+
+**One boundary reads differently for this member, deliberately.** The class requires an initialized
+manifest (`delivery_state`). `upgrade` runs against a repository that may predate the provenance
+stamp entirely, and it does *not* refuse-and-route on a missing manifest: it falls back to the
+recorded provenance line in the rendered `AGENTS.md`, and with neither it explains what is missing
+and exits cleanly. The manifest boundary exists because a command's *artifacts* need a governed
+surface to land in and an owner to resolve; a command that produces no artifact has nothing to
+govern, and routing an old repo to `/eados init` would be advice to overwrite the very repository
+it came to inform.
