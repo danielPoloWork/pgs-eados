@@ -11,6 +11,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Added
 
+- **`consumer-smoke` — every shipped tool, run inside a rendered repo (#359, L-0012).** Seven
+  consecutive issues — #306, #313, #346, #347, #350, #353, #358 — were found by a **downstream
+  consumer**, six naming the same two field repos, and **zero** by CI. Not seven unrelated misses:
+  one structural gap. Every tool a generated repo runs was tested only against hand-built fixtures,
+  and nothing ever ran a factory tool inside a rendered repository — so a "correct in the factory,
+  wrong in a generated repo" defect could only surface in the field. `workflow.yaml` even declares
+  the git gate as `runs: python .eados-core/tools/git_check.py`, a path that resolves *only* inside
+  a consumer repo.
+  - The test builds a faithful consumer — render → `git init` + a commit using a **manifest** scope →
+    the manifest where a vendored `.eados-core/` keeps it — and drives the real CLIs at it:
+    `git_check`, `doctor`, `phase_runner`, `eados status`, `traceability`, `risk_score`,
+    `self_check`, `self_review`, and `record_run`.
+  - Four properties. Every tool runs there without crashing (the #347 root-discovery class); the
+    read-only ones leave the tree **byte-identical**; when a tool rejects something, **the vocabulary
+    it names is the project's, not the factory's**; and the defect is **resurrected on demand**
+    (`--policy <factory spec>`), so the third is proven non-vacuous rather than passing because
+    nothing is being checked.
+  - **Verified to bite, twice.** Reintroducing #358 into `git_check` turns it red on three
+    independent assertions; making a read-only tool write one stray file trips the byte-identical
+    property. A gate that has never failed is a claim, not a check.
+  - It also holds the #350 consumer-side fixes in a real render: the rendered `dependabot.yml` stays
+    capped and grouped, and the rendered policy keeps both `authored` scopings. And it asserts
+    `record_run` writes into the **consumer**, never back into the factory's own ledger.
+
+
 - **`pin-label-truth` — a SHA pin's `# vX.Y.Z` comment must be TRUE of its SHA (#312, ADR-0009
   addendum 2026-07-27).** `action-pins` compares a pin's SHA *across files*; nothing checked that
   the trailing version comment was true of it. On 2026-07-26 a merge resolved two `ci.yml` lines to
