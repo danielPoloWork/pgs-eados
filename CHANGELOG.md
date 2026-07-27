@@ -5,9 +5,49 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ## [Unreleased]
+
+## [2.12.0] - 2026-07-27
+
+Provider-agnostic routing, and a loader that no longer loses data quietly — a minor release with
+two independent threads, both found by a full-repo architect audit on a tree where every gate was
+green.
+
+**The loader.** `yamlmini` sits under every gate in the factory, and it had three silent
+data-loss defects: a sequence-root document loaded as `{}` (live on the lessons ledger, discarding
+all of it on every call), a block-sequence item whose first key carried a hyphen degraded to a
+string and dropped its continuation lines, and a bare `-` item parsed as a mapping key named `-`.
+None was visible, because the differential that was supposed to catch exactly this compared
+against a synthetic corpus plus one real file. It now sweeps every tracked YAML in the repository
+— 47 files — and three gates that had been quietly fail-open are now closed.
+
+**Routing (M19).** EADOS no longer assumes it is running under Claude. The catalog is two levels —
+providers describe what each model *clears*, hosts declare which providers they reach — so a
+mono-vendor runtime and a model-agnostic one are both one data entry. Resolution is by
+**capability, not by name**: escalation computes a quality floor, then selection picks the cheapest
+reachable model that clears it. That split is what makes *quality-first with cost awareness*
+structural rather than aspirational — **cost may only choose among models that already clear the
+earned floor, and can never lower it**, so a security or ADR route cannot be degraded to save
+tokens. Which host is running is worked out from **environment evidence**, never by asking the
+agent what model it is; when it cannot be determined, EADOS says so and still gives a tier and
+effort, because those are vendor-neutral. Steps route too: a design step earns more than a test
+step, and a protected item keeps its floor in every step.
+
+**Also:** the catalog had been routing every ADR and security unit of work to a model all three
+READMEs called *not yet benchmarked* — corrected, and two new gates (`catalog-freshness`,
+`routing-model-lockstep`) make that class of contradiction impossible rather than merely fixed. A
+freshly rendered repository no longer opens on a wall of red CI: the toolchain jobs now **skip**
+until roadmap item 1.1 lands the build system, driven by profile data across all 19 toolchains.
+
+**Compatibility.** Additive for consumers, and verified: a manifest without the new optional fields
+(`routing.host`, `ci.build_manifest`) renders **byte-identically** to v2.11.0. The generated repo,
+the installer, and every documented CLI invocation are unchanged. One behaviour change worth
+naming: `route_advice.py` no longer defaults to the first catalog host when none is resolved — it
+reports the host as unresolved and returns `model: null`, with `--json` gaining `provider`,
+`relative_cost`, `alternatives[]`, `unresolved_reason` and `protected`. Anything scripted against
+the old silent default needs a `--host`.
 
 ### Added
 
