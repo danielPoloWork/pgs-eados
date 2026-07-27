@@ -9,6 +9,30 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ## [Unreleased]
 
+### Added
+
+- **Two gates so the routing catalog cannot rot or contradict the docs (M19 19.5, #326,
+  ADR-0024 D6).** The data half of #326 shipped in #330; these are the gates that make the drift
+  impossible rather than merely fixed.
+  - **`catalog-freshness`** — `catalog.as_of` was documented as *"the review cue"* with nothing
+    enforcing it, and the cue was missed. It is now checked against the catalog's own
+    `max_age_days`, and a per-model `verified:` date older than that budget is flagged too: a model
+    nobody re-checked while the catalog around it was refreshed is exactly the entry that goes
+    stale unnoticed. Offline, dependency-free — a date comparison, never a market query. The
+    message says what to *do*, not just that a number was exceeded.
+  - **`routing-model-lockstep`** — model names lived in two homes, the dated catalog and the
+    READMEs' ranking prose, with no gate between them. Two rules, both driven **from the catalog**
+    so they hold in any language: every *assessed* model must be named in the prose (a routing
+    target the docs never mention is drift by omission), and no assessed model may appear in the
+    clause that introduces the *not benchmarked* list. Covers all three README languages.
+  - The second rule is **#326 made impossible**, and is proven against the real thing: restoring
+    the exact sentence that shipped before #330 — *"the rest of the Claude 5 family (including
+    **Fable 5**) … are not yet benchmarked"* — turns the gate red while the catalog routes work to
+    Fable 5. A lockstep gate that cannot reproduce the drift it was written for is decoration.
+  - Deliberately **checked, not rendered**: generating the ranking from the catalog would flatten
+    the editorial nuance (*"not yet benchmarked"*, the rotation caveat) that the ADR-0015/0016
+    honesty posture wants kept.
+
 ### Changed
 
 - **The routing host is now resolved from evidence, and never defaulted (M19 19.4, #325,
