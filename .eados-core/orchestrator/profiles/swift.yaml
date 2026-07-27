@@ -28,6 +28,10 @@ commands:
   lint:         "swiftlint --strict"
   bench:        "swift run -c release Bench"   # package-benchmark
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: Package.swift
+
 config_files:
   - Package.swift
   - .swiftlint.yml
@@ -47,6 +51,8 @@ ci:
     quality:
       name: quality / swiftlint + swift-format
       runs-on: macos-14
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - run: swiftlint --strict
@@ -55,6 +61,8 @@ ci:
     tsan:
       name: tsan / thread sanitizer
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: swift-actions/setup-swift@v2

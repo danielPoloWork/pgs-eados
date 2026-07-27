@@ -263,6 +263,9 @@ def build_context(m):
         "DOC_DEFAULT_LANG": i18n.get("default_lang", "en"),
         "I18N_ENABLED": "True" if caps.get("i18n") else "False",
         "HOUSE_RULES": gov.get("house_rules", ""),
+        # The file whose presence proves the build system exists (#313). A glob is legal —
+        # the probe uses `compgen -G`, so lua's "*.rockspec" works without a special case.
+        "CI_BUILD_MANIFEST": ci.get("build_manifest", ""),
     }
     scalars = {k: ("" if v is None else str(v)) for k, v in scalars.items()}
 
@@ -277,6 +280,10 @@ def build_context(m):
         "IF_SERIES": bool(series.strip()),
         "IF_PKG_ECOSYSTEM": bool(pkg_eco.strip()),
         "IF_HOUSE_RULES": bool(str(gov.get("house_rules", "") or "").strip()),
+        # #313: the toolchain jobs SKIP until the build system exists. Absent a declared build
+        # manifest the guard is not rendered at all, so a manifest written before this shipped
+        # renders byte-identically — additive, like every other manifest field.
+        "IF_BOOTSTRAP_GUARD": bool(str(ci.get("build_manifest", "") or "").strip()),
         "IF_ARCHITECTURE_STYLE": bool(str(spec.get("architecture_style", "") or "").strip()),  # #151
         "IF_ENTERPRISE": (gov.get("posture") or "standard").strip().lower() == "enterprise",  # #248, ADR-0015
         "IF_LAYERED": bool(caps.get("layered")),   # #152: opt-in layered package skeleton
@@ -507,6 +514,16 @@ def validate_manifest(m, scalars):
     for key in REQUIRED_SCALARS:
         if not str(scalars.get(key, "")).strip():
             problems.append(f"required field for {{{{{key}}}}} is missing or empty")
+    # #313: `ci.extra_jobs` fragments gate themselves on the bootstrap job, which the CI template
+    # only renders when `ci.build_manifest` is declared. Having one without the other emits a
+    # workflow whose jobs `needs:` a job that does not exist — GitHub rejects it outright, and it
+    # would be found at push time rather than here. Cheap to catch, expensive to debug.
+    ci_block = m.get("ci") if isinstance(m.get("ci"), dict) else {}
+    if "needs: bootstrap" in str(ci_block.get("extra_jobs") or "") \
+            and not str(ci_block.get("build_manifest", "") or "").strip():
+        problems.append("ci.extra_jobs gates on the `bootstrap` job but ci.build_manifest is not "
+                        "set — the bootstrap job is only rendered when it is, so the emitted "
+                        "workflow would reference a job that does not exist (#313)")
     for field, key in (("identity.project_slug", "PROJECT_SLUG"),
                        ("language.lang", "LANG"),
                        ("language.group_path", "GROUP_PATH")):

@@ -32,6 +32,10 @@ commands:
   lint:         "ruff check . && mypy --strict src"
   bench:        "pytest tests/bench --benchmark-only"   # pytest-benchmark; "" if no bench
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: pyproject.toml
+
 config_files:
   - pyproject.toml
   - ruff.toml
@@ -58,6 +62,8 @@ ci:
     lint:
       name: lint / ruff + mypy
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: actions/setup-python@v5

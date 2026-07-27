@@ -86,6 +86,7 @@ Mustache-compatible renderer (or a careful manual pass) works.
 | `{{TIER1_PLATFORMS}}` | Human description of CI-gated platforms | `Linux x86_64, Windows x86_64, macOS arm64` |
 | `{{#EACH_CI_CELL}}` | Loop over CI matrix cells (`os`, `toolchain`, `preset`) | — |
 | `{{CI_SETUP_STEPS}}` | Profile-provided "set up the toolchain" YAML steps | — |
+| `{{CI_BUILD_MANIFEST}}` | The file whose presence proves the build system exists (`ci.build_manifest`); a glob is legal (#313) | `CMakeLists.txt`, `package.json`, `*.rockspec` |
 | `{{CI_EXTRA_JOBS}}` | Profile-provided extra jobs (sanitizers, valgrind, …) | — |
 | `{{CI_RACE_JOB}}` | Profile-provided data-race/concurrency job (rendered only under `IF_THREADING`; blank if N/A) | — |
 
@@ -124,6 +125,7 @@ These gate optional sections so a CLI does not ship a library's packaging docs, 
 
 | Flag | True when |
 |---|---|
+| `{{#IF_BOOTSTRAP_GUARD}}` | The manifest declares a `ci.build_manifest`, so the rendered CI skips the toolchain jobs until the build system lands (#313); absent, nothing is rendered and a pre-existing manifest is byte-identical |
 | `{{#IF_BENCH}}` | The project has a benchmark suite |
 | `{{#IF_THREADING}}` | The project exposes concurrency (renders the profile's race/TSan CI job + the thread-safety convention) |
 | `{{#IF_PUBLIC_API}}` | The project publishes a stable API/ABI (enables SemVer-ABR notes) |

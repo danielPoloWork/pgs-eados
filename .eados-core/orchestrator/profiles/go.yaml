@@ -32,6 +32,10 @@ commands:
   lint:         "golangci-lint run"
   bench:        "go test -bench=. -benchmem ./..."    # "" if no bench
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: go.mod
+
 config_files:
   - go.mod
   - .golangci.yml
@@ -53,6 +57,8 @@ ci:
     quality:
       name: quality / lint + race + vuln
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: actions/setup-go@v5
@@ -68,6 +74,8 @@ ci:
     race:
       name: race / data-race detector
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: actions/setup-go@v5

@@ -28,6 +28,10 @@ commands:
   lint:         "bundle exec rubocop"
   bench:        "bundle exec ruby bench/run.rb"   # benchmark-ips
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: Gemfile
+
 config_files:
   - Gemfile
   - .rubocop.yml
@@ -48,6 +52,8 @@ ci:
     quality:
       name: quality / rubocop + simplecov
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: ruby/setup-ruby@v1

@@ -31,6 +31,10 @@ commands:
   lint:         "eslint . --max-warnings 0 && tsc --noEmit"
   bench:        "pnpm vitest bench"        # "" if no bench
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: package.json
+
 config_files:
   - package.json
   - tsconfig.json
@@ -59,6 +63,8 @@ ci:
     lint:
       name: lint / eslint + tsc + prettier
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: pnpm/action-setup@v4

@@ -32,6 +32,10 @@ commands:
   lint:         "cargo clippy --all-targets -- -D warnings"
   bench:        "cargo bench"             # criterion; "" if no bench
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: Cargo.toml
+
 config_files:
   - Cargo.toml
   - rustfmt.toml
@@ -56,6 +60,8 @@ ci:
     quality:
       name: quality / fmt + clippy + deny
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: dtolnay/rust-toolchain@stable
@@ -65,6 +71,8 @@ ci:
     miri:
       name: miri / UB check (unsafe)
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: dtolnay/rust-toolchain@nightly
@@ -74,6 +82,8 @@ ci:
     tsan:
       name: tsan / thread sanitizer (nightly)
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: dtolnay/rust-toolchain@nightly

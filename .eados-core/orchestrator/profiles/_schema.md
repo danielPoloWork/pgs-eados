@@ -40,6 +40,12 @@ commands:
   lint:         <e.g. "clang-tidy --warnings-as-errors='*' <files>">
   bench:        <e.g. "cmake --build --preset bench"  | "" if N/A>
 
+# The ONE config file whose presence proves the build system exists (#313). Roadmap item 1.1 is
+# what creates it, so on a freshly rendered repo it is absent by design — and the rendered CI uses
+# this name to SKIP the toolchain jobs until then, instead of failing them. Normally one of the
+# `config_files` below. A glob is legal (the probe uses `compgen -G`).
+build_manifest: <e.g. CMakeLists.txt | package.json | pyproject.toml | "*.rockspec">
+
 # Repo-root config files this language expects (formatter/linter configs, build manifests).
 # The generator creates stubs for these so day-one tooling is wired.
 config_files:

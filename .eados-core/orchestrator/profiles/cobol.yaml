@@ -31,6 +31,10 @@ commands:
   lint:         "cobc -fsyntax-only -Wall src/main/cobol/<group>/<project>/*.cob"
   bench:        ""
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: Makefile
+
 config_files:
   - Makefile
 
@@ -45,6 +49,8 @@ ci:
     build-test:
       name: build + test (GnuCOBOL)
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - run: sudo apt-get update && sudo apt-get install -y gnucobol
