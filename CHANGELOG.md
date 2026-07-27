@@ -170,6 +170,33 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **A generated repo violated its own git policy minutes after bootstrap (#350).** The factory
+  shipped a `dependabot.yml` that opens PRs and a policy allowing **one open PR at a time**. On a
+  real scaffold, Dependabot opened three within minutes of the bootstrap PR merging and the repo was
+  permanently in violation — with nobody having done anything. The same collision hit `pr.metadata`:
+  a bot cannot assign, cannot set a milestone, and the label it requests is dropped silently until
+  the repo's labels are imported, so **every required field** reported MISSING on **every** bot PR.
+  Two unsatisfiable policies teach a maintainer to skip the output, and **a check that is routinely
+  ignored has stopped being a check** — the same failure #313 was closed for, in another surface.
+  - **The one-PR count is scoped by author TYPE**, not a login denylist:
+    `git.yaml commit.one_pr_counts: authored` (default), matched on `gh`'s `author.is_bot`. A name
+    list is a list to keep current, and the next bot would be counted until someone remembered it;
+    `is_bot` covers Dependabot, Renovate and whatever comes next on the day it arrives. The rule
+    itself is not weakened — two *authored* PRs are still a violation, asserted.
+  - **The metadata contract is scoped the same way** (`pr.metadata_applies_to: authored`):
+    `pr_metadata_check` now reports `n/a (bot-authored)` rather than INCOMPLETE, while an authored
+    PR with no metadata still fails. It reads the scoping through #358's discovery ladder, so a
+    generated repo inherits its own answer.
+  - **The bot's queue is bounded** — `open-pull-requests-limit: 1` plus `groups:` in the rendered
+    `dependabot.yml` (default is 5 *per ecosystem*, so a fresh repo could sit at 10 concurrent bot
+    PRs). Applied to the **factory's own** config too: a rule EADOS breaks in its own repository is
+    not a rule. Grouping alone would have *masked* the conflict rather than resolved it — one bot PR
+    still violates a one-PR policy — so it ships with the scoping, not instead of it.
+  - **The silently-dropped label is documented where it is acted on**: GitHub discards a label a bot
+    requests if it does not exist yet, with no error anywhere, so `github-setup.md` §2 now says to
+    import `.github/labels.yml` *before* the first Dependabot run.
+
+
 - **`git_check` judged a generated repo by the FACTORY's scope list (#358).** `GIT_POLICY` was
   hardcoded and `main()` exposed no way to change it, so after `scaffold` handed governance to a
   generated repo's own `AGENTS.md` — the two-contracts rule — the tool still evaluated that repo's
