@@ -121,3 +121,74 @@ Dependabot. A hybrid that SHA-pinned first-party actions *inside profiles* was c
 **rejected**: it would supersede §3 to buy a marginal hardening gain while reintroducing the
 unmaintainable, factory-side pin drift §3 exists to avoid. No structural, renderer, or gate change —
 this entry is the record, and #132 is closed by it.
+
+## Addendum (2026-07-27) — the version comment must be TRUE, not merely present (#312)
+
+**Status:** Accepted · **Deciders:** Maintainer, Enterprise Project Architect · **Related:** #309,
+#310 (the incident), #312, ADR-0013, `tools/eados_lint.py` (`pin-label-truth`).
+
+### What this adds
+
+The Decision above mandates that every SHA pin **carries** a `# vX.Y.Z` comment, and names its two
+consumers: the `action-pins` gate reads it, and Dependabot reads it to propose bumps. It never
+requires that comment to be **true** of the SHA it labels. Per L-0004 this ADR was checked first for
+an existing decision on the question; presence is decided here, truthfulness is not. A gap, not a
+rediscovered trade-off.
+
+On **2026-07-26** the gap was exercised. Merging `main` into Dependabot branch #309 resolved two
+lines of `.github/workflows/ci.yml` to `main`'s SHA while keeping the branch's version comment,
+landing the **v7.0.0** commit under a `# v7.0.1` label:
+
+```yaml
+- uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.1
+#                        ^ this is the v7.0.0 commit
+```
+
+`main` went red — but **only** because the mangling was non-uniform, so `action-pins` saw the
+cross-file disagreement with the workflow templates. Reproduced during #312: applying the same wrong
+SHA *uniformly* across `ci.yml` and all three workflow templates yields **zero** `action-pins`
+findings. The repository would have carried a pin claiming a version it did not have, green.
+
+### Decision
+
+A pin's version comment is **load-bearing metadata, and is now enforced as such.** The
+`pin-label-truth` self-lint resolves each `# vX.Y.Z` in the SHA-pinned workflows against the
+upstream tag and fails when it does not name the pinned commit.
+
+- **The SHA remains the security boundary; the label remains the audit aid.** This addendum does not
+  elevate the label — it stops the label from lying, which is the property that lets a human, and a
+  bot, tell *which* release the boundary corresponds to. To a reviewer reading #309's diff, both
+  sides said "v7.0.1".
+- **Scope is unchanged from §1/§3.** Only fully SHA-pinned `uses:` lines are governed. A profile's
+  floating `@v6` has no SHA to contradict and stays tag-pinned by design — §3 and its 2026-06-28
+  addendum are untouched.
+- **Annotated tags are dereferenced** to the commit they point at. A gate that failed every
+  annotated tag would be a gate people switch off.
+
+### A network-dependent gate, and the posture it takes
+
+This is the factory's **first** lint check that needs the network, so the posture is recorded rather
+than left to the implementation:
+
+- **Unreachable upstream is never a failure.** A gate that turns red when the network is down trains
+  people to ignore it, and an ignored gate is not a gate.
+- **Unreachable upstream is never a silent pass either.** The run states which pins it could not
+  vouch for, through a reporting channel added for the purpose, so an `OK` cannot imply a
+  verification that did not happen (L-0006). Both halves are required; either alone is worse than
+  the other's absence.
+- **The cache is a memo, not an authority.** Resolutions are memoised with the date they were read
+  and expire; past the TTL upstream is asked again, and a stale entry answers only when the network
+  fails — flagged as not re-verified. A cache trusted forever would rebuild this ADR's defect one
+  level up: a recorded claim nobody re-checks.
+
+### The remedy is toward upstream, not toward the factory
+
+Recorded because the obvious fix was the wrong one. `sync_action_pins.py --fix` (ADR-0013) copies
+the **factory CI's** SHA into the **templates**. Run against the #310 tree it would have propagated
+the v7.0.0 commit into all four template pins under a `v7.0.1` label — turning the gate green over a
+*uniformly incorrect* pin set, inherited by every repository generated from those templates. Drift
+between a pin and its label is resolved toward the **upstream tag**; `--fix` resolves toward the
+factory's current state, which is only correct when the factory is right. Teaching `sync_action_pins`
+to resolve tags itself was considered and **declined**: it is documented as a copier that never
+resolves a tag to a SHA, and that property is what makes it deterministic. The failing gate names
+the true upstream SHA; a human applies it. Also recorded as lesson **L-0011**.

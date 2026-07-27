@@ -22,10 +22,12 @@ Each check runs independently; all failures are reported, then a non-zero exit o
 import datetime
 import glob
 import hashlib
+import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
@@ -973,7 +975,7 @@ def check_run_records(fail):
 #     impossible to repeat. `*` matches within a path segment; `**` spans directories.
 # ---------------------------------------------------------------------------
 GATE_COVERAGE = [
-    (".eados-core/templates/**",                          "render-smoke + placeholder-integrity"),
+    (".eados-core/templates/**",                          "render-smoke + placeholder-integrity + action-pins/pin-label-truth (.github/workflows/*.tmpl)"),
     (".eados-core/orchestrator/profiles/*.yaml",          "profile-completeness"),
     (".eados-core/orchestrator/profiles/_schema.md",      "profile-completeness (schema)"),
     (".eados-core/orchestrator/os/**",                    "os-spec-completeness + cross-spec-consistency + gate-executability (workflow runs:) + routing-delegation (os/routing/delegation.md) + interaction-lockstep (os/interaction/ <-> AGENTS.md + templates/AGENTS.md.tmpl)"),
@@ -994,7 +996,7 @@ GATE_COVERAGE = [
     (".eados-core/docs/i18n/**",                          "i18n-freshness"),
     ("README.md",                                         "version-lockstep + i18n-freshness"),
     ("CHANGELOG.md",                                      "version-lockstep"),
-    (".github/workflows/*.yml",                           "action-pins + workflow-safety"),
+    (".github/workflows/*.yml",                           "action-pins + pin-label-truth + workflow-safety"),
     ("setup/*.sh",                                        "installer-smoke (test_setup_sh.py) + shellcheck (CI)"),
     ("setup/*.command",                                   "installer-smoke (test_setup_sh.py) + shellcheck (CI)"),
     ("setup/*.ps1",                                       "installer-smoke (test_setup_ps1.py) + PowerShell parse-check (CI)"),
@@ -1897,6 +1899,172 @@ def check_subprocess_timeouts(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 25. pin-label-truth (#312) — a SHA pin's `# vX.Y.Z` comment must be TRUE of its SHA.
+#
+#     `action-pins` (#6) compares a pin's SHA ACROSS files. Nothing checked that the trailing
+#     version comment is true of it. On 2026-07-26 a merge resolved two `ci.yml` lines to `main`'s
+#     SHA while keeping the branch's comment, landing the v7.0.0 commit under a `# v7.0.1` label
+#     (#309/#310). `main` went red only because the mangling was NON-uniform and #6 saw the
+#     cross-file disagreement; had it hit every file alike, the gate would have been green over a
+#     pin that lied about its own version.
+#
+#     ADR-0009 gives that comment two load-bearing jobs — the gate reads it, and Dependabot reads it
+#     to propose bumps — but mandates only its PRESENCE, never its TRUTH. This closes that half.
+#     Scope follows PIN_RE: only fully SHA-pinned `uses:` lines. A profile's floating `@v6` has no
+#     SHA to contradict and stays out by design (ADR-0009 §3 + its 2026-06-28 addendum).
+# ---------------------------------------------------------------------------
+GH_TIMEOUT = 30                     # network-bound (#321)
+PIN_CACHE = os.path.join(tempfile.gettempdir(), "eados-pin-labels.json")
+PIN_CACHE_TTL_DAYS = 30
+
+
+def _gh_api(path, run=subprocess.run):
+    """One `gh api` GET as parsed JSON. Raises RuntimeError naming the cause — never returns a
+    plausible empty result, because "could not check" and "checked, fine" must not look alike."""
+    try:
+        proc = run(["gh", "api", path], capture_output=True, text=True,
+                   encoding="utf-8", timeout=GH_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"`gh api {path}` timed out after {GH_TIMEOUT}s")
+    except (FileNotFoundError, OSError) as exc:
+        raise RuntimeError(f"could not run `gh` ({exc})")
+    if proc.returncode != 0:
+        raise RuntimeError(f"`gh api {path}` failed: {(proc.stderr or proc.stdout or '').strip()}")
+    try:
+        return json.loads(proc.stdout or "null")
+    except ValueError as exc:
+        raise RuntimeError(f"could not parse `gh` JSON for {path}: {exc}")
+
+
+def resolve_tag_commit(action, tag, run=subprocess.run):
+    """`owner/repo@tag` -> the COMMIT sha the tag names.
+
+    Two hops when the tag is **annotated**: `git/ref/tags/<tag>` then yields an object of type
+    `tag`, whose own `object.sha` is the commit. Stopping at the first hop would compare a pin
+    against the tag OBJECT's sha and fail every annotated tag — a gate that cries wolf on correct
+    pins gets switched off, so the dereference is not optional."""
+    ref = _gh_api(f"repos/{action}/git/ref/tags/{tag}", run) or {}
+    obj = ref.get("object") or {}
+    if obj.get("type") == "tag":
+        obj = (_gh_api(f"repos/{action}/git/tags/{obj.get('sha')}", run) or {}).get("object") or {}
+    sha = str(obj.get("sha") or "")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
+        raise RuntimeError(f"{action}@{tag} did not resolve to a commit sha (got {sha!r})")
+    return sha.lower()
+
+
+def _cache_load(path=PIN_CACHE):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = json.load(handle)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}                    # a corrupt cache is a cold cache, never a wrong answer
+
+
+def _cache_store(cache, path=PIN_CACHE):
+    try:
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(cache, handle, indent=1, sort_keys=True)
+    except OSError:
+        pass                         # the cache is an optimisation; failing to write one is not
+
+
+def cached_resolver(resolve=resolve_tag_commit, cache=None, today=None,
+                    ttl_days=PIN_CACHE_TTL_DAYS):
+    """`resolve(action, tag)` memoised on disk, keyed `owner/repo@tag` with the date it was read.
+
+    The cache is a **memo, not an authority** — the distinction matters here more than usual,
+    because "a recorded claim nobody re-checks" is the exact defect this gate exists to catch, and
+    a cache trusted forever would reintroduce it one level up. Hence the TTL: past it, the network
+    is asked again, and the cached value survives only as a fallback the caller must report as
+    such (`from_cache`)."""
+    store = _cache_load() if cache is None else cache
+    today = today or datetime.date.today()
+
+    def get(action, tag):
+        key = f"{action}@{tag}"
+        entry = store.get(key) if isinstance(store.get(key), dict) else None
+        if entry:
+            try:
+                age = (today - datetime.date.fromisoformat(str(entry.get("resolved_at")))).days
+            except ValueError:
+                age = ttl_days + 1
+            if 0 <= age <= ttl_days:
+                return str(entry.get("sha") or ""), False
+        try:
+            sha = resolve(action, tag)
+        except RuntimeError:
+            if entry and entry.get("sha"):
+                return str(entry["sha"]), True     # stale, and the caller says so
+            raise
+        store[key] = {"sha": sha, "resolved_at": today.isoformat()}
+        return sha, False
+
+    get.store = store
+    return get
+
+
+def pin_label_problems(pins, resolve):
+    """Pure. `pins`: {(action, tag): {sha: [files]}}. `resolve(action, tag)` -> `(sha, from_cache)`
+    or raises RuntimeError. Returns `(problems, unverified)` — the second is what the run could NOT
+    establish, which the caller must surface rather than let an OK imply it was checked (L-0006)."""
+    problems, unverified = [], []
+    for (action, tag), by_sha in sorted(pins.items()):
+        try:
+            actual, stale = resolve(action, tag)
+        except RuntimeError as exc:
+            unverified.append(f"{action}@{tag}: {exc}")
+            continue
+        for sha, files in sorted(by_sha.items()):
+            if sha.lower() == actual:
+                continue
+            where = ", ".join(sorted(files))
+            problems.append(
+                f"{where}: {action} is pinned {sha[:10]} but its `# {tag}` comment is not true of "
+                f"it — {tag} is {actual[:10]} upstream. The SHA is the security boundary and the "
+                f"comment is how a human (and Dependabot) audits WHICH release it is; a label that "
+                f"lies survives exactly as long as nobody resolves it (#312, ADR-0009). Fix toward "
+                f"the UPSTREAM TAG — `sync_action_pins.py --fix` copies the factory CI's SHA into "
+                f"the templates, so it would propagate a wrong pin under a right-looking label.")
+        if stale:
+            unverified.append(f"{action}@{tag}: upstream unreachable — compared against a cached "
+                              f"resolution, not re-verified")
+    return problems, unverified
+
+
+def check_pin_label_truth(fail, resolve=None):
+    name = "pin-label-truth"
+    roots = [os.path.join(os.path.dirname(ROOT), ".github", "workflows"),
+             os.path.join(TEMPLATES, ".github", "workflows")]
+    pins = {}
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for path in sorted(glob.glob(os.path.join(root, "*.yml"))
+                           + glob.glob(os.path.join(root, "*.tmpl"))):
+            rel = os.path.relpath(path, REPO_ROOT).replace(os.sep, "/")
+            for action, sha, tag in PIN_RE.findall(read(path)):
+                pins.setdefault((action, tag), {}).setdefault(sha.lower(), [])
+                if rel not in pins[(action, tag)][sha.lower()]:
+                    pins[(action, tag)][sha.lower()].append(rel)
+    if not pins:
+        return                                   # a checkout with no SHA-pinned workflows
+    resolver = resolve or cached_resolver()
+    problems, unverified = pin_label_problems(pins, resolver)
+    for problem in problems:
+        fail(name, problem)
+    if resolve is None and getattr(resolver, "store", None) is not None:
+        _cache_store(resolver.store)
+    if unverified:
+        # NOT a failure: a network-dependent gate that turns red on a missing network trains people
+        # to ignore it. But silence would let "OK — congruent" imply a verification that never
+        # happened, so the run says exactly which pins it could not vouch for (L-0006).
+        fail.note(name, f"{len(unverified)} of {len(pins)} pin label(s) NOT verified — "
+                        + "; ".join(sorted(unverified)))
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1926,23 +2094,41 @@ CHECKS = [
     check_routing_model_lockstep,
     check_state_writer,
     check_subprocess_timeouts,
+    check_pin_label_truth,
 ]
 
 
-def run_checks(checks=CHECKS):
-    """Run `checks`, each receiving its own view of the one reporter. Returns the (check,
-    message) findings — the accumulator lives HERE, per run, not in the module (#167)."""
-    failures = []
+class _Reporter:
+    """The one reporter, with two channels.
 
-    def fail(check, message):
-        failures.append((check, message))
+    It is **callable**, so every existing check's `fail(name, message)` is unchanged, and it also
+    carries `.note(name, message)` for a finding that must be SEEN without failing the run — a
+    network-dependent gate that could not reach the network (#312). Two channels because collapsing
+    them either turns a missing network into a red build (which trains people to ignore the gate)
+    or hides it entirely (which lets "OK" imply a verification that never happened, L-0006).
+    The accumulators live per-run, never in the module (#167)."""
 
+    def __init__(self):
+        self.failures = []
+        self.notes = []
+
+    def __call__(self, check, message):
+        self.failures.append((check, message))
+
+    def note(self, check, message):
+        self.notes.append((check, message))
+
+
+def run_checks(checks=CHECKS, reporter=None):
+    """Run `checks`, each receiving its own view of the one reporter. Returns the (check, message)
+    findings; pass a `_Reporter` to also collect the non-failing notes."""
+    rep = reporter if reporter is not None else _Reporter()
     for fn in checks:
         try:
-            fn(fail)
+            fn(rep)
         except Exception as exc:  # a crashing check is itself a failure
-            fail(fn.__name__, f"check crashed: {exc!r}")
-    return failures
+            rep(fn.__name__, f"check crashed: {exc!r}")
+    return rep.failures
 
 
 def main():
@@ -1950,7 +2136,12 @@ def main():
     for _stream in (sys.stdout, sys.stderr):
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
-    failures = run_checks()
+    reporter = _Reporter()
+    failures = run_checks(reporter=reporter)
+    for check, message in reporter.notes:
+        # Printed on BOTH paths: what a run could not verify is exactly as true when the rest
+        # passed, and an "OK" that quietly covered an unchecked gate is the lie this guards.
+        print(f"  [{check}] NOTE: {message}")
     if failures:
         print("EADOS self-lint: FAIL\n")
         for check, message in failures:

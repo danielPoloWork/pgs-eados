@@ -11,6 +11,37 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Added
 
+- **`pin-label-truth` — a SHA pin's `# vX.Y.Z` comment must be TRUE of its SHA (#312, ADR-0009
+  addendum 2026-07-27).** `action-pins` compares a pin's SHA *across files*; nothing checked that
+  the trailing version comment was true of it. On 2026-07-26 a merge resolved two `ci.yml` lines to
+  `main`'s SHA while keeping the branch's comment, landing the **v7.0.0** commit under a `# v7.0.1`
+  label (#309/#310). `main` went red **only** because the mangling was non-uniform, so the existing
+  gate saw the cross-file disagreement — reproduced while fixing this, the same wrong SHA applied
+  *uniformly* across `ci.yml` and all three workflow templates yields **zero** `action-pins`
+  findings and a green repository carrying a pin that lies about its own version.
+  - The new check resolves each `# vX.Y.Z` against the upstream tag and fails when it does not name
+    the pinned commit, reporting every file that carries it. **Annotated tags are dereferenced** to
+    their commit — a gate that failed every annotated tag would be a gate people switch off. Scope
+    follows the existing `PIN_RE`: fully SHA-pinned `uses:` lines only, so a profile's floating
+    `@v6` stays tag-pinned by design (ADR-0009 §3, untouched).
+  - **The factory's first network-dependent lint**, so the posture is recorded in the ADR rather
+    than left to the code: an unreachable upstream is **never a failure** (a gate that reddens on a
+    missing network trains people to ignore it) and **never a silent pass** (an `OK` must not imply
+    a verification that did not happen — L-0006). Both halves are required; either alone is worse
+    than the other's absence. A new `note` reporting channel carries the second.
+  - **The cache is a memo, not an authority.** Resolutions are memoised with the date they were
+    read and expire; past the TTL upstream is asked again, and a stale entry answers only when the
+    network fails — flagged as not re-verified. A cache trusted forever would rebuild this defect
+    one level up: a recorded claim nobody re-checks.
+  - Recorded that the obvious remedy was the **wrong** one: `sync_action_pins.py --fix` copies the
+    factory CI's SHA into the templates, so on the #310 tree it would have propagated the incorrect
+    commit under a right-looking label and turned the gate green over a uniformly wrong pin set.
+    Drift is resolved toward the **upstream tag**, never toward the local artifact a sync tool
+    treats as canonical. Also lesson **L-0011**.
+  - CI passes `GH_TOKEN` to the self-lint step so the check actually verifies rather than degrading
+    to its note. Self-lint is now **29 checks**.
+
+
 - **`/eados upgrade` — an advisory channel to an already-generated repository (#320, ADR-0003
   addendum 2026-07-27, ADR-0019 §3).** ADR-0003 weighed two branches — couple the generated repo to
   the factory, or re-render it on every change — and rejected both. Both were about *writing*, so
