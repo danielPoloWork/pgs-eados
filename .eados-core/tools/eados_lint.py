@@ -1849,6 +1849,54 @@ def check_state_writer(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 24. Subprocess timeouts (#321). `subprocess.run` without one waits FOREVER, and the tools most
+#     exposed are the ones written to degrade gracefully offline: they handle "gh is missing" and
+#     "gh returned an error" carefully, but not "gh never returns" — the failure a flaky network
+#     actually produces. It then blocks until the CI job's own timeout and reports as a generic job
+#     timeout rather than as a hung network call.
+#
+#     Fixing the eight sites was the easy half; this is the half that keeps the ninth from being
+#     added silently. Scoped to the SHIPPED CLIs: tools/tests/* drive local `sys.executable` runs
+#     with no network or credential path, so a bounded budget there would be ceremony, and CI's own
+#     job timeout already covers a genuinely stuck test.
+# ---------------------------------------------------------------------------
+def subprocess_timeout_problems(items):
+    """items: (relpath, source) pairs. Returns a problem per `subprocess.run(...)` with no
+    `timeout=`. Parsed with `ast`, not a regex — a call spanning lines is exactly the shape a
+    textual check would miss, and this gate exists because of a silent omission."""
+    import ast
+    problems = []
+    for rel, src in items:
+        try:
+            tree = ast.parse(src)
+        except SyntaxError as exc:                 # byte-compile is the gate that reports this
+            problems.append(f"{rel}: does not parse — {exc}")
+            continue
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "run"
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "subprocess"
+                    and not any(kw.arg == "timeout" for kw in node.keywords)):
+                problems.append(f"{rel}:{node.lineno}: subprocess.run without a `timeout=` — a "
+                                "hung child blocks until the job dies, and reports as a job "
+                                "timeout rather than as the stalled call it is (#321)")
+    return problems
+
+
+def check_subprocess_timeouts(fail):
+    name = "subprocess-timeouts"
+    tools = os.path.join(ROOT, "tools")
+    if not os.path.isdir(tools):
+        return
+    items = [(os.path.relpath(os.path.join(tools, fn), REPO_ROOT).replace(os.sep, "/"),
+              read(os.path.join(tools, fn)))
+             for fn in sorted(os.listdir(tools)) if fn.endswith(".py")]
+    for problem in subprocess_timeout_problems(items):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -1877,6 +1925,7 @@ CHECKS = [
     check_catalog_freshness,
     check_routing_model_lockstep,
     check_state_writer,
+    check_subprocess_timeouts,
 ]
 
 

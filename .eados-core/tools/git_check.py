@@ -37,6 +37,14 @@ ROOT = os.path.dirname(HERE)                       # .eados-core/
 sys.path.insert(0, HERE)
 import render  # noqa: E402  — the dependency-free YAML loader
 
+# Subprocess budgets (#321). `subprocess.run` without one waits FOREVER: a `gh` call that
+# stalls on a TLS handshake, a rate-limit backoff, or an auth prompt with no stdin does not
+# fail — it blocks until the CI job times out, and then reports as a generic job timeout
+# rather than as "the network call hung". A timeout turns an unattributable stall into a
+# clean, named degradation on the path this tool already has for `gh` being unavailable.
+GH_TIMEOUT = 30    # network-bound
+GIT_TIMEOUT = 15   # local, but git can block on a credential helper or a remote
+
 GIT_POLICY = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
 
 _KEBAB = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*\Z")
@@ -108,9 +116,9 @@ def commit_problems(subject, policy):
 def _git(repo, *args):
     """One git plumbing call; None when git is unavailable or the call fails."""
     try:
-        proc = subprocess.run(["git", "-C", repo, *args],
-                              capture_output=True, text=True, encoding="utf-8", errors="replace")
-    except OSError:
+        proc = subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
         return None
     return proc.stdout.strip() if proc.returncode == 0 else None
 
@@ -120,9 +128,9 @@ def open_pr_count(repo):
     offline work must not fail a courtesy count it cannot perform)."""
     try:
         proc = subprocess.run(["gh", "pr", "list", "--state", "open", "--json", "number"],
-                              cwd=repo, capture_output=True, text=True,
-                              encoding="utf-8", errors="replace")
-    except OSError:
+                              cwd=repo, capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=GH_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
         return None
     if proc.returncode != 0:
         return None

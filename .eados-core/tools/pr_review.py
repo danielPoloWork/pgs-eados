@@ -23,6 +23,13 @@ import render            # noqa: E402  — the dependency-free YAML loader
 import authority_check as ac  # noqa: E402  — owned-path lens (compose, don't re-implement)
 import risk_score as rs       # noqa: E402  — security/size/blast lens
 
+# Subprocess budgets (#321). `subprocess.run` without one waits FOREVER: a `gh` call that
+# stalls on a TLS handshake, a rate-limit backoff, or an auth prompt with no stdin does not
+# fail — it blocks until the CI job times out, and then reports as a generic job timeout
+# rather than as "the network call hung". A timeout turns an unattributable stall into a
+# clean, named degradation on the path this tool already has for `gh` being unavailable.
+GH_TIMEOUT = 30    # network-bound
+
 CONTRIB_SPEC = os.path.join(ROOT, "orchestrator", "os", "contribution", "contribution.yaml")
 
 
@@ -188,7 +195,12 @@ def format_report(report):
 def _gh_json(args):
     import json
     try:
-        proc = subprocess.run(["gh", *args], capture_output=True, text=True, encoding="utf-8")
+        proc = subprocess.run(["gh", *args], capture_output=True, text=True,
+                              encoding="utf-8", timeout=GH_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"`gh {' '.join(args)}` timed out after {GH_TIMEOUT}s — the network "
+                           "stalled, the API is rate-limiting, or it is waiting on an auth prompt "
+                           "that will never be answered")
     except (FileNotFoundError, OSError) as exc:
         raise RuntimeError(f"could not run `gh` (is the GitHub CLI installed and on PATH?): {exc}")
     if proc.returncode != 0:

@@ -18,6 +18,13 @@ import shlex
 import subprocess
 import sys
 
+# Subprocess budgets (#321). `subprocess.run` without one waits FOREVER: a `gh` call that
+# stalls on a TLS handshake, a rate-limit backoff, or an auth prompt with no stdin does not
+# fail — it blocks until the CI job times out, and then reports as a generic job timeout
+# rather than as "the network call hung". A timeout turns an unattributable stall into a
+# clean, named degradation on the path this tool already has for `gh` being unavailable.
+GH_TIMEOUT = 30    # network-bound
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # `## Milestone <N> — <title>` (em-dash; a hyphen is tolerated). The title runs to end-of-line.
@@ -92,7 +99,12 @@ def run_one(m, repo=None):
     """Create one milestone via `gh`. Returns (ok, message). RuntimeError only when gh is
     missing/unreachable; an existing milestone (422) is reported as a benign skip."""
     try:
-        proc = subprocess.run(gh_argv(m, repo), capture_output=True, text=True, encoding="utf-8")
+        proc = subprocess.run(gh_argv(m, repo), capture_output=True, text=True,
+                              encoding="utf-8", timeout=GH_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"`gh` timed out after {GH_TIMEOUT}s — the network stalled, the API is "
+                           "rate-limiting, or it is waiting on an auth prompt that will never be "
+                           "answered")
     except (FileNotFoundError, OSError) as exc:
         raise RuntimeError(f"could not run `gh` (is the GitHub CLI installed and on PATH?): {exc}")
     if proc.returncode == 0:
