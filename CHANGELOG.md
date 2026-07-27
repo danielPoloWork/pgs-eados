@@ -11,6 +11,33 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Added
 
+- **A workflow state now declares its `state_writer` — who records the phase's outcome
+  (#346, ADR-0025).** Every phase command names one acting role, but every phase also has to write
+  two architect-only paths: the manifest's `delivery_state` and a run record under `learning/runs/`
+  (#250's uniform audit trail). `authority.yaml` grants both to the architect alone, so three of
+  the six procedures instructed the acting role to write paths the authority gate **denies** it —
+  `design` (tech-lead), `plan` (producer) and `audit` (security-auditor). The gate was right; the
+  procedures were wrong.
+  - It stayed hidden because the three unaffected phases are exactly the three the architect
+    already owns: the classic one-shot `init → scaffold` path never leaves architect territory. It
+    surfaced only on a consumer running the full pipeline end to end.
+  - Following the procedure literally was an authority violation; following it *correctly* required
+    undocumented behaviour — an unstated role switch, or splitting a phase across two PRs. The
+    correct behaviour was **folklore**, the opposite of the knowledge-as-data posture `os/` exists
+    for. And since `record_run.py` is instructed by every phase, #250's uniform audit trail was
+    unreachable for those three.
+  - A state now declares `role` (**authors** the artifact) and `state_writer` (**records** the
+    outcome). Nothing about the authority model changes — no role gains a path, no new
+    authorization axis — what changes is that a handoff already implied by `authority.yaml` is
+    stated in data instead of inferred. `/eados status` names both, and says which write the acting
+    role may not make.
+  - Held honest by a new **`state-writer-authority`** gate: a declared writer that is undeclared as
+    a role, or that authority would deny on the state paths, fails in the factory. A declaration
+    that can lie is the original defect with an extra step. The regression also asserts the acting
+    roles of `design`/`plan`/`audit` are **still denied** — if that ever passes, the separation has
+    quietly gone.
+
+
 - **A generated repository now records which EADOS produced it (#319).** Twelve minor releases have
   shipped, several carrying security fixes, and a rendered repo recorded **nothing** about where it
   came from — so a maintainer could not tell whether their `setup.*` predates the #129 tar-slip

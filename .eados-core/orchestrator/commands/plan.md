@@ -43,6 +43,11 @@ The `plan` phase turns approved RFCs into a **negotiated** milestone roadmap. Ow
    Must pass before `plan → scaffold` is legal.
 5. **Record the cross-links** — add the milestone ids to `delivery_state.refs.milestones` (feeds
    the traceability graph; references, not content).
+   > **Who writes this:** the phase's **`state_writer`** (`enterprise-architect`), not the
+   > acting role. `authority.yaml` grants `orchestrator/project.yaml` and `.eados-core/**`
+   > to the architect alone, so the acting role doing it is an authority violation this
+   > project's own gate catches (#346, ADR-0025). Hand off, or act as the state writer for
+   > this step — `/eados status` names both roles.
 6. **Propose the transition** — emit the checkpoint for `plan → scaffold` (human-gated):
    ```bash
    python .eados-core/tools/phase_runner.py <manifest> --propose scaffold
