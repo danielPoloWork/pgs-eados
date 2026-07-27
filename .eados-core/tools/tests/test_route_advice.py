@@ -32,6 +32,8 @@ def fixture_spec():
         "efforts": ["low", "medium", "high", "extra", "max"],
         "flags": {"sets-pattern": "first of its class", "decision-heavy": "the decision is the deliverable"},
         "defaults": {"tier": "fast", "effort": "low"},
+        "protected": ["label:security"],
+        "selection": {"objective": "quality-first", "prefer": ["lowest_cost"]},
         "rules": [
             {"id": "sev-med", "when": ["label:severity:medium"],
              "min_tier": "standard", "min_effort": "medium", "why": "significant gap"},
@@ -164,6 +166,9 @@ def main():
           broken(lambda s: s.update(selection={"prefer": ["fastest"]})), failures)
     check("a protected signal referencing an undeclared flag is a problem",
           broken(lambda s: s.update(protected=["flag:nope"])), failures)
+    # Both carry the cost invariant, and both fail OPEN when absent — so absence must be a problem.
+    check("a missing `protected` is a problem", broken(lambda s: s.pop("protected")), failures)
+    check("a missing `selection` is a problem", broken(lambda s: s.pop("selection")), failures)
     check("an alias to an unknown effort is a problem",
           broken(lambda s: s["catalog"]["hosts"][0]["effort_aliases"].update(mega="extreme")), failures)
     check("an examples verdict outside `tiers` is a problem",
@@ -172,6 +177,87 @@ def main():
           broken(lambda s: s["catalog"].pop("as_of")), failures)
     check("a rule that can raise nothing is a problem",
           broken(lambda s: [s["rules"][0].pop("min_tier"), s["rules"][0].pop("min_effort")]), failures)
+
+    # --- 19.3 phase 2: SELECTION (ADR-0024 D2/D3) ------------------------------------------
+    tier_rank = {t: i for i, t in enumerate(spec["tiers"])}
+
+    # Cheapest-that-clears: the floor admits every tier at or above it, and with no cost recorded
+    # the tier ladder decides — so the answer is the LEAST capable model that still clears it.
+    adv = ra.advise([], spec)                                     # floor = fast/low
+    check("selection takes the least capable model that clears the floor",
+          adv["model"] == "Sonnet 5" and adv["provider"] == "vendor-a", failures)
+    check("the runners-up that also cleared are reported",
+          [a["model"] for a in adv["alternatives"]] == ["Opus 4.8", "Fable 5"], failures)
+
+    # Recorded costs take over from the ladder — but only among models that ALREADY clear.
+    costed = fixture_spec()
+    for m, c in zip(costed["catalog"]["providers"][0]["models"], (1, 9, 5)):
+        m["relative_cost"] = c                                    # fable=1, opus=9, sonnet=5
+    adv = ra.advise([], costed)
+    check("with full cost data the cheapest clearing model wins, not the lowest tier",
+          adv["model"] == "Fable 5" and adv["relative_cost"] == 1, failures)
+    # Partial cost data must NOT rank: a recorded 9 must not outrank an unknown.
+    partial = fixture_spec()
+    partial["catalog"]["providers"][0]["models"][1]["relative_cost"] = 9
+    check("partial cost data falls back to the ladder rather than ranking unfairly",
+          ra.advise([], partial)["model"] == "Sonnet 5", failures)
+
+    # THE invariant: no signal combination may resolve a model below its own floor.
+    every_label = ["severity:medium", "severity:high", "adr", "security"]
+    every_flag = ["sets-pattern", "decision-heavy"]
+    combos = []
+    for i in range(1 << len(every_label)):
+        for j in range(1 << len(every_flag)):
+            combos.append(([l for k, l in enumerate(every_label) if i >> k & 1],
+                           [f for k, f in enumerate(every_flag) if j >> k & 1]))
+    below = []
+    for labels, flags in combos:
+        a = ra.advise(ra.signals_for(labels, flags, spec), spec)
+        if a["model"] is None:
+            continue
+        got = next((m for p in spec["catalog"]["providers"] for m in p["models"]
+                    if m.get("name") == a["model"]), None)
+        if got is None or tier_rank[got["meets_tier"]] < tier_rank[a["tier"]]:
+            below.append((labels, flags, a["tier"], a["model"]))
+    check(f"no signal combination resolves below its floor ({len(combos)} combinations)",
+          not below, failures)
+    check("every alternative offered also clears the floor",
+          all(tier_rank[alt["meets_tier"]] >= tier_rank[a["tier"]]
+              for labels, flags in combos
+              for a in [ra.advise(ra.signals_for(labels, flags, spec), spec)]
+              for alt in a["alternatives"]), failures)
+
+    # Protected signals are surfaced so the guarantee is visible, not merely true.
+    prot = fixture_spec()
+    prot["protected"] = ["label:adr"]
+    adv = ra.advise(ra.signals_for(["adr"], [], prot), prot)
+    check("a protected signal is reported on the advice",
+          adv["protected"] == ["label:adr"], failures)
+
+    # An unassessed model is reachable but never selectable — the #326 guard, at resolution time.
+    only_unproven = fixture_spec()
+    only_unproven["catalog"]["providers"][0]["models"] = [
+        {"id": "unproven", "name": "Unproven", "assessed": False}]
+    adv = ra.advise([], only_unproven)
+    check("an unassessed model is never selected", adv["model"] is None, failures)
+    check("an unresolvable model states WHY, and keeps the tier/effort advice",
+          adv["unresolved_reason"] and adv["tier"] == "fast" and adv["effort"] == "low", failures)
+    check("the unresolved reason names the floor and the host",
+          "fast/low" in adv["unresolved_reason"] and "claude-code" in adv["unresolved_reason"],
+          failures)
+
+    # An effort ceiling excludes a model that cannot be driven that hard.
+    capped = fixture_spec()
+    capped["catalog"]["providers"][0]["models"][0]["max_effort"] = "low"   # Fable 5 capped
+    adv = ra.advise(ra.signals_for(["adr", "severity:high"], ["decision-heavy"], capped), capped)
+    check("a model whose max_effort is below the floor is not a candidate",
+          adv["model"] is None and adv["effort"] == "max", failures)
+
+    # Determinism: reordering the catalog must not change the answer.
+    shuffled = fixture_spec()
+    shuffled["catalog"]["providers"][0]["models"].reverse()
+    check("reordering the catalog does not change the resolved model",
+          ra.advise([], shuffled)["model"] == ra.advise([], spec)["model"], failures)
 
     # --- host + effort-alias resolution ---
     adv = ra.advise([], spec, host="other-host")
