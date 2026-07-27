@@ -46,7 +46,15 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
+      # GH_TOKEN is what makes `pin-label-truth` (#312) actually verify here rather than degrade to
+      # its "could not reach upstream" note. Read-only use — it resolves public tags to commits —
+      # so the default token is enough, including on a fork PR. Given to every cell on purpose: the
+      # check is SILENT when it verifies, so there is no noise to save by restricting it to one,
+      # and a cell without the token would print a note on every run until people stopped reading
+      # notes. ~4 API calls per cell against a 1000/hr limit.
       - name: EADOS self-lint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .eados-core/tools/eados_lint.py
       # #168: the suite is DISCOVERED (tools/tests/test_*.py), never enumerated — a new test
       # runs here with no ci.yml edit. The render-smoke job re-runs a few of these in their
