@@ -48,6 +48,13 @@ def run(*args, cwd=None, stdin=""):
     paths so tar reads them on Windows (bsdtar) and Linux/pwsh (GNU tar) alike."""
     proc = subprocess.run([PWSH, "-NoProfile", "-File", SETUP_PS1, *args],
                           capture_output=True, text=True, cwd=cwd, input=stdin)
+    if os.environ.get("EADOS_PS_VERBOSE", "").strip():
+        # The suite reports assertion LABELS, which is unhelpful when a whole class of them fails
+        # on a machine you cannot reach. Echo what the installer actually said (#318).
+        print(f"--- setup.ps1 {' '.join(map(str, args))} -> rc={proc.returncode}")
+        for stream, text in (("out", proc.stdout), ("err", proc.stderr)):
+            for line in (text or "").splitlines():
+                print(f"    [{stream}] {line}")
     return proc.returncode, proc.stdout, proc.stderr
 
 

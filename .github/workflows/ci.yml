@@ -99,9 +99,18 @@ jobs:
         run: |
           $PSVersionTable.PSVersion.ToString()
           if ($PSVersionTable.PSVersion.Major -ne 5) { Write-Error "expected 5.x, got $($PSVersionTable.PSVersion)"; exit 1 }
+      # The installer shells out to `tar`, and Windows ships TWO: bsdtar in System32 and GNU tar
+      # under Git's usr/bin. Which one wins is a PATH accident that differs between a developer
+      # box and this runner, so record it — a failure here is otherwise unattributable (#318).
+      - name: Which tar is on PATH (bsdtar vs GNU tar)
+        shell: powershell
+        run: |
+          (Get-Command tar).Source
+          & tar --version
       - name: setup.ps1 behavioural suite under Windows PowerShell 5.1
         env:
           EADOS_PS_EXE: powershell     # pin the engine; pwsh is also present on this runner
+          EADOS_PS_VERBOSE: '1'        # dump the installer's own output on a failed expectation
         run: python .eados-core/tools/tests/test_setup_ps1.py
       - name: setup.bat is EXECUTED, not merely parsed
         shell: cmd
