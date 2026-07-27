@@ -1,12 +1,22 @@
 # Dependabot for the EADOS factory itself. SHA-pinned actions and the pinned CI dependency are
 # only safe to pin if something proposes bumps — that is this file. Each update opens a PR that
 # goes through the normal review/CI flow.
+#
+# Grouped and capped for the same reason the template is (#350): ungrouped weekly bumps open one PR
+# per dependency against a `one_pr_at_a_time` policy, and EADOS eats its own dogfood — a rule the
+# factory violates in its own repository is not a rule. The policy side is fixed too
+# (`os/git/git.yaml` `commit.one_pr_counts: authored`), so this bounds the noise rather than
+# papering over a contradiction.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns: ["*"]
     commit-message:
       prefix: "ci"
     labels: ["ci"]
@@ -14,6 +24,10 @@ updates:
     directory: "/.eados-core/tools"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      tooling:
+        patterns: ["*"]
     commit-message:
       prefix: "ci"
     labels: ["ci"]

@@ -30,6 +30,15 @@ commit:
   scopes: [{{GIT_COMMIT_SCOPES}}]
   one_logical_change_per_pr: true
   one_pr_at_a_time: true
+  # WHOSE open PRs the limit counts: `authored` (human/agent) or `all`. The rule is about not
+  # stacking work in flight, not about capping a dependency bot's queue — counting bots put a
+  # generated repo in violation of its own policy minutes after bootstrap (#350). Matched on the
+  # author TYPE, so a new bot is covered the day it arrives with nothing to keep current.
+  one_pr_counts: authored
 
 pr:
   default_branch: {{DEFAULT_BRANCH}}
+  # WHOSE PRs the assignee / one-label / milestone contract binds. A bot cannot assign, cannot set
+  # a milestone, and its requested label is dropped until `.github/labels.yml` is imported — so
+  # reporting those fields INCOMPLETE on a dependency PR only teaches people to ignore the check.
+  metadata_applies_to: authored

@@ -29,6 +29,11 @@ This is why the PR title/body is written "as it should read in `git log` forever
 
 ## 2. Labels (one type-label per PR)
 
+> **Run this before the first Dependabot run.** GitHub drops a label a bot requests if it does not
+> exist yet — **silently**, with no error anywhere. `.github/dependabot.yml` asks for `ci` / `build`,
+> which live in `.github/labels.yml` and only exist once this import has run; until then the first
+> batch of bot PRs arrives unlabelled and nothing tells you why (#350).
+
 ```bash
 # Requires yq. Imports .github/labels.yml idempotently.
 yq -o=json '.[]' .github/labels.yml | jq -c . | while read -r l; do

@@ -31,12 +31,30 @@ REQUIRED = ("assignee", "label", "milestone")   # the fields the contract mandat
 
 
 # --- the pure evaluator ---------------------------------------------------
-def evaluate_metadata(pr):
+def evaluate_metadata(pr, applies_to="authored"):
     """Given a PR's metadata, report which contract fields are set. `pr` keys: `assignees` (list of
     logins), `labels` (list of names), `milestone` (title or None), `project` (truthy when the PR is
-    on a board). `assignee` passes with >=1 assignee; `label` wants exactly one (the one-type-label
-    rule) and is `warn` when present but not exactly one; `milestone` passes when set; `project` is
-    advisory — informational, never a failure (it exists only where the repo has a board)."""
+    on a board), `is_bot` (the author is an app). `assignee` passes with >=1 assignee; `label` wants
+    exactly one (the one-type-label rule) and is `warn` when present but not exactly one;
+    `milestone` passes when set; `project` is advisory — informational, never a failure (it exists
+    only where the repo has a board).
+
+    A **bot-authored** PR reports `n/a`, not `INCOMPLETE` (#350, `git.yaml pr.metadata_applies_to`):
+    Dependabot cannot assign, cannot set a milestone, and the label it requests is silently dropped
+    until the repo's labels are imported — so every required field is unsatisfiable by construction.
+    Reporting three MISSes on a PR nobody can fix teaches maintainers to skip the output, and a
+    check that is routinely ignored has stopped being a check. `applies_to="all"` restores the
+    literal reading for a repo that wants it."""
+    if pr.get("is_bot") and str(applies_to) != "all":
+        return {
+            "pr": pr.get("number"),
+            "checks": [{"field": f, "status": "n/a",
+                        "note": "bot-authored — the author cannot set this field"}
+                       for f in REQUIRED],
+            "missing_required": [], "warnings": [], "complete": True, "bot": True,
+            "boundary": "n/a — the metadata contract binds authored PRs "
+                        "(git.yaml pr.metadata_applies_to)",
+        }
     assignees = pr.get("assignees") or []
     labels = pr.get("labels") or []
     milestone = pr.get("milestone")
@@ -83,10 +101,16 @@ def evaluate_metadata(pr):
 
 def format_report(report):
     """Render an `evaluate_metadata` report as a human-readable check."""
-    mark = {"pass": "[OK]  ", "fail": "[MISS]", "warn": "[WARN]", "advisory": "[ -- ]"}
+    mark = {"pass": "[OK]  ", "fail": "[MISS]", "warn": "[WARN]", "advisory": "[ -- ]",
+            "n/a": "[n/a] "}
     out = [f"PR-metadata check: #{report.get('pr')}"]
     for c in report["checks"]:
         out.append(f"  {mark.get(c['status'], '[????]')} {c['field']} — {c['note']}")
+    if report.get("bot"):
+        out.append("  -> n/a: bot-authored — the metadata contract binds authored PRs, and a bot "
+                   "can satisfy none of these fields (#350).")
+        out.append(f"  {report['boundary']}")
+        return "\n".join(out)
     if report["complete"]:
         tail = " (see warnings above)" if report["warnings"] else ""
         out.append("  -> complete: assignee, label, and milestone are all set." + tail)
@@ -126,7 +150,7 @@ def fetch_pr_metadata(number, repo=None):
     base = ["pr", "view", str(number)]
     if repo:
         base += ["--repo", repo]
-    data = _gh_json(base + ["--json", "number,assignees,labels,milestone"]) or {}
+    data = _gh_json(base + ["--json", "number,assignees,labels,milestone,author"]) or {}
     project = []
     try:
         pdata = _gh_json(base + ["--json", "projectItems"]) or {}
@@ -140,6 +164,9 @@ def fetch_pr_metadata(number, repo=None):
         "labels": [lab.get("name") for lab in (data.get("labels") or []) if isinstance(lab, dict)],
         "milestone": milestone.get("title") if isinstance(milestone, dict) else None,
         "project": project,
+        # The author TYPE, not a login denylist (#350): true for Dependabot, Renovate, and the next
+        # bot on the day it arrives, with nothing to keep current.
+        "is_bot": bool((data.get("author") or {}).get("is_bot")),
     }
 
 
@@ -155,13 +182,27 @@ def main(argv=None):
     ap.add_argument("--pr", type=int, required=True, help="the PR number to check")
     ap.add_argument("--repo", help="OWNER/REPO (default: the repo gh infers)")
     ap.add_argument("--json", action="store_true", help="emit the structured report as JSON")
+    ap.add_argument("--policy", help="the git policy to read `pr.metadata_applies_to` from "
+                                     "(default: this repository's, discovered like git_check)")
     args = ap.parse_args(argv)
+    # Whose PRs the contract binds — resolved through git_check's ladder (#358), so a generated repo
+    # reads its OWN policy here too rather than the factory's.
+    applies_to = "authored"
+    try:
+        import git_check
+        path, _ = git_check.resolve_policy(".", args.policy)
+        if path:
+            applies_to = str(((git_check.load_policy(path).get("pr") or {})
+                              .get("metadata_applies_to")) or "authored")
+    except (ImportError, OSError, ValueError):
+        pass          # the default IS the corrected reading; an unreadable policy must not
+        # silently restore the behaviour that reports three MISSes on an unfixable PR
     try:
         pr = fetch_pr_metadata(args.pr, repo=args.repo)
     except RuntimeError as exc:
         print(f"pr-metadata-check: SKIP — {exc}", file=sys.stderr)
         return 2
-    report = evaluate_metadata(pr)
+    report = evaluate_metadata(pr, applies_to)
     if args.json:
         print(json.dumps(report, indent=2))
     else:

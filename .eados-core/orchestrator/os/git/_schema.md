@@ -25,7 +25,12 @@ traceability:       # the artifact lineage the graph + lint (M3/M4) are built fr
 
 - **`branch_naming`** — `{ pattern, types[] }`. `types` is the Conventional-Commit type set.
 - **`commit`** — `{ convention, scopes[], one_logical_change_per_pr, one_pr_at_a_time,
-  squash_body{} }`. `squash_body` requires the squash-merge commit (squash is the only merge
+  one_pr_counts, squash_body{} }`. **`one_pr_counts`** (`authored` | `all`, default `authored`)
+  says *whose* open PRs `one_pr_at_a_time` counts. The rule exists so an agent does not stack
+  work in flight; it was never meant to cap a dependency bot's queue, and counting bots put a
+  generated repo in violation of its own policy minutes after bootstrap (#350). Matched on the
+  **author type** (`gh` `author.is_bot`), never a login denylist — a list of bot names is a list
+  to keep current, and the next bot would be counted until someone remembered it. `squash_body` requires the squash-merge commit (squash is the only merge
   method) to carry a **verbose, professional body**, not a one-line subject collapse:
   `subject` = the Conventional-Commit one-liner (the PR title), `body_from: pull_request` = the
   PR description (context, change, verification) preserved into the merge commit. The repo is
@@ -34,7 +39,11 @@ traceability:       # the artifact lineage the graph + lint (M3/M4) are built fr
 - **`pr`** — `{ draft_by, opened_by, merged_by, merge_method, one_type_label,
   required_crosslinks[], template, review_gate, metadata{} }`. `required_crosslinks` (e.g.
   `[rfc, milestone]`) are the references a PR *body* must carry; the traceability lint fails on a
-  missing edge. `metadata` is the distinct set of GitHub fields **set on creation** via
+  missing edge. **`metadata_applies_to`** (`authored` | `all`, default `authored`) scopes the metadata contract
+  the same way: a bot cannot assign, cannot set a milestone, and its requested label is dropped
+  until the repo's labels are imported, so every required field is unsatisfiable for a dependency
+  PR — reporting them `INCOMPLETE` trains maintainers to ignore the check, and a check that is
+  routinely ignored has stopped being one (#350). `metadata` is the distinct set of GitHub fields **set on creation** via
   `gh pr create` — `assignee` (the repository **owner**, never `@me`/the drafting actor: EADOS →
   `danielPoloWork`, a generated repo → the manifest owner), `label` (one type label matching the
   lead commit's type, per `one_type_label`), `milestone` (the current open release/roadmap

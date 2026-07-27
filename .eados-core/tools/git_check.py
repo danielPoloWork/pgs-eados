@@ -187,18 +187,37 @@ def _git(repo, *args):
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
-def open_pr_count(repo):
-    """The number of open PRs, via gh; None == gh unavailable/unauthenticated (SKIP, not FAIL —
-    offline work must not fail a courtesy count it cannot perform)."""
+def count_open_prs(payload, counts="authored"):
+    """Pure. How many of `gh pr list --json number,author`'s entries the one-PR limit counts.
+
+    `counts="authored"` drops **bot-authored** PRs, matched on `author.is_bot` — the property, not a
+    login denylist. A denylist is a list to keep current, and the next bot would be counted until
+    somebody remembered to add it; `is_bot` is true for Dependabot, Renovate, and whatever comes
+    after, on the day it arrives."""
+    if not isinstance(payload, list):
+        return None
+    if str(counts) == "all":
+        return len(payload)
+    return sum(1 for pr in payload
+               if isinstance(pr, dict) and not ((pr.get("author") or {}).get("is_bot")))
+
+
+def open_pr_count(repo, counts="authored"):
+    """The number of open PRs the policy counts, via gh; None == gh unavailable/unauthenticated
+    (SKIP, not FAIL — offline work must not fail a courtesy count it cannot perform)."""
+    import json
     try:
-        proc = subprocess.run(["gh", "pr", "list", "--state", "open", "--json", "number"],
+        proc = subprocess.run(["gh", "pr", "list", "--state", "open", "--json", "number,author"],
                               cwd=repo, capture_output=True, text=True, encoding="utf-8",
                               errors="replace", timeout=GH_TIMEOUT)
     except (OSError, subprocess.TimeoutExpired):
         return None
     if proc.returncode != 0:
         return None
-    return proc.stdout.count('"number"')
+    try:
+        return count_open_prs(json.loads(proc.stdout or "null"), counts)
+    except ValueError:
+        return None
 
 
 def main(argv=None):
@@ -245,12 +264,20 @@ def main(argv=None):
         skips.append("commit: git unavailable — SKIP")
     else:
         problems += commit_problems(subject, policy)
-    if (policy.get("commit") or {}).get("one_pr_at_a_time"):
-        count = open_pr_count(args.repo)
+    commit_policy = policy.get("commit") or {}
+    if commit_policy.get("one_pr_at_a_time"):
+        # Default `authored`, not `all` (#350): counting bots was never the rule's intent — it is
+        # about an agent not stacking work in flight — and the accident put a generated repo in
+        # violation of its own policy minutes after bootstrap, with nobody having done anything.
+        counts = str(commit_policy.get("one_pr_counts") or "authored")
+        count = open_pr_count(args.repo, counts)
         if count is None:
             skips.append("one-PR: gh unavailable — SKIP")
         elif count > 1:
-            problems.append(f"{count} PRs are open — git.yaml commit.one_pr_at_a_time allows one")
+            problems.append(f"{count} PRs are open — commit.one_pr_at_a_time allows one"
+                            + (" (bot-authored PRs are not counted)" if counts == "authored"
+                               else " (counting every open PR, including bots — "
+                                    "commit.one_pr_counts: all)"))
 
     print(f"git-policy check ({args.repo}) — branch: {branch or '?'}")
     print(f"  policy: {origin if policy_path else 'NONE'}")

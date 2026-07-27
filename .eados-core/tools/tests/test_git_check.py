@@ -60,7 +60,7 @@ def main():
     #     so the cases stay hermetic on a machine with an authenticated gh (no network, no
     #     dependence on how many PRs happen to be open) ---
     real_count = git_check.open_pr_count
-    git_check.open_pr_count = lambda repo: 1
+    git_check.open_pr_count = lambda repo, counts="authored": 1
     try:
         rc = git_check.main(["--branch", "feat/good-branch",
                              "--message", "feat(tools): a fine subject"])
@@ -69,7 +69,7 @@ def main():
         check("CLI exits 1 on violations", rc == 1, failures)
         rc = git_check.main(["--branch", "bad branch name", "--message", "nope", "--advisory"])
         check("CLI --advisory reports but exits 0 (the local pre-flight mode)", rc == 0, failures)
-        git_check.open_pr_count = lambda repo: 3
+        git_check.open_pr_count = lambda repo, counts="authored": 3
         rc = git_check.main(["--branch", "feat/good-branch",
                              "--message", "feat(tools): a fine subject"])
         check("CLI exits 1 when more than one PR is open (one-PR-at-a-time)", rc == 1, failures)

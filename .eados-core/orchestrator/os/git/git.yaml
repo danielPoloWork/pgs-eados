@@ -12,6 +12,13 @@ commit:
   scopes: [interview, profiles, templates, lint, agent, docs, adr, ci, os, workflow, authority, git, rfc, plan, risk, contribution, commands, traceability, tools, setup, release]
   one_logical_change_per_pr: true
   one_pr_at_a_time: true
+  # WHOSE open PRs the limit counts (#350). `authored` = human/agent PRs only; `all` = literally
+  # every open PR. The rule exists so an agent does not stack work in flight — it was never meant to
+  # cap a dependency bot's queue, and counting bots put a generated repo in violation of its own
+  # policy minutes after bootstrap, with nobody having done anything. Matched on the AUTHOR TYPE
+  # (`gh` `author.is_bot`), never a login denylist: a list of bot names is a list to keep current,
+  # and the next bot would be counted until someone remembered to add it.
+  one_pr_counts: authored
   # Evaluated by the cross-cutting `git-policy` gate — tools/git_check.py (#250): branch naming,
   # commit convention, one-PR-at-a-time; PR *metadata* stays tools/pr_metadata_check.py (#141).
   # The squash-merge commit (squash is the only merge method) MUST carry a verbose, professional
@@ -34,6 +41,11 @@ pr:
   # cross-links above (those are referenced *in* the body for traceability; these are gh metadata
   # flags). `assignee` resolves to the OWNER, never "@me" (which is whichever actor — human or agent —
   # drafts the PR): EADOS's own repo -> the owner (danielPoloWork); a generated repo -> the manifest owner.
+  # WHOSE PRs the metadata contract binds (#350). A bot cannot assign, cannot set a milestone, and
+  # its requested label is silently dropped until the repo's labels are imported — so every one of
+  # these fields is unsatisfiable for a dependency PR, and reporting them INCOMPLETE teaches
+  # maintainers to ignore the check. A check that is routinely ignored has stopped being a check.
+  metadata_applies_to: authored   # authored | all — bot-authored PRs report n/a, never INCOMPLETE
   metadata:
     assignee: owner          # the repository owner, NOT "@me"/the gh actor that drafts the PR
     label: one-type          # exactly one type label matching the lead commit's <type> (see one_type_label)
