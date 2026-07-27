@@ -28,6 +28,10 @@ commands:
   lint:         "luacheck ."
   bench:        "lua bench/run.lua"
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: "*.rockspec"
+
 config_files:
   - "*.rockspec"
   - .luacheckrc
@@ -52,6 +56,8 @@ ci:
     quality:
       name: quality / luacheck + stylua
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: leafo/gh-actions-lua@v10

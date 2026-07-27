@@ -29,6 +29,10 @@ commands:
   lint:         "clang-tidy --warnings-as-errors='*' <changed .c/.h>"
   bench:        "cmake --build --preset bench"
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: CMakeLists.txt
+
 config_files:
   - .clang-format
   - .clang-tidy
@@ -55,6 +59,8 @@ ci:
     format:
       name: format / clang-format check
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - name: Verify all C sources are clean
@@ -66,6 +72,8 @@ ci:
     cppcheck:
       name: cppcheck / static analysis
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - run: sudo apt-get update && sudo apt-get install -y cppcheck
@@ -73,6 +81,8 @@ ci:
     valgrind:
       name: valgrind / leak-check=full
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - run: sudo apt-get update && sudo apt-get install -y valgrind
@@ -83,6 +93,8 @@ ci:
     tsan:
       name: tsan / thread sanitizer
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       env: { CC: clang }
       steps:
         - uses: actions/checkout@v6

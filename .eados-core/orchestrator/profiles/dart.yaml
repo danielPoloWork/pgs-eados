@@ -28,6 +28,10 @@ commands:
   lint:         "dart analyze --fatal-infos"
   bench:        "dart run benchmark_harness"
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: pubspec.yaml
+
 config_files:
   - pubspec.yaml
   - analysis_options.yaml
@@ -46,6 +50,8 @@ ci:
     quality:
       name: quality / format + analyze + coverage
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: dart-lang/setup-dart@v1

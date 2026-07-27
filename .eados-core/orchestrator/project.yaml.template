@@ -100,6 +100,11 @@ ci:                          # Defaults come from profiles/<lang>.yaml.
   matrix: []                 # CI cells: {os, toolchain, preset}. -> {{#EACH_CI_CELL}}
   setup_steps: ""            # YAML snippet that sets up the toolchain. -> {{CI_SETUP_STEPS}}
   extra_jobs:   ""           # YAML snippet for extra jobs (sanitizers/Valgrind/…). -> {{CI_EXTRA_JOBS}}
+  build_manifest: ""         # The file whose presence proves the build system exists (#313), from
+                             # the profile. Roadmap item 1.1 creates it, so a freshly rendered repo
+                             # does NOT have it — and the CI skips the toolchain jobs until it does,
+                             # instead of failing them. Empty = no guard (renders as before).
+                             # -> {{CI_BUILD_MANIFEST}} / {{#IF_BOOTSTRAP_GUARD}}
 
 governance:
   posture: standard                               # standard | enterprise: raised governance/compliance bar on any domain (ADR-0015)

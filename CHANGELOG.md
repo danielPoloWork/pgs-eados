@@ -40,26 +40,6 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   (#202) and `routing-delegation` (#327), where in both cases the unchecked direction was where the
   rot actually was.
 
-### Fixed
-
-- **`routing-delegation` was a one-way registry check (M19 19.6, #327).** It verified that every
-  catalog host appears in `os/routing/delegation.md`'s application matrix, and called that *"the
-  anti-rot property"*. The reverse went unchecked — and the reverse is where the rot actually was:
-  the matrix documented `codex` and `gemini` from M16 onward while the catalog had neither, so
-  `route_advice.py --host codex` failed with `unknown host` on a host the documentation said was
-  supported. This is the **#202 defect class** recurring: a registry walked in one direction
-  validates half a relationship and reports it as whole. Now checked both ways, with messages that
-  distinguish *add the catalog entry* from *drop the row*.
-- **Matrix rows are read structurally, not by substring (#327).** The old check asked whether a
-  host's name appeared anywhere in the file — but `delegation.md` legitimately names hosts in prose
-  (*"Run the same relay on codex or gemini…"*), so a host's name was present whether or not it had
-  a row. Deleting a real row kept the gate green. Rows are now matched as table lines whose first
-  cell bolds the host id, which also lets the gate require what the row exists for: a row stating
-  neither `applied` nor `advisory-only` is now flagged. With the spec absent or unparseable both
-  directions are skipped rather than flagging every row — a parse failure means *cannot check*,
-  not *everything is wrong*, and it is `data-file-validity`'s to report.
-
-### Added
 
 - **Two gates so the routing catalog cannot rot or contradict the docs (M19 19.5, #326,
   ADR-0024 D6).** The data half of #326 shipped in #330; these are the gates that make the drift
@@ -82,6 +62,53 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   - Deliberately **checked, not rendered**: generating the ranking from the catalog would flatten
     the editorial nuance (*"not yet benchmarked"*, the rotation caveat) that the ADR-0015/0016
     honesty posture wants kept.
+
+
+- **The loader differential now sweeps the repository's own tracked YAML, not one file (#317).**
+  `tests/test_loader.py` pinned `yamlmini` to PyYAML across ~25 hand-written cases plus exactly one
+  real file (`reference.yaml`). Every one of those cases was written by someone who already knew
+  what the loader supports — which is the blind spot, not the coverage: the two silent-data-loss
+  defects found in the 2026-07-26 audit (#315, #316) each sat one character outside the synthetic
+  corpus and stayed invisible behind a green gate, live on shipped files. The sweep enumerates
+  tracked `.eados-core/**` and `.github/**` YAML through `git ls-files` (so a new data file is
+  covered the moment it is staged) and compares both parsers on each: **47 files — 44 agree, 1 is
+  loudly rejected at the documented subset boundary, 2 are known-divergent.** Three properties make
+  it a gate rather than a report: an **undeclared** divergence fails; a file listed as
+  known-divergent that starts **agreeing** also fails, so the exception list cannot outlive the
+  bugs it documents; and the one deliberate divergence — PyYAML's YAML-1.1 coercion of bare keys
+  like `on:` to booleans, where yamlmini is intentionally the 1.2 side — is a **declared deviation
+  normalized before comparison with its reason recorded**, not an opaque exclusion, because a
+  skip-list would have hidden `lessons.yaml` exactly as well as no sweep at all. Degrades honestly
+  in both directions: no PyYAML, or no git checkout, reports a skip with the reason and never a
+  false pass. #315 and #316 remain listed as known-divergent with their issue numbers until fixed.
+
+- **ADR-0024 — provider-agnostic, capability-driven model & effort routing (M19 19.1, #322).**
+  The decision the rest of M19 builds on, extending (never superseding) ADR-0017. Six sub-decisions:
+  a **two-level catalog** — `providers[] → models[]` for what exists and what it can do,
+  `hosts[] → providers[]` for what a runtime can reach, which is what finally makes model-agnostic
+  hosts representable; **resolution by capability rather than by name**, split into escalation
+  (which computes the quality floor, unchanged and still monotonic) and selection (which picks the
+  cheapest reachable model that clears it); **quality-first with cost awareness as a structural
+  invariant** — *cost may only choose among models that already clear the earned floor, and can
+  never lower it*, so a security or ADR route cannot be degraded to save tokens because cost never
+  touches the floor at all; **host identity from environment evidence with a loud unknown**, never
+  from asking the agent what model it is, reconciled explicitly with M18's self-report provenance
+  decision; the **`extra`** effort level; and **enforceable catalog freshness**, with unassessed
+  models catalogued but excluded from selection. Records the rejected alternatives, in particular
+  the two most likely to be re-litigated: model self-report and API-driven catalog refresh.
+- **Lessons ledger entry L-0008 (#326).** *"A test whose expected outcome depends on data owned
+  elsewhere must derive its fixture from that data and assert the classification it is named for,
+  never a proxy that every branch satisfies."* Drawn from the two `--check` cases below, which
+  decayed the same way twice in one PR.
+- **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
+  `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
+  longer Anthropic-only, and generated repositories render both. This also clears half of a live
+  inconsistency: `os/routing/delegation.md`'s application matrix has documented `codex` since M16,
+  while the catalog listed `claude-code` alone, so `route_advice.py --host codex` failed with
+  `unknown host` on a host the documentation said was supported. `--host codex` now resolves. The
+  GPT model names are **maintainer-supplied and not independently verified in-repo**, recorded as
+  such in the catalog. `gemini` remains documented-but-uncatalogued — the remaining half of #327,
+  which also needs the two-way lint, since the one-way check cannot see that direction at all.
 
 ### Changed
 
@@ -184,6 +211,51 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ### Fixed
 
+- **A freshly rendered repository no longer opens on a wall of red CI (#313).** Roadmap item 1.1 is
+  what lays down the build system, so the build manifest is absent on day zero *by design* — but
+  the rendered workflow ran the toolchain jobs anyway and every one failed at its install or build
+  step. For the javascript profile that meant **every `pnpm` job**, because
+  `pnpm install --frozen-lockfile` has nothing to install; only `consistency / lint` was green.
+  Strictly it was not a broken promise (the quality bar only guarantees the congruence lint passes
+  out of the box), and it was still the wrong first experience: a maintainer's first signal from
+  their new repo taught them that red CI here is normal, which is the opposite of what every other
+  gate is for.
+  - Fixed **generically across all 19 toolchains**, per the issue's option (a): each profile
+    declares its `build_manifest:` as data, the CI template renders a `bootstrap` job that probes
+    for it, and the toolchain jobs `if:` on the result — so they **skip rather than fail**, and
+    start running by themselves the moment item 1.1 lands, with no edit to the workflow or the
+    profile. The probe uses `compgen -G`, so a profile may name a literal file or a glob
+    (lua's `*.rockspec` needs no special case).
+  - The **congruence lint is never gated** — it is the green-by-construction promise, and it must
+    stay the one job that always runs.
+  - **Additive.** A manifest with no `ci.build_manifest` renders **byte-identically** to before
+    (verified by diffing a full render against the pre-change output). Declaring `extra_jobs` that
+    gate on `bootstrap` *without* the manifest field is refused at `--check`, rather than emitting
+    a workflow whose jobs reference a job that does not exist.
+- **Lessons ledger entry L-0010 (#313).** *"A generated artifact must be green on day zero for the
+  work not yet done, not merely green for the work already finished — where a job cannot succeed
+  until a later roadmap item lands, make it SKIP on a declared condition rather than fail."*
+  Upstreamed from the `egl-utils-js` field run's local lesson.
+
+
+- **`routing-delegation` was a one-way registry check (M19 19.6, #327).** It verified that every
+  catalog host appears in `os/routing/delegation.md`'s application matrix, and called that *"the
+  anti-rot property"*. The reverse went unchecked — and the reverse is where the rot actually was:
+  the matrix documented `codex` and `gemini` from M16 onward while the catalog had neither, so
+  `route_advice.py --host codex` failed with `unknown host` on a host the documentation said was
+  supported. This is the **#202 defect class** recurring: a registry walked in one direction
+  validates half a relationship and reports it as whole. Now checked both ways, with messages that
+  distinguish *add the catalog entry* from *drop the row*.
+- **Matrix rows are read structurally, not by substring (#327).** The old check asked whether a
+  host's name appeared anywhere in the file — but `delegation.md` legitimately names hosts in prose
+  (*"Run the same relay on codex or gemini…"*), so a host's name was present whether or not it had
+  a row. Deleting a real row kept the gate green. Rows are now matched as table lines whose first
+  cell bolds the host id, which also lets the gate require what the row exists for: a row stating
+  neither `applied` nor `advisory-only` is now flagged. With the spec absent or unparseable both
+  directions are skipped rather than flagging every row — a parse failure means *cannot check*,
+  not *everything is wrong*, and it is `data-file-validity`'s to report.
+
+
 - **A block-sequence item whose first key was not `[A-Za-z0-9_]+` degraded to a string and dropped
   every continuation line (#316).** `parse_list` probed for a mapping item with a charset guess, so
   a first key carrying a hyphen, a dot, a space or quotes fell through to the scalar branch — the
@@ -226,55 +298,6 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
   misparse class, everywhere, not just at the root. Now rejected loudly, pointing at the inline
   form every shipped file already uses.
 
-### Added
-
-- **The loader differential now sweeps the repository's own tracked YAML, not one file (#317).**
-  `tests/test_loader.py` pinned `yamlmini` to PyYAML across ~25 hand-written cases plus exactly one
-  real file (`reference.yaml`). Every one of those cases was written by someone who already knew
-  what the loader supports — which is the blind spot, not the coverage: the two silent-data-loss
-  defects found in the 2026-07-26 audit (#315, #316) each sat one character outside the synthetic
-  corpus and stayed invisible behind a green gate, live on shipped files. The sweep enumerates
-  tracked `.eados-core/**` and `.github/**` YAML through `git ls-files` (so a new data file is
-  covered the moment it is staged) and compares both parsers on each: **47 files — 44 agree, 1 is
-  loudly rejected at the documented subset boundary, 2 are known-divergent.** Three properties make
-  it a gate rather than a report: an **undeclared** divergence fails; a file listed as
-  known-divergent that starts **agreeing** also fails, so the exception list cannot outlive the
-  bugs it documents; and the one deliberate divergence — PyYAML's YAML-1.1 coercion of bare keys
-  like `on:` to booleans, where yamlmini is intentionally the 1.2 side — is a **declared deviation
-  normalized before comparison with its reason recorded**, not an opaque exclusion, because a
-  skip-list would have hidden `lessons.yaml` exactly as well as no sweep at all. Degrades honestly
-  in both directions: no PyYAML, or no git checkout, reports a skip with the reason and never a
-  false pass. #315 and #316 remain listed as known-divergent with their issue numbers until fixed.
-
-- **ADR-0024 — provider-agnostic, capability-driven model & effort routing (M19 19.1, #322).**
-  The decision the rest of M19 builds on, extending (never superseding) ADR-0017. Six sub-decisions:
-  a **two-level catalog** — `providers[] → models[]` for what exists and what it can do,
-  `hosts[] → providers[]` for what a runtime can reach, which is what finally makes model-agnostic
-  hosts representable; **resolution by capability rather than by name**, split into escalation
-  (which computes the quality floor, unchanged and still monotonic) and selection (which picks the
-  cheapest reachable model that clears it); **quality-first with cost awareness as a structural
-  invariant** — *cost may only choose among models that already clear the earned floor, and can
-  never lower it*, so a security or ADR route cannot be degraded to save tokens because cost never
-  touches the floor at all; **host identity from environment evidence with a loud unknown**, never
-  from asking the agent what model it is, reconciled explicitly with M18's self-report provenance
-  decision; the **`extra`** effort level; and **enforceable catalog freshness**, with unassessed
-  models catalogued but excluded from selection. Records the rejected alternatives, in particular
-  the two most likely to be re-litigated: model self-report and API-driven catalog refresh.
-- **Lessons ledger entry L-0008 (#326).** *"A test whose expected outcome depends on data owned
-  elsewhere must derive its fixture from that data and assert the classification it is named for,
-  never a proxy that every branch satisfies."* Drawn from the two `--check` cases below, which
-  decayed the same way twice in one PR.
-- **`codex` is a real catalog host (#326, partially #327).** The catalog gained a second host —
-  `codex`: GPT Sol · GPT Terra · GPT Luna, flagship to economical — so the routing ladder is no
-  longer Anthropic-only, and generated repositories render both. This also clears half of a live
-  inconsistency: `os/routing/delegation.md`'s application matrix has documented `codex` since M16,
-  while the catalog listed `claude-code` alone, so `route_advice.py --host codex` failed with
-  `unknown host` on a host the documentation said was supported. `--host codex` now resolves. The
-  GPT model names are **maintainer-supplied and not independently verified in-repo**, recorded as
-  such in the catalog. `gemini` remains documented-but-uncatalogued — the remaining half of #327,
-  which also needs the two-way lint, since the one-way check cannot see that direction at all.
-
-### Fixed
 
 - **The routing catalog no longer contradicts the benchmark it is supposed to encode (#326).**
   `os/routing/routing.yaml` routed the factory's most consequential work — every `label:adr`,

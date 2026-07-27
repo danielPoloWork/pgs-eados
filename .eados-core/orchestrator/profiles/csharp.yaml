@@ -28,6 +28,10 @@ commands:
   lint:         "dotnet build -warnaserror"
   bench:        "dotnet run -c Release --project bench"   # BenchmarkDotNet
 
+# The one config file whose presence proves the build system exists (#313). Until it is
+# there, the rendered CI SKIPS the toolchain jobs instead of failing them. A glob is legal.
+build_manifest: Directory.Build.props
+
 config_files:
   - .editorconfig
   - Directory.Build.props
@@ -47,6 +51,8 @@ ci:
     quality:
       name: quality / format + analyzers + coverage
       runs-on: ubuntu-24.04
+      needs: bootstrap
+      if: needs.bootstrap.outputs.ready == 'true'
       steps:
         - uses: actions/checkout@v6
         - uses: actions/setup-dotnet@v4
