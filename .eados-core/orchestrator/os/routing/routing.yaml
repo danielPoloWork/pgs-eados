@@ -195,11 +195,26 @@ catalog:
 
   # What each runtime can reach. A mono-vendor host lists one provider; a model-agnostic one lists
   # every vendor it can drive - the case the flat v1 shape could not express at all.
+  #
+  # `detect:` are the environment markers that identify the RUNTIME (19.4, ADR-0024 D4). The OS
+  # never asks the agent which MODEL it is - a route built on a hallucinated self-description is
+  # worse than none, because it is wrong AND authoritative-looking. Marker vocabulary:
+  #     - env: NAME                 the variable is set
+  #     - env: NAME + matches: RE   it is set AND its value matches
+  # Only markers actually OBSERVED are listed. A host with `detect: []` never auto-detects and must
+  # be named (--host, or `routing.host` in the manifest) - the same honesty as an unassessed model:
+  # a guessed marker either never fires, or fires on the wrong host, and the second is worse than
+  # no detection at all. Adding one is a data edit, no code change.
   hosts:
     - id: claude-code
       name: "Claude Code"
       providers: [anthropic]
       delegation: applied
+      detect:
+        - env: CLAUDECODE
+        - env: CLAUDE_CODE_ENTRYPOINT
+        - env: AI_AGENT
+          matches: "^claude-code"
       effort_aliases:
         ultracode: max
         ultrathink: max
@@ -207,14 +222,17 @@ catalog:
       name: "ChatGPT Codex"
       providers: [openai]
       delegation: advisory-only
+      detect: []      # no marker observed yet - name it explicitly
     - id: gemini
       name: "Gemini Antigravity"
       providers: [google]
       delegation: advisory-only
+      detect: []      # no marker observed yet - name it explicitly
     - id: opencode
       name: "OpenCode (model-agnostic)"
       providers: [anthropic, openai, google, mistral, alibaba-qwen, moonshot, sakana]
       delegation: advisory-only
+      detect: []      # no marker observed yet - name it explicitly
 
 # Worked-example decision surface (#224) - the judgment call is WHICH TIER a unit of work
 # deserves. Shape-checked by the `examples` gate; drawn from the maintainer-reviewed M15

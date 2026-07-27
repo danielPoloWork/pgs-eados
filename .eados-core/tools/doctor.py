@@ -111,8 +111,8 @@ def routing_lines(issues, spec, host=None):
     for it in issues:
         adv = route_advice.advise(
             route_advice.signals_for(it.get("labels") or [], [], spec), spec, host=host)
-        lines.append(f"#{it.get('number')} -> {adv['tier']}/{adv['effort']} ({adv['model']})  "
-                     f"{it.get('title')}")
+        lines.append(f"#{it.get('number')} -> {adv['tier']}/{adv['effort']} "
+                     f"({adv['model'] or 'model unresolved'})  {it.get('title')}")
     if lines:
         lines.append("advisory only - the human keeps final model authority (ADR-0017); "
                      "asserted flags may raise a route")
@@ -166,8 +166,15 @@ def main(argv=None):
         print(f"  routing advice - milestone '{args.routing_milestone}':")
         try:
             spec = route_advice.load_routing()
+            # 19.4: report WHICH host the advice is for and WHAT decided it. An unresolved host
+            # still yields tier/effort - only the model name is lost (ADR-0024 D4).
+            resolved = route_advice.resolve_host(
+                spec, manifest_host=route_advice.manifest_routing_host())
+            print(f"    host: {resolved['host'] or 'unresolved'} "
+                  f"({resolved['source']}: {resolved['evidence']})")
+            print(f"    catalog as of {(spec.get('catalog') or {}).get('as_of')}")
             issues = route_advice.fetch_milestone_issues(args.routing_milestone)
-            out = routing_lines(issues, spec) or \
+            out = routing_lines(issues, spec, host=resolved["host"]) or \
                 [f"no open issues in milestone '{args.routing_milestone}'"]
         except RuntimeError as exc:
             out = [f"SKIP - {exc}"]

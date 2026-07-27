@@ -91,8 +91,11 @@ def main():
     adv = ra.advise([], spec)
     check("no signals -> the floor (fast/low)",
           (adv["tier"], adv["effort"]) == ("fast", "low"), failures)
-    check("the floor names the first catalog host's model",
-          adv["model"] == "Sonnet 5" and adv["host"] == "claude-code", failures)
+    # 19.4: no host resolved -> no model name. The tier/effort half is unaffected.
+    check("advise without a host yields no model (no silent default)",
+          adv["model"] is None and adv["host"] is None, failures)
+    check("advise WITH a host names that host's model",
+          ra.advise([], spec, host="claude-code")["model"] == "Sonnet 5", failures)
     check("no-match advice reports the floor", adv["matched"] == [], failures)
 
     adv = ra.advise(ra.signals_for(["severity:medium"], [], spec), spec)
@@ -183,7 +186,7 @@ def main():
 
     # Cheapest-that-clears: the floor admits every tier at or above it, and with no cost recorded
     # the tier ladder decides — so the answer is the LEAST capable model that still clears it.
-    adv = ra.advise([], spec)                                     # floor = fast/low
+    adv = ra.advise([], spec, host="claude-code")                 # floor = fast/low
     check("selection takes the least capable model that clears the floor",
           adv["model"] == "Sonnet 5" and adv["provider"] == "vendor-a", failures)
     check("the runners-up that also cleared are reported",
@@ -193,14 +196,14 @@ def main():
     costed = fixture_spec()
     for m, c in zip(costed["catalog"]["providers"][0]["models"], (1, 9, 5)):
         m["relative_cost"] = c                                    # fable=1, opus=9, sonnet=5
-    adv = ra.advise([], costed)
+    adv = ra.advise([], costed, host="claude-code")
     check("with full cost data the cheapest clearing model wins, not the lowest tier",
           adv["model"] == "Fable 5" and adv["relative_cost"] == 1, failures)
     # Partial cost data must NOT rank: a recorded 9 must not outrank an unknown.
     partial = fixture_spec()
     partial["catalog"]["providers"][0]["models"][1]["relative_cost"] = 9
     check("partial cost data falls back to the ladder rather than ranking unfairly",
-          ra.advise([], partial)["model"] == "Sonnet 5", failures)
+          ra.advise([], partial, host="claude-code")["model"] == "Sonnet 5", failures)
 
     # THE invariant: no signal combination may resolve a model below its own floor.
     every_label = ["severity:medium", "severity:high", "adr", "security"]
@@ -212,7 +215,7 @@ def main():
                            [f for k, f in enumerate(every_flag) if j >> k & 1]))
     below = []
     for labels, flags in combos:
-        a = ra.advise(ra.signals_for(labels, flags, spec), spec)
+        a = ra.advise(ra.signals_for(labels, flags, spec), spec, host="claude-code")
         if a["model"] is None:
             continue
         got = next((m for p in spec["catalog"]["providers"] for m in p["models"]
@@ -224,13 +227,13 @@ def main():
     check("every alternative offered also clears the floor",
           all(tier_rank[alt["meets_tier"]] >= tier_rank[a["tier"]]
               for labels, flags in combos
-              for a in [ra.advise(ra.signals_for(labels, flags, spec), spec)]
+              for a in [ra.advise(ra.signals_for(labels, flags, spec), spec, host="claude-code")]
               for alt in a["alternatives"]), failures)
 
     # Protected signals are surfaced so the guarantee is visible, not merely true.
     prot = fixture_spec()
     prot["protected"] = ["label:adr"]
-    adv = ra.advise(ra.signals_for(["adr"], [], prot), prot)
+    adv = ra.advise(ra.signals_for(["adr"], [], prot), prot, host="claude-code")
     check("a protected signal is reported on the advice",
           adv["protected"] == ["label:adr"], failures)
 
@@ -238,7 +241,7 @@ def main():
     only_unproven = fixture_spec()
     only_unproven["catalog"]["providers"][0]["models"] = [
         {"id": "unproven", "name": "Unproven", "assessed": False}]
-    adv = ra.advise([], only_unproven)
+    adv = ra.advise([], only_unproven, host="claude-code")
     check("an unassessed model is never selected", adv["model"] is None, failures)
     check("an unresolvable model states WHY, and keeps the tier/effort advice",
           adv["unresolved_reason"] and adv["tier"] == "fast" and adv["effort"] == "low", failures)
@@ -249,7 +252,8 @@ def main():
     # An effort ceiling excludes a model that cannot be driven that hard.
     capped = fixture_spec()
     capped["catalog"]["providers"][0]["models"][0]["max_effort"] = "low"   # Fable 5 capped
-    adv = ra.advise(ra.signals_for(["adr", "severity:high"], ["decision-heavy"], capped), capped)
+    adv = ra.advise(ra.signals_for(["adr", "severity:high"], ["decision-heavy"], capped), capped,
+                    host="claude-code")
     check("a model whose max_effort is below the floor is not a candidate",
           adv["model"] is None and adv["effort"] == "max", failures)
 
@@ -257,7 +261,61 @@ def main():
     shuffled = fixture_spec()
     shuffled["catalog"]["providers"][0]["models"].reverse()
     check("reordering the catalog does not change the resolved model",
-          ra.advise([], shuffled)["model"] == ra.advise([], spec)["model"], failures)
+          ra.advise([], shuffled, host="claude-code")["model"]
+          == ra.advise([], spec, host="claude-code")["model"], failures)
+
+    # --- 19.4 host detection: the precedence ladder (ADR-0024 D4) ---------------------------
+    det = fixture_spec()
+    det["catalog"]["hosts"][0]["detect"] = [{"env": "FIXTURE_CLAUDE"},
+                                            {"env": "FIXTURE_AGENT", "matches": "^cc-"}]
+    det["catalog"]["hosts"][1]["detect"] = [{"env": "FIXTURE_OTHER"}]
+
+    r = ra.resolve_host(det, environ={"FIXTURE_CLAUDE": "1"})
+    check("evidence resolves the host", r["host"] == "claude-code" and r["source"] == "evidence",
+          failures)
+    check("the evidence names what was actually observed",
+          "FIXTURE_CLAUDE" in r["evidence"], failures)
+    r = ra.resolve_host(det, environ={"FIXTURE_AGENT": "cc-2"})
+    check("a value-matching marker resolves", r["host"] == "claude-code", failures)
+    check("a marker whose value does NOT match is not a hit",
+          ra.resolve_host(det, environ={"FIXTURE_AGENT": "other"})["host"] is None, failures)
+
+    # THE removal: no environment, no flag, no manifest -> unresolved, never hosts[0].
+    r = ra.resolve_host(det, environ={})
+    check("an empty environment resolves to UNRESOLVED, never the first catalog host",
+          r["host"] is None and r["source"] == "unresolved", failures)
+    check("_host_entry has no default — None means unresolved, not 'the first host'",
+          ra._host_entry(det, None) is None, failures)
+
+    # Ambiguity is stated, not settled by picking one.
+    r = ra.resolve_host(det, environ={"FIXTURE_CLAUDE": "1", "FIXTURE_OTHER": "1"})
+    check("two matching hosts resolve to UNRESOLVED", r["host"] is None, failures)
+    check("ambiguity names both candidates",
+          "claude-code" in r["evidence"] and "other-host" in r["evidence"], failures)
+
+    # Precedence: flag beats manifest beats evidence.
+    env_both = {"FIXTURE_CLAUDE": "1"}
+    check("explicit beats manifest and evidence",
+          ra.resolve_host(det, explicit="other-host", manifest_host="claude-code",
+                          environ=env_both)["host"] == "other-host", failures)
+    check("manifest beats evidence",
+          ra.resolve_host(det, manifest_host="other-host", environ=env_both)["host"]
+          == "other-host", failures)
+    try:
+        ra.resolve_host(det, explicit="not-a-host")
+        failures.append("a named host that does not exist must be rejected loudly")
+    except ValueError:
+        pass
+
+    # An unresolved host keeps the whole tier/effort recommendation — only the NAME is lost.
+    adv = ra.advise(ra.signals_for(["adr"], [], det), det, host=None)
+    check("unresolved host still yields tier and effort",
+          (adv["tier"], adv["effort"]) == ("frontier-reasoning", "high"), failures)
+    check("unresolved host yields no model, and says why",
+          adv["model"] is None and adv["host"] is None and adv["unresolved_reason"], failures)
+    check("the reason points at the two explicit rungs",
+          "--host" in adv["unresolved_reason"] and "routing.host" in adv["unresolved_reason"],
+          failures)
 
     # --- host + effort-alias resolution ---
     adv = ra.advise([], spec, host="other-host")
@@ -267,8 +325,15 @@ def main():
         failures.append("an unknown host must be rejected")
     except ValueError:
         pass
+    # An alias is HOST vocabulary, so it needs a host — with none resolved there is nothing to
+    # map it through, and 19.4 removed the silent default that used to supply one.
     check("a host alias maps to the OS scale (ultracode -> max)",
-          ra.normalize_effort("ultracode", spec) == "max", failures)
+          ra.normalize_effort("ultracode", spec, host="claude-code") == "max", failures)
+    try:
+        ra.normalize_effort("ultracode", spec)
+        failures.append("a host alias must not resolve without a host (no silent default)")
+    except ValueError:
+        pass
     check("an OS-scale effort passes through", ra.normalize_effort("high", spec) == "high", failures)
     try:
         ra.normalize_effort("mega", spec)
@@ -277,14 +342,17 @@ def main():
         pass
 
     # --- the shipped spec routes the ratified M16 anchor cases (plan-doc backfill table) ---
-    adv = ra.advise(ra.signals_for(["adr", "severity:high"], ["decision-heavy"], shipped), shipped)
+    adv = ra.advise(ra.signals_for(["adr", "severity:high"], ["decision-heavy"], shipped),
+                    shipped, host="claude-code")
     check("shipped spec: the foundational ADR routes to frontier-reasoning/max",
           (adv["tier"], adv["effort"]) == ("frontier-reasoning", "max"), failures)
-    adv = ra.advise(ra.signals_for(["documentation", "severity:low"], [], shipped), shipped)
+    adv = ra.advise(ra.signals_for(["documentation", "severity:low"], [], shipped),
+                    shipped, host="claude-code")
     check("shipped spec: a small doc fix stays on the floor",
           (adv["tier"], adv["effort"]) == (shipped["defaults"]["tier"], shipped["defaults"]["effort"]),
           failures)
-    adv = ra.advise(ra.signals_for(["security", "severity:medium"], [], shipped), shipped)
+    adv = ra.advise(ra.signals_for(["security", "severity:medium"], [], shipped),
+                    shipped, host="claude-code")
     check("shipped spec: the security surface routes to frontier-reasoning",
           adv["tier"] == "frontier-reasoning", failures)
 
@@ -296,35 +364,36 @@ def main():
     check("formatted advice states the advisory boundary", "advisory" in text, failures)
 
     # --- the route checkpoint (#297): tier_of_model normalization ---
-    check("model matches its own catalog name", ra.tier_of_model("Opus 4.8", spec) == "standard", failures)
+    check("model matches its own catalog name", ra.tier_of_model("Opus 4.8", spec, host="claude-code") == "standard", failures)
     check("normalization tolerates id form (claude-opus-4-8)",
-          ra.tier_of_model("claude-opus-4-8", spec) == "standard", failures)
-    check("frontier model resolves", ra.tier_of_model("Fable 5", spec) == "frontier-reasoning", failures)
-    check("an off-catalog model resolves to no tier", ra.tier_of_model("gpt-4", spec) is None, failures)
-    check("an empty model resolves to no tier", ra.tier_of_model("", spec) is None, failures)
+          ra.tier_of_model("claude-opus-4-8", spec, host="claude-code") == "standard", failures)
+    check("frontier model resolves", ra.tier_of_model("Fable 5", spec, host="claude-code") == "frontier-reasoning", failures)
+    check("an off-catalog model resolves to no tier", ra.tier_of_model("gpt-4", spec, host="claude-code") is None, failures)
+    check("an empty model resolves to no tier", ra.tier_of_model("", spec, host="claude-code") is None, failures)
     check("tier_of_model honors the host", ra.tier_of_model("X-mid", spec, host="other-host") == "standard",
           failures)
 
     # --- check_route: ok / mismatch (below+above) / unknown-model ---
-    std = ra.advise(ra.signals_for(["severity:medium"], [], spec), spec)   # standard/medium
-    ok = ra.check_route(std, "Opus 4.8", spec)
+    std = ra.advise(ra.signals_for(["severity:medium"], [], spec), spec,
+                    host="claude-code")   # standard/medium
+    ok = ra.check_route(std, "Opus 4.8", spec, host="claude-code")
     check("check_route OK when session tier == routed tier", ok["status"] == "ok", failures)
     check("OK carries no direction", ok["direction"] is None, failures)
 
-    below = ra.check_route(std, "Sonnet 5", spec)                          # fast < standard
+    below = ra.check_route(std, "Sonnet 5", spec, host="claude-code")                          # fast < standard
     check("check_route flags a below-route mismatch",
           below["status"] == "mismatch" and below["direction"] == "below", failures)
     check("mismatch reports the session's own tier", below["current_tier"] == "fast", failures)
 
-    front = ra.advise(ra.signals_for(["adr"], [], spec), spec)            # frontier-reasoning
-    above = ra.check_route(front, "Opus 4.8", spec)                       # standard < frontier
+    front = ra.advise(ra.signals_for(["adr"], [], spec), spec, host="claude-code")            # frontier-reasoning
+    above = ra.check_route(front, "Opus 4.8", spec, host="claude-code")                       # standard < frontier
     check("check_route flags an above vs below correctly",
           above["status"] == "mismatch" and above["direction"] == "below", failures)
-    over = ra.check_route(std, "Fable 5", spec)                           # frontier > standard
+    over = ra.check_route(std, "Fable 5", spec, host="claude-code")                           # frontier > standard
     check("a session above the route reads 'above'",
           over["status"] == "mismatch" and over["direction"] == "above", failures)
 
-    unknown = ra.check_route(std, "gpt-4", spec)
+    unknown = ra.check_route(std, "gpt-4", spec, host="claude-code")
     check("check_route degrades to unknown-model off-catalog", unknown["status"] == "unknown-model", failures)
     check("unknown-model carries no session tier", unknown["current_tier"] is None, failures)
 
@@ -349,7 +418,10 @@ def main():
     # case became an unknown-model. Both stayed green while testing nothing. So: derive the models
     # from the live catalog, and assert the VERDICT rather than only the exit code — a future
     # reshuffle turns these red instead of quiet.
-    live_models = ra.models_by_tier(ra.load_routing())   # v2: projected, not stored
+    # The CLI resolves its own host through the 19.4 ladder, so read the catalog through the
+    # same host it will pick — otherwise this compares against a different host's models.
+    _live = ra.load_routing()
+    live_models = ra.models_by_tier(_live, ra.resolve_host(_live)["host"])
     verdicts = {}
     for slot in ("standard", "fast"):                    # standard == the floor, fast == below it
         buf = io.StringIO()
