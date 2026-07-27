@@ -46,17 +46,25 @@ the delegation, that wins — the hook fills the gap, it does not seize the whee
 
 ## Host application matrix
 
-| Host | Per-delegation model control | Hook behaviour |
-|---|---|---|
-| **claude-code** | **yes** — Agent-tool `model:` parameter per spawn; `model:` frontmatter on a persisted subagent definition; effort via the `ultracode` alias (→ `max`) | **applied** — resolve → pass `model` + effort to each delegation |
-| **codex** | not today | **advisory-only** — state the route for the sub-task; proceed at the session model |
-| **gemini** (Antigravity) | not today | **advisory-only** — state the route for the sub-task; proceed at the session model |
+| Host | Reaches (providers) | Per-delegation model control | Hook behaviour |
+|---|---|---|---|
+| **claude-code** | anthropic | **yes** — Agent-tool `model:` parameter per spawn; `model:` frontmatter on a persisted subagent definition; effort via the `ultracode` alias (→ `max`) | **applied** — resolve → pass `model` + effort to each delegation |
+| **codex** | openai | not today | **advisory-only** — state the route for the sub-task; proceed at the session model |
+| **gemini** (Antigravity) | google | not today | **advisory-only** — state the route for the sub-task; proceed at the session model |
+| **opencode** (model-agnostic) | anthropic, openai, google, mistral, alibaba-qwen, moonshot, sakana | not today | **advisory-only** — state the route for the sub-task; proceed at the session model |
 
 The matrix tracks the `catalog.hosts` in [`routing.yaml`](./routing.yaml): **every** catalog host
 appears here as either *applied* or *advisory-only*, so a host added to the catalog cannot be
 silently left without a stated delegation posture (enforced by the `routing-delegation` self-lint).
 A host graduates from advisory-only to applied the day it ships per-delegation model control — a
 one-row edit here, no policy or tool change.
+
+The **Reaches** column is the schema-v2 half (ADR-0024 D1): a host declares which *providers* it
+can drive, and the model for a tier is selected from those providers' catalogued models rather than
+stored per host. `opencode` is the case the flat v1 shape could not express at all — one runtime,
+seven vendors, one entry. A host whose reachable providers have **no assessed model** for a tier
+resolves tier and effort but no model name, and says so: the recommendation is vendor-neutral, so
+only the name is lost (ADR-0024 D4/D6). That is today's state for `gemini`.
 
 ## Worked example (claude-code) — the four-role relay
 

@@ -73,10 +73,14 @@ def routing_scalars(routing):
     defaults = routing.get("defaults") or {}
     catalog = routing.get("catalog") or {}
     lines = []
+    import route_advice   # noqa: E402 — lazy, same cycle-break as load_routing above
     for h in catalog.get("hosts") or []:
-        models = h.get("models") if isinstance(h, dict) else {}
-        cells = " · ".join(f"{t} → {(models or {}).get(t, '')}" for t in tiers)
-        lines.append(f"- **{(h or {}).get('host', '')}**: {cells}")
+        # Schema v2 (ADR-0024): a host declares which providers it reaches, so the tier→model map
+        # is projected from the catalog rather than stored per host. A tier with no assessed
+        # reachable model renders as "—" — the honest answer, not a blank that reads as an omission.
+        models = route_advice.models_by_tier(routing, (h or {}).get("id")) if isinstance(h, dict) else {}
+        cells = " · ".join(f"{t} → {models.get(t) or '—'}" for t in tiers)
+        lines.append(f"- **{(h or {}).get('id', '')}**: {cells}")
     return {
         "ROUTE_TIERS": " → ".join(tiers),
         "ROUTE_EFFORTS": " → ".join(str(e) for e in routing.get("efforts") or []),

@@ -1,14 +1,20 @@
-# EADOS model & effort routing - reference instance. Schema: ./_schema.md (ADR-0017).
+# EADOS model & effort routing - reference instance. Schema: ./_schema.md (ADR-0017 + ADR-0024).
 # Advisory-first: the OS recommends, the human keeps final model authority. The rules speak
 # capability TIERS; concrete model names live ONLY in the dated catalog below, so model churn is
-# a catalog edit - never a policy or code change. Evaluator: tools/route_advice.py (M16 16.2).
-version: 1
+# a catalog edit - never a policy or code change. Evaluator: tools/route_advice.py.
+#
+# SCHEMA v2 (M19 19.2, ADR-0024). The catalog is two levels: `providers` say what exists and what
+# it can do; `hosts` say what a runtime can actually reach. That split is what makes a
+# model-agnostic host (one runtime, many vendors) representable as ONE entry instead of a
+# pseudo-host per host x provider pair. Resolution is by CAPABILITY, never by name: escalation
+# computes the quality floor, then selection picks the cheapest reachable model that clears it.
+version: 2
 
 # Ordered cheapest -> most capable / lowest -> highest. Resolution starts at the `defaults` floor
 # and matched rules only ever RAISE (max over floor + matches) - the same only-add-never-relax
 # principle as the workflow's domain overlays. Deterministic and order-independent.
 tiers: [fast, standard, frontier-reasoning]
-efforts: [low, medium, high, max]
+efforts: [low, medium, high, extra, max]
 
 # Derived signals beyond tracker labels, asserted by an evaluator heuristic or a human judgment.
 flags:
@@ -21,8 +27,28 @@ defaults:
   tier: fast
   effort: low
 
+# Signals whose earned floor NOTHING may reduce - not selection, not a cost preference, not a
+# future budget posture (ADR-0024 D3). Declared as data so the guarantee is checkable rather than
+# a property of the code that happens to hold.
+protected:
+  - "label:security"
+  - "label:adr"
+  - "flag:decision-heavy"
+
+# How selection chooses AMONG the models that already clear the floor. Cost operates HERE and
+# only here: it can pick the cheapest sufficient model, and it can never lower the floor itself.
+# `lowest_cost` falls back to declaration order for models whose relative_cost is unrecorded.
+selection:
+  objective: quality-first
+  prefer: [lowest_cost]
+
 # Signal vocabulary: "label:<tracker label>" or "flag:<flags key>". A rule matches when ALL of
 # its `when` signals hold; it raises the result to at least min_tier / min_effort.
+#
+# EFFORT RE-READ (19.2, 2026-07-27). Inserting `extra` between `high` and `max` changed what every
+# existing `min_effort: high` MEANS - it used to sit one step below the ceiling and now sits two.
+# Each rule was re-read against the five-point scale rather than migrated mechanically; the
+# outcome, changed or deliberately unchanged, is recorded per rule below.
 rules:
   - id: severity-medium
     when:
@@ -30,36 +56,46 @@ rules:
     min_tier: standard
     min_effort: medium
     why: "a significant gap deserves substantive work - standard tier, real effort"
+    # re-read: UNCHANGED. Mid-scale work; it sat mid-scale before and still does.
   - id: severity-high
     when:
       - "label:severity:high"
     min_tier: standard
     min_effort: high
     why: "core-guarantee work needs sustained effort; tier rises via flags, not severity alone"
+    # re-read: UNCHANGED. The `why` already says severity alone does not buy the top; `high` is
+    # still the right "substantive but not maximal", and it now reads as exactly that.
   - id: security-surface
     when:
       - "label:security"
     min_tier: frontier-reasoning
-    min_effort: high
+    min_effort: extra
     why: "on security posture the cost of a subtle miss dwarfs the routing saving"
+    # re-read: RAISED high -> extra. The stated argument wants near-ceiling effort; `high` no
+    # longer is near-ceiling, so leaving it would have quietly weakened the rule.
   - id: decision-heavy
     when:
       - "flag:decision-heavy"
     min_tier: frontier-reasoning
-    min_effort: high
+    min_effort: extra
     why: "when the decision is the deliverable, reasoning depth is the product"
+    # re-read: RAISED high -> extra. Same argument as security-surface: depth IS the deliverable.
   - id: adr-is-decision-heavy
     when:
       - "label:adr"
     min_tier: frontier-reasoning
-    min_effort: high
+    min_effort: extra
     why: "an ADR-bearing issue is decision-heavy by definition"
+    # re-read: RAISED high -> extra. This is the label form of `decision-heavy`; the two must move
+    # together or the same work routes differently depending on which signal was asserted.
   - id: sets-pattern
     when:
       - "flag:sets-pattern"
     min_tier: frontier-reasoning
     min_effort: high
     why: "the first of a class fixes the template every follower copies - amortized quality"
+    # re-read: UNCHANGED, deliberately. The amortization argument justifies the TIER, not maximal
+    # effort. Holding at `high` is what now distinguishes it from the three rules above.
   - id: foundational-decision
     when:
       - "flag:decision-heavy"
@@ -67,50 +103,118 @@ rules:
     min_tier: frontier-reasoning
     min_effort: max
     why: "a wrong foundational call is the most expensive artifact the factory can produce"
+    # re-read: UNCHANGED. The ceiling by design; `extra` exists below it, not in place of it.
 
-# The ONLY place model names live. `as_of` is refreshed whenever a mapping changes - a stale
-# date is the review cue. Hosts with their own effort words map them via effort_aliases.
+# The ONLY place model names live.
 #
-# PROVENANCE (#326). Until 2026-07-26 this catalog and the README disagreed outright: the catalog
-# routed every ADR / security / foundational-decision unit of work - the whole frontier-reasoning
-# tier, the most consequential work the factory does - to a model the README listed among those NOT
-# benchmarked for EADOS, while the one it ranked first sat a tier below. Model names lived in two
-# homes with nothing forcing them to agree, and the home that executes was the wrong one.
+# PROVENANCE. `assessed: true` means the MAINTAINER has judged this model against EADOS and placed
+# it on the ladder - a dated judgment, not a benchmark run. A model nobody has assessed is
+# catalogued as REACHABLE and carries NO `meets_tier`: you cannot claim a capability you have not
+# verified, and selection skips it (ADR-0024 D6). Inventing a tier to fill the table is exactly
+# how #326 happened - the catalog routed every ADR and security unit of work to a model the README
+# itself called unbenchmarked, for weeks, because a confident claim was indistinguishable from a
+# verified one. A provider with `models: []` records only that hosts can reach it.
 #
-# The fix is the COUPLING, not any particular name: the ladder below and the README ranking are now
-# written in the same change and must be changed in the same change. M19 19.5 (#326) adds the
-# `routing-model-lockstep` gate that makes that mechanical instead of a habit.
-#
-# What the entries rest on:
-#   * ASSESSED   - the maintainer's dated judgment (2026-07-26): flagship / balanced / economical
-#                  per host. A judgment, not a benchmark run. The distinction is written down
-#                  rather than implied, because the bug being fixed here existed precisely because
-#                  an unverified claim was indistinguishable from a verified one.
-#   * codex host - the GPT model names were supplied by the maintainer on 2026-07-26 and are NOT
-#                  independently verified in-repo. Adding this host also clears a live
-#                  inconsistency (#327): delegation.md's matrix has always documented `codex`,
-#                  while the catalog listed claude-code alone - so `route_advice.py --host codex`
-#                  errored on a host the documentation said was supported.
-#
-# M19 19.2 (#323) replaces this comment with data: a two-level provider/host catalog where every
-# model carries `assessed:`, a context window, a relative cost and its own verification date;
-# 19.3 (#324) then excludes unassessed models from selection instead of trusting a comment.
+# `relative_cost` (cheapest = 1) and `context` are OPTIONAL and currently unrecorded: real figures
+# are a maintainer task, and fabricated ones would be worse than none. Where cost is absent,
+# selection falls back to declaration order within the tier.
 catalog:
-  as_of: "2026-07-26"
-  hosts:
-    - host: claude-code
+  as_of: "2026-07-27"
+  max_age_days: 90
+
+  providers:
+    - id: anthropic
+      name: "Anthropic"
       models:
-        frontier-reasoning: "Fable 5"    # flagship   - ASSESSED, maintainer 2026-07-26
-        standard: "Opus 5"               # balanced   - ASSESSED, maintainer 2026-07-26
-        fast: "Sonnet 5"                 # economical - ASSESSED, maintainer 2026-07-26
+        - id: fable-5
+          name: "Fable 5"
+          meets_tier: frontier-reasoning
+          max_effort: max
+          assessed: true
+          verified: "2026-07-26"
+        - id: opus-5
+          name: "Opus 5"
+          meets_tier: standard
+          max_effort: max
+          assessed: true
+          verified: "2026-07-26"
+        - id: sonnet-5
+          name: "Sonnet 5"
+          meets_tier: fast
+          max_effort: max
+          assessed: true
+          verified: "2026-07-26"
+        - id: haiku-4-5
+          name: "Haiku 4.5"
+          assessed: false
+          notes: "reachable and cheaper than Sonnet 5; never assessed against EADOS, so no tier claim"
+    - id: openai
+      name: "OpenAI"
+      models:
+        - id: gpt-sol
+          name: "GPT Sol"
+          meets_tier: frontier-reasoning
+          assessed: true
+          verified: "2026-07-26"
+          notes: "maintainer-supplied ladder; the model NAMES are not independently verified in-repo"
+        - id: gpt-terra
+          name: "GPT Terra"
+          meets_tier: standard
+          assessed: true
+          verified: "2026-07-26"
+          notes: "maintainer-supplied ladder; the model NAMES are not independently verified in-repo"
+        - id: gpt-luna
+          name: "GPT Luna"
+          meets_tier: fast
+          assessed: true
+          verified: "2026-07-26"
+          notes: "maintainer-supplied ladder; the model NAMES are not independently verified in-repo"
+    - id: google
+      name: "Google"
+      models:
+        - id: gemini-3-5-flash
+          name: "Gemini 3.5 Flash"
+          assessed: false
+          notes: "the README records that it works; that is not a tier assessment, so no claim here"
+    - id: mistral
+      name: "Mistral AI"
+      models: []
+      notes: "reachability recorded; the README states it is not benchmarked for EADOS"
+    - id: alibaba-qwen
+      name: "Qwen (Alibaba)"
+      models: []
+      notes: "reachability recorded; no model catalogued or assessed"
+    - id: moonshot
+      name: "Moonshot AI (Kimi)"
+      models: []
+      notes: "reachability recorded; no model catalogued or assessed"
+    - id: sakana
+      name: "Sakana AI"
+      models: []
+      notes: "reachability recorded; the README states it is not benchmarked for EADOS"
+
+  # What each runtime can reach. A mono-vendor host lists one provider; a model-agnostic one lists
+  # every vendor it can drive - the case the flat v1 shape could not express at all.
+  hosts:
+    - id: claude-code
+      name: "Claude Code"
+      providers: [anthropic]
+      delegation: applied
       effort_aliases:
         ultracode: max
         ultrathink: max
-    - host: codex
-      models:
-        frontier-reasoning: "GPT Sol"    # flagship   - maintainer-supplied, unverified in-repo
-        standard: "GPT Terra"            # balanced   - maintainer-supplied, unverified in-repo
-        fast: "GPT Luna"                 # economical - maintainer-supplied, unverified in-repo
+    - id: codex
+      name: "ChatGPT Codex"
+      providers: [openai]
+      delegation: advisory-only
+    - id: gemini
+      name: "Gemini Antigravity"
+      providers: [google]
+      delegation: advisory-only
+    - id: opencode
+      name: "OpenCode (model-agnostic)"
+      providers: [anthropic, openai, google, mistral, alibaba-qwen, moonshot, sakana]
+      delegation: advisory-only
 
 # Worked-example decision surface (#224) - the judgment call is WHICH TIER a unit of work
 # deserves. Shape-checked by the `examples` gate; drawn from the maintainer-reviewed M15

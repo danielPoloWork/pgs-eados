@@ -45,9 +45,9 @@ def main():
     # --- routed_item: the per-item derivation --------------------------------
     check("legacy string passes through untouched",
           render.routed_item("2.1 Plain item", routing) == "2.1 Plain item", failures)
-    check("adr signal earns frontier-reasoning / high",
+    check("adr signal earns frontier-reasoning / extra",
           render.routed_item({"text": "3.2 Record the ADR", "signals": ["adr"]}, routing)
-          == "3.2 Record the ADR — route: frontier-reasoning / high (adr)", failures)
+          == "3.2 Record the ADR — route: frontier-reasoning / extra (adr)", failures)
     check("severity:medium earns standard / medium",
           render.routed_item({"text": "4.1 Fix gap", "signals": ["severity:medium"]}, routing)
           == "4.1 Fix gap — route: standard / medium (severity:medium)", failures)
@@ -57,7 +57,7 @@ def main():
     check("only-raise: max over floor and every match",
           render.routed_item({"text": "4.3 X", "signals": ["security", "severity:medium"]},
                              routing)
-          == "4.3 X — route: frontier-reasoning / high (security, severity:medium)", failures)
+          == "4.3 X — route: frontier-reasoning / extra (security, severity:medium)", failures)
     check("foundational pair escalates effort to max",
           render.routed_item({"text": "4.4 Y", "signals": ["decision-heavy", "severity:high"]},
                              routing).endswith(
@@ -68,19 +68,24 @@ def main():
     check("ROUTE_TIERS is the spec ladder, cheapest first",
           sc["ROUTE_TIERS"] == "fast → standard → frontier-reasoning", failures)
     check("ROUTE_EFFORTS is the spec ladder, lowest first",
-          sc["ROUTE_EFFORTS"] == "low → medium → high → max", failures)
+          sc["ROUTE_EFFORTS"] == " → ".join(routing["efforts"]), failures)
     check("ROUTE_FLOOR is the defaults pair", sc["ROUTE_FLOOR"] == "fast / low", failures)
     check("ROUTE_CATALOG_AS_OF mirrors the spec's dated catalog",
           sc["ROUTE_CATALOG_AS_OF"] == str((routing.get("catalog") or {}).get("as_of")),
           failures)
     # Catalog content asserted against the SPEC's values (a catalog refresh must not edit this
     # test): every host appears, and each tier maps to that host's current model name.
+    import route_advice as _ra   # schema v2: the tier→model map is PROJECTED, not stored per host
     for host in (routing.get("catalog") or {}).get("hosts") or []:
-        check(f"ROUTE_CATALOG names host {host['host']}",
-              f"**{host['host']}**" in sc["ROUTE_CATALOG"], failures)
+        hid = host["id"]
+        check(f"ROUTE_CATALOG names host {hid}",
+              f"**{hid}**" in sc["ROUTE_CATALOG"], failures)
+        projected = _ra.models_by_tier(routing, hid)
         for tier in routing["tiers"]:
-            check(f"ROUTE_CATALOG maps {host['host']}/{tier} to its catalog value",
-                  f"{tier} → {host['models'][tier]}" in sc["ROUTE_CATALOG"], failures)
+            # A tier with no assessed reachable model renders "—" (ADR-0024 D6), which is a value
+            # this assertion must accept rather than a gap it should paper over.
+            check(f"ROUTE_CATALOG maps {hid}/{tier} to its catalog value",
+                  f"{tier} → {projected.get(tier) or '—'}" in sc["ROUTE_CATALOG"], failures)
 
     # --- milestone_item_problems: loud validation -----------------------------
     clean = {"milestones": [{"items": ["2.1 ok", {"text": "2.2 ok", "signals": ["adr"]}]}],
@@ -139,7 +144,7 @@ def main():
           sections["EACH_MILESTONE"][0]["items"][0] == "2.1 plain", failures)
     check("build_context suffixes object items",
           sections["EACH_MILESTONE"][0]["items"][1]
-          == "2.2 t — route: frontier-reasoning / high (adr)", failures)
+          == "2.2 t — route: frontier-reasoning / extra (adr)", failures)
     check("build_context routes milestone1_items too",
           sections["EACH_MILESTONE1_ITEM"][0] == "1.6 extra — route: fast / low", failures)
 

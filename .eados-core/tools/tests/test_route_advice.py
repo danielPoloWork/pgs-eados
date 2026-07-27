@@ -29,7 +29,7 @@ def fixture_spec():
     return {
         "version": 1,
         "tiers": ["fast", "standard", "frontier-reasoning"],
-        "efforts": ["low", "medium", "high", "max"],
+        "efforts": ["low", "medium", "high", "extra", "max"],
         "flags": {"sets-pattern": "first of its class", "decision-heavy": "the decision is the deliverable"},
         "defaults": {"tier": "fast", "effort": "low"},
         "rules": [
@@ -44,14 +44,32 @@ def fixture_spec():
             {"id": "foundational", "when": ["flag:decision-heavy", "label:severity:high"],
              "min_tier": "frontier-reasoning", "min_effort": "max", "why": "most expensive artifact"},
         ],
+        # Schema v2 (ADR-0024): providers say what exists and what it CLEARS; hosts say what they
+        # reach. The fixture keeps the same resolved names as the v1 fixture did, so every
+        # assertion below still reads against the values it was written for.
         "catalog": {
             "as_of": "2026-07-09",
+            "providers": [
+                {"id": "vendor-a", "models": [
+                    {"id": "fable-5", "name": "Fable 5", "meets_tier": "frontier-reasoning",
+                     "assessed": True},
+                    {"id": "opus-4-8", "name": "Opus 4.8", "meets_tier": "standard",
+                     "assessed": True},
+                    {"id": "sonnet-5", "name": "Sonnet 5", "meets_tier": "fast", "assessed": True},
+                    # Unassessed: reachable, but it must never be selected for any tier.
+                    {"id": "unproven", "name": "Unproven", "assessed": False},
+                ]},
+                {"id": "vendor-b", "models": [
+                    {"id": "x-large", "name": "X-large", "meets_tier": "frontier-reasoning",
+                     "assessed": True},
+                    {"id": "x-mid", "name": "X-mid", "meets_tier": "standard", "assessed": True},
+                    {"id": "x-small", "name": "X-small", "meets_tier": "fast", "assessed": True},
+                ]},
+            ],
             "hosts": [
-                {"host": "claude-code",
-                 "models": {"frontier-reasoning": "Fable 5", "standard": "Opus 4.8", "fast": "Sonnet 5"},
+                {"id": "claude-code", "providers": ["vendor-a"],
                  "effort_aliases": {"ultracode": "max"}},
-                {"host": "other-host",
-                 "models": {"frontier-reasoning": "X-large", "standard": "X-mid", "fast": "X-small"}},
+                {"id": "other-host", "providers": ["vendor-b"]},
             ],
         },
         "examples": {"verdicts": ["fast", "standard", "frontier-reasoning"], "cases": []},
@@ -125,10 +143,27 @@ def main():
           broken(lambda s: s["rules"][0].update(when=["severity:high"])), failures)
     check("bad defaults are a problem",
           broken(lambda s: s["defaults"].update(tier="huge")), failures)
-    check("a host missing a tier's model is a problem",
-          broken(lambda s: s["catalog"]["hosts"][0]["models"].pop("fast")), failures)
-    check("a host mapping an unknown tier is a problem",
-          broken(lambda s: s["catalog"]["hosts"][0]["models"].update(huge="Y")), failures)
+    # --- schema v2 referential integrity (ADR-0024 D1/D6) ---
+    check("a host reaching an unknown provider is a problem",
+          broken(lambda s: s["catalog"]["hosts"][0].update(providers=["ghost-vendor"])), failures)
+    check("a host that reaches nothing is a problem",
+          broken(lambda s: s["catalog"]["hosts"][0].update(providers=[])), failures)
+    check("a model claiming an unknown tier is a problem",
+          broken(lambda s: s["catalog"]["providers"][0]["models"][0].update(meets_tier="huge")),
+          failures)
+    check("an assessed model with no meets_tier is a problem",
+          broken(lambda s: s["catalog"]["providers"][0]["models"][0].pop("meets_tier")), failures)
+    # The #326 guard: an unverified capability claim must be rejected, not quietly trusted.
+    check("an UNASSESSED model claiming a tier is a problem",
+          broken(lambda s: s["catalog"]["providers"][0]["models"][3].update(
+              meets_tier="frontier-reasoning")), failures)
+    check("a model with an unknown max_effort is a problem",
+          broken(lambda s: s["catalog"]["providers"][0]["models"][0].update(max_effort="extreme")),
+          failures)
+    check("an unknown selection criterion is a problem",
+          broken(lambda s: s.update(selection={"prefer": ["fastest"]})), failures)
+    check("a protected signal referencing an undeclared flag is a problem",
+          broken(lambda s: s.update(protected=["flag:nope"])), failures)
     check("an alias to an unknown effort is a problem",
           broken(lambda s: s["catalog"]["hosts"][0]["effort_aliases"].update(mega="extreme")), failures)
     check("an examples verdict outside `tiers` is a problem",
@@ -228,7 +263,7 @@ def main():
     # case became an unknown-model. Both stayed green while testing nothing. So: derive the models
     # from the live catalog, and assert the VERDICT rather than only the exit code — a future
     # reshuffle turns these red instead of quiet.
-    live_models = ra.load_routing()["catalog"]["hosts"][0]["models"]
+    live_models = ra.models_by_tier(ra.load_routing())   # v2: projected, not stored
     verdicts = {}
     for slot in ("standard", "fast"):                    # standard == the floor, fast == below it
         buf = io.StringIO()
