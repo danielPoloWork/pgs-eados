@@ -26,7 +26,15 @@ TOOLS = os.path.dirname(HERE)
 REPO_ROOT = os.path.dirname(os.path.dirname(TOOLS))
 SETUP_PS1 = os.path.join(REPO_ROOT, "setup", "setup.ps1")
 
-PWSH = shutil.which("pwsh") or shutil.which("powershell")
+# Which PowerShell to drive. `pwsh` (7.x, cross-platform) by default — but setup.ps1 TARGETS
+# Windows, where the default shell is Windows PowerShell 5.1, a different engine with materially
+# different behaviour (no `&&`/`||` chain operators, no ternary, `Set-Content` defaulting to the
+# ANSI codepage). Testing only under pwsh on a Linux runner therefore proves the script parses and
+# runs somewhere other than where its users are. EADOS_PS_EXE lets CI pin the interpreter so the
+# 5.1 cell is a real cell rather than a second pwsh run (#318).
+PWSH = (shutil.which(os.environ.get("EADOS_PS_EXE", "").strip())
+        if os.environ.get("EADOS_PS_EXE", "").strip()
+        else (shutil.which("pwsh") or shutil.which("powershell")))
 HAVE_GIT = shutil.which("git") is not None
 
 

@@ -9,6 +9,34 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ## [Unreleased]
 
+### Changed
+
+- **The factory's own CI now runs on the platforms its users and its maintainer actually use
+  (#318).** It was `ubuntu-24.04` + Python 3.12 — **one cell** — while EADOS ships a cross-platform
+  installer and its maintainer develops on Windows with Python 3.14, a version CI never touched.
+  That gap had already cost twice: #128 (a `UnicodeEncodeError` crash across 20 CLI tools on a
+  cp1252 console) and the UTF-8 BOM strip were both **Windows-specific defects found by hand under
+  a green CI**, and 19.4's host-detection test passed locally and failed on the runner precisely
+  because the feature reads its environment. One platform cannot validate code that reads its
+  platform.
+  - The self-lint / test job is now a **7-cell matrix** — Linux × 3.12/3.13/3.14, Windows ×
+    3.12/**3.14**, macOS × 3.12/3.14 — with `fail-fast: false`, so one red cell cannot hide the
+    state of the others. The advisory readouts (auto-tuner, lesson audit) stay on the baseline
+    cell: they never fail the build, and seven copies of the same advice is not seven signals.
+  - **`setup.ps1` is now exercised under Windows PowerShell 5.1 on a Windows runner.** It targets
+    Windows, whose default shell is 5.1 — a different engine from `pwsh` 7, with no `&&`/`||`
+    chain operators, no ternary, and `Set-Content` defaulting to the ANSI codepage. Testing it
+    only under `pwsh` on a Linux runner proved it worked *somewhere other than where its users
+    are*. The job asserts it really is on 5.x before running, and `EADOS_PS_EXE` pins the engine
+    so the cell cannot silently become a second `pwsh` run.
+  - **`setup.bat` is executed rather than parsed** — it never ran anywhere before. Its trailing
+    `pause` is fed `NUL` on stdin so it returns immediately.
+  - Installer static analysis (shellcheck + the PowerShell parse check) moved to its own
+    Linux-only job, since `shellcheck` is not on the Windows/macOS runners and a parse check is
+    platform-independent anyway.
+  - **The supported range is now a claim the matrix proves**: `CONTRIBUTING.md` states Python
+    3.12–3.14 on Linux, macOS and Windows, and every one of those is a cell.
+
 ## [2.12.0] - 2026-07-27
 
 Provider-agnostic routing, and a loader that no longer loses data quietly — a minor release with
