@@ -170,6 +170,36 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **`git_check` judged a generated repo by the FACTORY's scope list (#358).** `GIT_POLICY` was
+  hardcoded and `main()` exposed no way to change it, so after `scaffold` handed governance to a
+  generated repo's own `AGENTS.md` — the two-contracts rule — the tool still evaluated that repo's
+  commits against **EADOS's** Conventional-Commit scopes. On the consumer that reported it the two
+  lists overlapped in **2 of 13** entries, making it wrong in both directions: **11 of the
+  project's own scopes rejected**, and **19 of the factory's accepted** — so `fix(profiles):` sailed
+  through a Java library with no profiles. The quiet half is the worse one: nobody notices a check
+  that passes.
+  - **The policy is now discovered, not hardcoded.** A generated repo's own
+    `docs/workflow/git-policy.yaml` first; the factory's `os/git/git.yaml` **only** when the repo is
+    EADOS itself (`.eados-dev`) — gated rather than used as a fallback, because an ungated fallback
+    *is* the defect; `--policy PATH` overrides both.
+  - **A generated repo now carries its git policy as data.** Rendered from the manifest's
+    `governance.scopes`, because `.eados-core/` is gitignored downstream — the manifest that
+    declared those scopes does not survive a clone, and `AGENTS.md` §6 prose was the only remaining
+    trace. Deliberately **not** a copy of the factory spec: the universal parts (who drafts, merges,
+    publishes; semver; traceability) are already stated in that repo's own authoritative
+    `AGENTS.md`, and duplicating them would only create something to drift. The Conventional Commit
+    *types* are derived from the factory spec at render time, so the two cannot disagree.
+  - **A repo generated before this ships is handled explicitly, not silently.** It is never
+    re-rendered (ADR-0003), so it has no policy file — the check then narrows to what is identical
+    in every EADOS contract (branch shape, the commit type vocabulary), **states** that scopes and
+    one-PR were not checked and why, and says how to enable them. Checking less honestly beats
+    checking more wrongly (L-0006).
+  - Found in the field, not by CI — see #359 for the gate that closes that gap. The new test drives
+    a **real render** rather than a hand-built fixture for exactly that reason, asserts both
+    directions of the defect, and pins the old behaviour (`--policy <factory spec>` on a generated
+    repo rejects its own valid commit) so it stays demonstrable.
+
+
 - **Eight `gh` / `git` calls could hang forever (#321).** `subprocess.run` without a `timeout`
   waits indefinitely, and the tools most exposed were the ones written to degrade gracefully
   offline: `derive_links`, `pr_review`, `route_advice`, `pr_metadata_check`, `lesson_sweep`,
