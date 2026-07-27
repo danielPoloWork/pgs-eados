@@ -11,6 +11,38 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ### Changed
 
+- **Routing resolves by capability instead of looking a name up in a table (M19 19.3, #324,
+  ADR-0024 D2/D3).** `advise()` is now two phases with different jobs. **Escalation** computes the
+  quality floor — unchanged, monotonic, order-independent, and verified byte-for-byte equivalent to
+  the previous evaluator across all 128 signal combinations of the shipped policy. **Selection**
+  then picks, among the models the resolved host can reach, the cheapest one that *clears* that
+  floor: `meets_tier` at or **above** the floor rather than an exact match, `max_effort` honoured
+  where declared, unassessed models never eligible.
+  - **The cost invariant is now structural.** Selection has no branch that can return a model below
+    the floor, and no configuration — no `selection` value, no signal, no catalog edit — can create
+    one. Asserted directly rather than argued: a test drives **all 128 signal combinations** and
+    checks both the chosen model *and* every offered alternative against the floor.
+  - **"Minimum sufficient model" is computed, not asserted.** With no `relative_cost` recorded, the
+    fallback is the tier ladder — which `tiers` already declares cheapest→most capable — so the
+    answer is the *least capable model that still clears the floor*. When every candidate does
+    record a cost, cost decides instead. **Partial** cost data deliberately does not rank: a
+    recorded cost of 100 must not outrank an unknown, so the ladder decides until the data is
+    complete.
+  - **An unresolvable model is stated, never substituted.** When nothing reachable clears the floor
+    the tier and effort still stand — they are vendor-neutral — and the output names the floor, the
+    host and its providers, and what to do about it. The default exit stays 0 because that advice is
+    valid and complete for what it could determine; automation that genuinely needs a name asks with
+    the new `--require-model`, which exits non-zero. (The issue proposed a bare non-zero exit; that
+    would have contradicted ADR-0024 D4 and 19.2's shipped behaviour, so the strictness is opt-in.)
+  - **`--explain`** shows why the chosen model won and what the runners-up would have cost —
+    every model it lists already clears the floor, so it is visibly a cost choice, never a quality
+    one. Advice gains `provider`, `relative_cost`, `alternatives[]`, `unresolved_reason` and
+    `protected`, the last so the guarantee is visible rather than merely true.
+  - `protected` and `selection` are now **required** by the spec validator. Both fail *open* when
+    absent — an undeclared `selection` silently disables the cost preference, an undeclared
+    `protected` silently drops the guarantee it encodes — which the test fixture demonstrated by
+    omitting `selection` and quietly never exercising cost at all.
+
 - **`os/routing` moves to schema v2 — a two-level provider/host catalog (M19 19.2, #323,
   ADR-0024).** The catalog was a flat `host → {tier: model name}` map, which could represent
   neither a vendor the factory does not run on nor a **model-agnostic runtime** (one host, many

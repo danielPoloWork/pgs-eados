@@ -147,8 +147,17 @@ def spec_problems(spec):
                 problems.append(f"catalog host '{hid}' alias '{alias}' -> {effort!r} is not an "
                                 "`efforts` entry")
 
+    # `protected` and `selection` are required structure in schema v2: they carry the cost
+    # invariant, and absent they fail OPEN — an undeclared `selection` silently disables the cost
+    # preference, and an undeclared `protected` silently drops the guarantee it encodes.
+    if spec.get("protected") is None:
+        problems.append("`protected` is missing — schema v2 requires the signals whose floor "
+                        "nothing may reduce, declared as data (use [] to mean none)")
     for sig in spec.get("protected") or []:
         problems += _signal_problems(str(sig), flags, where="protected")
+    if not isinstance(spec.get("selection"), dict):
+        problems.append("`selection` is missing — schema v2 requires how selection chooses among "
+                        "models that already clear the floor")
     sel = spec.get("selection") if isinstance(spec.get("selection"), dict) else {}
     for pref in sel.get("prefer") or []:
         if pref not in ("lowest_cost", "lowest_latency"):
@@ -225,19 +234,64 @@ def advise(signals, spec, host=None):
         if me is not None and effort_rank[me] > effort_rank[effort]:
             effort = me
 
+    # --- phase 2: SELECTION — the cheapest reachable model that CLEARS the floor -------------
+    # The floor above is quality, and nothing below decides it. Selection only ever chooses AMONG
+    # models that already clear it, so cost can never lower the floor (ADR-0024 D3). There is
+    # deliberately no branch here that can return a model below `tier`.
     entry = _host_entry(spec, host)
+    ranked = candidates_for(spec, tier, effort, host)
+    best = ranked[0] if ranked else None
+    protected = [str(s) for s in (spec.get("protected") or []) if str(s) in have]
+
+    unresolved = None
+    if best is None:
+        reachable = ", ".join(entry.get("providers") or []) or "nothing"
+        unresolved = (f"no reachable model clears {tier}/{effort} on host '{entry['id']}' "
+                      f"(providers: {reachable}) — catalogue and assess one, or run this work on a "
+                      "host that reaches one. The tier and effort above still stand.")
+
     return {
         "tier": tier,
         "effort": effort,
-        # None when the host reaches no ASSESSED model for this tier — the tier/effort advice is
-        # vendor-neutral and still stands; only the name is unresolved (ADR-0024 D4/D6).
-        "model": models_by_tier(spec, host).get(tier),
+        # None when nothing reachable clears the floor. The tier/effort advice is vendor-neutral
+        # and still stands; only the name is unresolved, and `unresolved_reason` says why. Never a
+        # cheaper substitute — that would be the floor quietly lowered.
+        "model": best["model"] if best else None,
+        "provider": best["provider"] if best else None,
+        "relative_cost": best["relative_cost"] if best else None,
+        "alternatives": ranked[1:],
+        "unresolved_reason": unresolved,
+        "protected": protected,
         "host": entry["id"],
         "catalog_as_of": (spec.get("catalog") or {}).get("as_of"),
         "matched": matched,
         "floor": dict(spec["defaults"]),
         "boundary": "advisory only — the human keeps final model authority (ADR-0017)",
     }
+
+
+def format_selection(advice, spec):
+    """`--explain`: why the chosen model won, and what the runners-up would have cost. Selection is
+    phase 2 only — every model listed here already clears the floor, so this shows a COST choice,
+    never a quality one."""
+    prefer = (spec.get("selection") or {}).get("prefer") or []
+    alts = advice.get("alternatives") or []
+    out = [f"  selection: among models that already clear {advice['tier']}/{advice['effort']} "
+           f"(prefer: {', '.join(prefer) or 'declaration order'})"]
+    if advice.get("model"):
+        costed = advice.get("relative_cost")
+        basis = (f"cheapest at cost {costed}" if costed is not None
+                 else "least capable that still clears the floor (no cost recorded, so the tier "
+                      "ladder decides)")
+        out.append(f"    chosen: {advice['model']} ({advice['provider']}, "
+                   f"clears {advice['tier']}) — {basis}")
+    for a in alts:
+        cost = f"cost {a['relative_cost']}" if a.get("relative_cost") is not None else "cost unrecorded"
+        out.append(f"    also cleared: {a['model']} ({a['provider']}, {a['meets_tier']}, {cost})")
+    if not alts:
+        out.append("    no runner-up — it was the only reachable model clearing the floor"
+                   if advice.get("model") else "    no candidate cleared the floor")
+    return "\n".join(out)
 
 
 def _host_entry(spec, host=None):
@@ -257,35 +311,74 @@ def _host_entry(spec, host=None):
     raise ValueError(f"unknown host '{host}' — catalog hosts: {known}")
 
 
-def models_by_tier(spec, host=None):
-    """`{tier: model name}` for `host` — the cheapest-first projection of the v2 catalog.
+def candidates_for(spec, floor_tier, floor_effort, host=None):
+    """Every model that CLEARS the floor and is reachable from `host`, best-first (ADR-0024 D2
+    phase 2). A candidate is a dict: {model, model_id, provider, meets_tier, relative_cost}.
 
-    INTERIM (19.2 -> 19.3). ADR-0024 D2 splits resolution into escalation (the floor) and
-    selection (the cheapest reachable model that CLEARS the floor). This is only the projection
-    the v1 callers need to keep working: for each tier, the first *assessed* model that meets it,
-    in `selection.prefer` order across the host's reachable providers. 19.3 (#324) replaces it with
-    the real two-phase resolution — meets-or-exceeds matching, effort ceilings, alternatives, and a
-    loud failure when nothing clears the floor. A tier with no assessed reachable model is simply
-    absent here, which is the honest answer: the tier advice still stands, the model name does not.
+    Admission — a model is a candidate only when all of these hold:
+      * it belongs to a provider the host declares it reaches;
+      * it is `assessed` (an unverified capability claim never routes work — #326);
+      * its `meets_tier` is at or ABOVE the floor tier (meets-or-exceeds, not exact match);
+      * its `max_effort`, where declared, admits the floor effort. An absent ceiling is
+        unrecorded, not unlimited — it is treated as no constraint, which is how every other
+        optional field in this catalog reads.
+
+    Ordering — `selection.prefer`. `lowest_cost` applies only when EVERY candidate records a
+    `relative_cost`: partial cost data cannot produce a fair ranking, and a model with a recorded
+    cost of 100 must not outrank one whose cost is simply unknown. With cost unusable, the fallback
+    is the tier ladder itself, which `tiers` declares as cheapest -> most capable — so the answer is
+    the LEAST capable model that still clears the floor. That is "minimum sufficient model"
+    computed rather than asserted (ADR-0024 D3). Remaining ties break on the host's provider order
+    then declaration order, so the result never depends on a missing figure.
     """
+    tier_rank = {t: i for i, t in enumerate(spec.get("tiers") or [])}
+    effort_rank = {e: i for i, e in enumerate(spec.get("efforts") or [])}
     entry = _host_entry(spec, host)
     by_id = {p.get("id"): p for p in (spec.get("catalog") or {}).get("providers") or []
              if isinstance(p, dict)}
-    prefer_cost = "lowest_cost" in ((spec.get("selection") or {}).get("prefer") or [])
+
+    rows = []
+    for order, pid in enumerate(entry.get("providers") or []):
+        for decl, m in enumerate((by_id.get(pid) or {}).get("models") or []):
+            if not isinstance(m, dict) or not m.get("assessed"):
+                continue
+            meets = m.get("meets_tier")
+            if meets not in tier_rank or tier_rank[meets] < tier_rank.get(floor_tier, 0):
+                continue
+            ceiling = m.get("max_effort")
+            if ceiling in effort_rank and effort_rank[ceiling] < effort_rank.get(floor_effort, 0):
+                continue
+            rows.append({"model": str(m.get("name") or m.get("id")),
+                         "model_id": m.get("id"), "provider": pid, "meets_tier": meets,
+                         "relative_cost": m.get("relative_cost"),
+                         "_order": order, "_decl": decl})
+
+    prefer = (spec.get("selection") or {}).get("prefer") or []
+    costed = bool(rows) and all(r["relative_cost"] is not None for r in rows)
+    if "lowest_cost" in prefer and costed:
+        rows.sort(key=lambda r: (r["relative_cost"], tier_rank[r["meets_tier"]],
+                                 r["_order"], r["_decl"]))
+    else:
+        rows.sort(key=lambda r: (tier_rank[r["meets_tier"]], r["_order"], r["_decl"]))
+    for r in rows:
+        r.pop("_order", None)
+        r.pop("_decl", None)
+    return rows
+
+
+def models_by_tier(spec, host=None):
+    """`{tier: model name}` — the model each tier resolves to for `host`, exact-tier floor.
+
+    A thin view over `candidates_for` kept for the surfaces that show a tier→model legend (the
+    rendered ROADMAP, `tier_of_model`). A tier with no reachable assessed candidate is absent,
+    which is the honest answer: the tier advice stands, the name does not.
+    """
     out = {}
     for tier in spec.get("tiers") or []:
-        candidates = []
-        for order, pid in enumerate(entry.get("providers") or []):
-            for rank, m in enumerate((by_id.get(pid) or {}).get("models") or []):
-                if isinstance(m, dict) and m.get("assessed") and m.get("meets_tier") == tier:
-                    cost = m.get("relative_cost")
-                    # Unrecorded cost falls back to declaration order (documented in routing.yaml),
-                    # so the choice stays deterministic instead of depending on a missing figure.
-                    candidates.append(((cost if prefer_cost and cost is not None else float("inf")),
-                                       order, rank, m))
-        if candidates:
-            best = min(candidates, key=lambda c: c[:3])[3]
-            out[tier] = str(best.get("name") or best.get("id"))
+        rows = candidates_for(spec, tier, (spec.get("defaults") or {}).get("effort"), host)
+        exact = [r for r in rows if r["meets_tier"] == tier]
+        if exact:
+            out[tier] = exact[0]["model"]
     return out
 
 
@@ -309,10 +402,18 @@ def format_advice(advice, heading=None):
         out.append(heading)
     # An unresolved model is stated, never printed as a bare None: the tier/effort half of the
     # advice is vendor-neutral and fully actionable on its own (ADR-0024 D4).
-    model = advice["model"] or "<no assessed model for this tier on this host>"
+    model = advice["model"] or "<unresolved>"
+    cost = advice.get("relative_cost")
+    provider = f", {advice['provider']}" if advice.get("provider") else ""
+    cost_note = f", cost {cost}" if cost is not None else ""
     out.append(f"  route: tier={advice['tier']}  effort={advice['effort']}  "
-               f"-> {model} (host: {advice['host']}, catalog as of "
+               f"-> {model} (host: {advice['host']}{provider}{cost_note}, catalog as of "
                f"{advice['catalog_as_of']})")
+    if advice.get("unresolved_reason"):
+        out.append(f"    unresolved: {advice['unresolved_reason']}")
+    if advice.get("protected"):
+        out.append(f"    protected ({', '.join(advice['protected'])}) — this floor may not be "
+                   "lowered to save cost")
     if advice["matched"]:
         for m in advice["matched"]:
             out.append(f"    matched {m['id']}: {m['why']}")
@@ -448,6 +549,12 @@ def main(argv=None):
     ap.add_argument("--repo", help="OWNER/REPO (default: the repo gh infers)")
     ap.add_argument("--host", default=None, help="catalog host (default: the first catalog entry)")
     ap.add_argument("--json", action="store_true", help="emit structured advice as JSON")
+    ap.add_argument("--explain", action="store_true",
+                    help="show why the chosen model won and what the runners-up would have cost")
+    ap.add_argument("--require-model", action="store_true",
+                    help="exit non-zero when no reachable model clears the floor (for automation "
+                         "that needs a name; the default reports it and still exits 0, because the "
+                         "tier/effort advice is valid on its own)")
     ap.add_argument("--check", action="store_true",
                     help="compare the resolved route against the session model (--current-model); "
                          "prints ROUTE-OK / ROUTE-MISMATCH, advisory — always exits 0")
@@ -515,6 +622,14 @@ def main(argv=None):
         print(json.dumps(advice, indent=2))
     else:
         print(format_advice(advice, heading=heading))
+        if args.explain:
+            print(format_selection(advice, spec))
+    # An unresolved model does NOT fail by default: the tier/effort half of the advice is
+    # vendor-neutral and fully valid on its own (ADR-0024 D4), and the reason is printed. Automation
+    # that genuinely needs a name asks for it explicitly.
+    if args.require_model and not advice.get("model"):
+        print(f"route-advice: ERROR — {advice.get('unresolved_reason')}", file=sys.stderr)
+        return 1
     return 0
 
 
