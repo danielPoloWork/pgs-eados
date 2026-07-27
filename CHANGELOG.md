@@ -9,25 +9,38 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- **The guided Windows installer could not verify a checksum on a machine with pwsh installed
-  (#318).** `setup.ps1` called `Get-FileHash`, which is *"not recognized"* on a Windows PowerShell
-  5.1 process whose `PSModulePath` was set up for pwsh 7 — what a GitHub Windows runner hands you,
-  and what any user with pwsh installed can hit. Since the checksum is the installer's **only**
-  integrity control and it is fail-closed, that turned every verified install on such a machine
-  into a hard failure. It now computes the hash through .NET when the cmdlet cannot be reached,
-  keeping the cmdlet as the fast path — the fallback is proven by pulling the shipped function out
-  of `setup.ps1` with the PowerShell parser and driving it in a process where `Get-FileHash`
-  genuinely raises, rather than by asserting it works. **Found by the broadened matrix within
-  minutes of it existing**, on a job that had never run before.
-- **The i18n freshness gate reported a false STALE on every CRLF checkout (#318).** `_source_hash`
-  hashed raw bytes, so any clone git had given CRLF line endings — every Windows clone with the
-  default `core.autocrlf=true` — computed a different hash and failed the lint. A Windows
-  contributor could not run the self-lint at all. ADR-0010 calls this a *content* hash, and a line
-  ending is a checkout convention rather than content (the same reasoning the loader applies to a
-  UTF-8 BOM), so line endings are now normalized before hashing. Every recorded hash stays valid,
-  and the gate is green in both an LF and a CRLF checkout.
+- **A generated repository now records which EADOS produced it (#319).** Twelve minor releases have
+  shipped, several carrying security fixes, and a rendered repo recorded **nothing** about where it
+  came from — so a maintainer could not tell whether their `setup.*` predates the #129 tar-slip
+  hardening, or their CLI tools the #128 UTF-8 crash, without diffing against a guessed tag. The
+  factory could not answer the mirror question either: field reports like #306 and #313 arrived
+  with no reliable way to know which version produced the repo being described.
+  - The generated `AGENTS.md` now carries a **Provenance** line — version, commit and date —
+    rendered from `{{EADOS_PROVENANCE}}`. The version is **derived** from the CHANGELOG's latest
+    released heading, which the `version-lockstep` gate already holds the READMEs to, so a stamp
+    cannot claim a release it is not; the commit comes from git and degrades to absent in a bundle
+    install rather than being guessed.
+  - The manifest gains an optional, additive **`generated_by:`** block (provenance-exempt: it
+    records the environment, not an interview answer). **A recorded stamp wins over the running
+    factory** — that is the load-bearing property, and what makes the stamp provenance rather than
+    a clock: a repo rendered by v2.9.0 keeps saying v2.9.0 after the factory moves on. Asserted
+    end to end.
+  - `/eados status` reports it, and distinguishes *recorded* from *derived* explicitly — "rendered
+    by v2.9.0" and "rendered by whatever is checked out right now" are different facts and must not
+    read alike. An unknown version is **stated**, never omitted.
+  - This does not reopen ADR-0003: a generated repo still governs itself and is never re-rendered.
+    Recording where it started is the prerequisite for #320's advisory upgrade channel — *"do not
+    re-render"* was never *"do not tell them what changed"*.
+
+  > **Deviation from the issue, flagged rather than made quietly.** #319 asked for the block to be
+  > *written by the renderer at scaffold time*. A rendered repository does not contain a manifest —
+  > verified — so there is nothing there to stamp; and having `render.py` write back to the source
+  > manifest would be its first write outside the sandbox, into a user's file, which the
+  > `safe-write` gate exists to prevent. The stamp therefore lands in the artifact every generated
+  > repo *does* have (`AGENTS.md`), and the manifest block is recorded rather than auto-written.
+  > Recording it is a job for the scaffold procedure, the same split `record_run.py` already is.
 
 ### Changed
 
@@ -62,6 +75,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
     single-cell one it replaces: adding or removing a matrix cell can never break merging again.
   - **The supported range is now a claim the matrix proves**: `CONTRIBUTING.md` states Python
     3.12–3.14 on Linux, macOS and Windows, and every one of those is a cell.
+
+### Fixed
+
+- **The guided Windows installer could not verify a checksum on a machine with pwsh installed
+  (#318).** `setup.ps1` called `Get-FileHash`, which is *"not recognized"* on a Windows PowerShell
+  5.1 process whose `PSModulePath` was set up for pwsh 7 — what a GitHub Windows runner hands you,
+  and what any user with pwsh installed can hit. Since the checksum is the installer's **only**
+  integrity control and it is fail-closed, that turned every verified install on such a machine
+  into a hard failure. It now computes the hash through .NET when the cmdlet cannot be reached,
+  keeping the cmdlet as the fast path — the fallback is proven by pulling the shipped function out
+  of `setup.ps1` with the PowerShell parser and driving it in a process where `Get-FileHash`
+  genuinely raises, rather than by asserting it works. **Found by the broadened matrix within
+  minutes of it existing**, on a job that had never run before.
+- **The i18n freshness gate reported a false STALE on every CRLF checkout (#318).** `_source_hash`
+  hashed raw bytes, so any clone git had given CRLF line endings — every Windows clone with the
+  default `core.autocrlf=true` — computed a different hash and failed the lint. A Windows
+  contributor could not run the self-lint at all. ADR-0010 calls this a *content* hash, and a line
+  ending is a checkout convention rather than content (the same reasoning the loader applies to a
+  UTF-8 BOM), so line endings are now normalized before hashing. Every recorded hash stays valid,
+  and the gate is green in both an LF and a CRLF checkout.
 
 ## [2.12.0] - 2026-07-27
 

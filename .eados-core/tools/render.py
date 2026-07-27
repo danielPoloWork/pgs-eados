@@ -20,8 +20,10 @@ every existing caller works unchanged.
 """
 
 import argparse
+import datetime
 import os
 import re
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -263,6 +265,11 @@ def build_context(m):
         "DOC_DEFAULT_LANG": i18n.get("default_lang", "en"),
         "I18N_ENABLED": "True" if caps.get("i18n") else "False",
         "HOUSE_RULES": gov.get("house_rules", ""),
+        # #319: which factory produced this repo. Derived from the CHANGELOG + git, or taken from
+        # the manifest's `generated_by:` when it records one. ADR-0003 rightly refuses to
+        # re-render a generated repo on every factory change — but "do not re-render" is not "do
+        # not tell them what changed", and neither is possible without knowing where they started.
+        "EADOS_PROVENANCE": provenance_line(factory_provenance(m)),
         # The file whose presence proves the build system exists (#313). A glob is legal —
         # the probe uses `compgen -G`, so lua's "*.rockspec" works without a special case.
         "CI_BUILD_MANIFEST": ci.get("build_manifest", ""),
@@ -334,6 +341,7 @@ def build_context(m):
 # ---------------------------------------------------------------------------
 KNOWN_SECTIONS = {
     "identity", "ownership", "language", "toolchain", "ci",
+    "generated_by",     # which EADOS produced this repo (#319); recorded, never interviewed
     "governance", "i18n", "announce", "spec",
     "delivery_state",   # EADOS persistent delivery state (M1-B); state, not a placeholder source
     "interview",        # interview provenance — asked|defaulted|imported per answer key (#169);
@@ -361,7 +369,7 @@ _PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 # `routing` is exempt because it records the ENVIRONMENT the project is being run in (which host
 # the OS should route for, #325), not an interview answer about the project itself.
 PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview", "adoption",
-                     "routing"}
+                     "routing", "generated_by"}
 
 # The brownfield adoption goal menu (#247, ADR-0021): what a maintainer may ask of an adopted
 # repository. Closed — extending it takes an ADR, like every command-surface class (ADR-0019).
@@ -491,6 +499,54 @@ def _unsafe_path_value(value):
         if part in ("", ".", "..", ".git") or not _SAFE_SEGMENT.match(part):
             return True
     return False
+
+
+CHANGELOG = os.path.join(os.path.dirname(ROOT), "CHANGELOG.md")
+
+
+def factory_provenance(manifest=None):
+    """`{eados_version, eados_commit, rendered_at}` — which factory produced this render (#319).
+
+    Derived, never hand-maintained: the version is the CHANGELOG's latest released heading, which
+    is already the single source of truth the `version-lockstep` gate holds the READMEs to, so a
+    stamp cannot drift from the release it claims. The commit comes from git and degrades to "" in
+    a bundle install (no .git) rather than guessing.
+
+    A manifest that RECORDS a `generated_by:` block wins over the derived values: a recorded fact
+    beats one re-derived later, which is the whole point of a provenance stamp — a repo rendered by
+    v2.11.0 must keep saying so after the factory moves on."""
+    recorded = (manifest or {}).get("generated_by") if isinstance(manifest, dict) else None
+    if isinstance(recorded, dict) and str(recorded.get("eados_version") or "").strip():
+        return {k: str(recorded.get(k, "") or "") for k in
+                ("eados_version", "eados_commit", "rendered_at")}
+    version = ""
+    try:
+        with open(CHANGELOG, encoding="utf-8") as handle:
+            found = re.findall(r"(?m)^##\s*\[(\d+\.\d+\.\d+)\]", handle.read())
+        version = found[0] if found else ""
+    except OSError:
+        pass
+    commit = ""
+    try:
+        out = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                             cwd=os.path.dirname(ROOT), capture_output=True, text=True,
+                             encoding="utf-8", timeout=15)
+        if out.returncode == 0:
+            commit = (out.stdout or "").strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return {"eados_version": version, "eados_commit": commit,
+            "rendered_at": datetime.date.today().isoformat()}
+
+
+def provenance_line(prov):
+    """The one human-readable sentence the generated contract carries. Says plainly what is not
+    known rather than omitting it — an unstamped repo and a repo stamped by an unknown version are
+    different situations, and a reader deserves to tell them apart."""
+    ver = prov.get("eados_version") or "an unrecorded version"
+    at = f" on {prov['rendered_at']}" if prov.get("rendered_at") else ""
+    commit = f" (commit {prov['eados_commit']})" if prov.get("eados_commit") else ""
+    return f"EADOS v{ver}{commit}{at}" if prov.get("eados_version") else f"EADOS {ver}{at}"
 
 
 def validate_manifest(m, scalars):
