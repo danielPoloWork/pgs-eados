@@ -76,11 +76,18 @@ placeholder is a hard error, never a guess.
 - **Calibrated interaction as a governance feature** — confidence tags, no sycophancy, structured
   dissent, evidence-first pushback, rendered into the agent contract and gated for congruence;
   *instructed + artifact-gated + re-grounded*, never claimed as a guarantee on live chat.
-- **Model & effort routing as data** — each roadmap item carries a capability tier + effort
-  (*tiers, not model names*); a scaffolded repo gets the same surface — a `ROADMAP.md` routing
-  legend with a dated catalog plus per-item advisory routes derived from intake signals — and a
-  checkpoint warns when the session model is off the route. Advisory — the human keeps model
-  authority; an agent never switches its own session model.
+- **Provider-agnostic model & effort routing** — works under **any** LLM. The policy speaks
+  capability tiers, never model names; the dated catalog is two levels (*providers* say what each
+  model clears, *hosts* say which providers a runtime reaches), so a mono-vendor host and a
+  model-agnostic one are both one entry, and adding either is data. EADOS works out which host it
+  is running under from **environment evidence** — never by asking the agent what model it is —
+  and when it cannot, it says so and still gives you a tier and effort. Steps route too: a design
+  step earns more than a test step, and a protected item keeps its floor in every step.
+  **Quality-first with cost awareness, structurally:** *cost may only choose among models that
+  already clear the earned floor — it can never lower it*, so tokens are a real but strictly
+  secondary constraint and a security or ADR route cannot be quietly degraded to save them.
+  Advisory throughout — the human keeps model authority; an agent never switches its own session
+  model. A scaffolded repo gets the same surface, and a checkpoint warns on a mismatch.
 - **Guided installer** — a cross-platform `setup.{sh,command,ps1,bat}` with **fail-closed SHA256**
   verification and additive, no-clobber extraction.
 - **Self-improvement, versioned & human-gated** — a lessons ledger, an auto-tuner, and self-review.

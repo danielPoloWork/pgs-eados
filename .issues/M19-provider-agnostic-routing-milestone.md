@@ -75,15 +75,22 @@ M19 closes all four without disturbing what M16 got right.
 
 ## Sequence (one PR each, in order)
 
-| Item | Issue | Title | Effort | Routing |
-|---|---|---|---|---|
-| 19.1 | [#322](https://github.com/danielPoloWork/pgs-eados/issues/322) | ADR — provider-agnostic, capability-driven routing | L | frontier-reasoning / max (decision-heavy, sets-pattern) |
-| 19.2 | [#323](https://github.com/danielPoloWork/pgs-eados/issues/323) | Schema v2 — two-level catalog, capability models, five-level effort | L | frontier-reasoning / high (sets-pattern) |
-| 19.3 | [#324](https://github.com/danielPoloWork/pgs-eados/issues/324) | `route_advice` — resolve by capability, cheapest above the floor | M | standard / extra |
-| 19.4 | [#325](https://github.com/danielPoloWork/pgs-eados/issues/325) | Host detection from evidence — never default, never introspect | M | standard / high |
-| 19.5 | [#326](https://github.com/danielPoloWork/pgs-eados/issues/326) | Catalog/README contradiction + freshness & model-lockstep gates | M | standard / high |
-| 19.6 | [#327](https://github.com/danielPoloWork/pgs-eados/issues/327) | `routing-delegation` becomes two-way | S | fast / medium |
-| 19.7 | [#328](https://github.com/danielPoloWork/pgs-eados/issues/328) | Per-step routing + surfaces, docs, worked examples (capstone) | M | standard / medium |
+| Item | Issue | PR | Title | Effort | Routing |
+|---|---|---|---|---|---|
+| 19.1 | [#322](https://github.com/danielPoloWork/pgs-eados/issues/322) | [#332](https://github.com/danielPoloWork/pgs-eados/pull/332) | ADR-0024 — provider-agnostic, capability-driven routing | L | frontier-reasoning / max (decision-heavy, sets-pattern) |
+| 19.2 | [#323](https://github.com/danielPoloWork/pgs-eados/issues/323) | [#336](https://github.com/danielPoloWork/pgs-eados/pull/336) | Schema v2 — two-level catalog, capability models, five-level effort | L | frontier-reasoning / high (sets-pattern) |
+| 19.3 | [#324](https://github.com/danielPoloWork/pgs-eados/issues/324) | [#337](https://github.com/danielPoloWork/pgs-eados/pull/337) | `route_advice` — resolve by capability, cheapest above the floor | M | standard / extra |
+| 19.4 | [#325](https://github.com/danielPoloWork/pgs-eados/issues/325) | [#338](https://github.com/danielPoloWork/pgs-eados/pull/338) | Host detection from evidence — never default, never introspect | M | standard / high |
+| 19.5 | [#326](https://github.com/danielPoloWork/pgs-eados/issues/326) | [#330](https://github.com/danielPoloWork/pgs-eados/pull/330) + [#339](https://github.com/danielPoloWork/pgs-eados/pull/339) | Catalog/README contradiction (data) + freshness & model-lockstep gates | M | standard / high |
+| 19.6 | [#327](https://github.com/danielPoloWork/pgs-eados/issues/327) | [#340](https://github.com/danielPoloWork/pgs-eados/pull/340) | `routing-delegation` becomes two-way | S | fast / medium |
+| 19.7 | [#328](https://github.com/danielPoloWork/pgs-eados/issues/328) | [#341](https://github.com/danielPoloWork/pgs-eados/pull/341) | Per-step routing + surfaces, docs, worked examples (capstone) | M | standard / medium |
+
+**Delivery notes.** 19.5's data half shipped early as #330 — correcting a catalog that was routing
+every ADR and security unit of work to a model the READMEs called unbenchmarked had no reason to
+wait for its gate. Three gates enforced their own contracts unprompted during the milestone:
+`routing-delegation` blocked 19.2 until `delegation.md` gained the `opencode` row; the #317 corpus
+sweep blocked 19.5's predecessor until a stale known-divergent entry was removed; and CI caught a
+19.4 test that read the environment the feature had just made meaningful.
 
 **Dependencies.** 19.1 blocks everything. 19.2 blocks 19.3 / 19.4 / 19.7. 19.3 + 19.4 block 19.7.
 19.5 and 19.6 are independent of the chain and can land at any point — and **19.5's first half

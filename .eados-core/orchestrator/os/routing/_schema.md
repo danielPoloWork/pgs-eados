@@ -108,6 +108,29 @@ keep those that are `assessed` and whose `meets_tier` is at or above the floor t
 
 - `label:<name>` — the unit of work carries that tracker label (`label:severity:high`, `label:adr`).
 - `flag:<id>` — a derived flag from `flags:`, asserted by an evaluator heuristic or a human.
+- `step:<id>` — the **step within** the unit of work, from the declared `steps:` vocabulary
+  (`design` / `implement` / `test` / `review` / `optimize`).
+
+`flags:` and `steps:` are **closed** vocabularies: an undeclared one is a typo and is rejected
+loudly. Tracker labels are not — the tracker owns that vocabulary.
+
+### Per-step routing
+
+Routing resolved per *issue*, which is the right grain for an issue and not the grain the work is
+actually done at. The steps inside one item differ, so they all inherited the item's route —
+over-routing the mechanical steps and under-routing the design of a nominally simple item.
+
+Steps **raise like every other signal and can never lower a route**. Two consequences fall out of
+that one rule, and both are worked cases in `examples:`:
+
+- a trivial item's **design** step earns more than its **test** step — the cheap item's one
+  expensive moment;
+- a **protected** item routes identically in *every* step, including the most mechanical, because
+  a step can only ever ask for more. There is no "this step is cheap" shortcut to be had.
+
+Only steps that genuinely earn more carry a rule. `implement` and `test` route on their item's own
+signals — which is the point: the cheap steps of an expensive item stop paying for the whole
+item's tier.
 
 ## The invariant cost must obey
 

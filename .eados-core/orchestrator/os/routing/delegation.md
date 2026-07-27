@@ -80,8 +80,14 @@ per-role constant — the point of routing is that the *work*, not the *seat*, s
 | 3 | **reviewer** — `reviewer` | Return structured findings on the change | `label:severity:high` | **standard / high** → Opus 5 |
 | 4 | **optimizer** — `tech-lead` under [`/eados optimize`](../../commands/optimize.md) | Measure-first tune to a numeric NFR budget | `label:severity:medium` | **standard / medium** → Opus 5 |
 
-Each row's route is exactly what `route_advice.py --labels … [--flags …]` returns for that row's
-signals — the table is not hand-assigned. On claude-code the run **applies** it: delegation 1 is
+Since 19.7 each seat is also a **step**, so the relay can be resolved without hand-assigning
+anything: `--step design` for the architect, `--step review` for the reviewer, `--step optimize`
+for the optimizer. A step **raises** the route and can never lower it, so the architect's seat
+earns depth on a cheap item while a *protected* item keeps its floor in every seat — including the
+mechanical ones.
+
+Each row's route is exactly what `route_advice.py --labels … [--flags …] [--step …]` returns for
+that row's signals — the table is not hand-assigned. On claude-code the run **applies** it: delegation 1 is
 spawned with `model:` = the frontier-reasoning name and effort `high`; delegations 2–4 at their
 resolved model + effort. The **architect's decision surface earns the top tier and every follower
 inherits a cheaper route** — the `sets-pattern` economics, now mechanical. Note the honest mapping:

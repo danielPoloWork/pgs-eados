@@ -21,6 +21,21 @@ flags:
   sets-pattern: "first of its class - fixes the template; the follower issues inherit a cheaper route"
   decision-heavy: "the decision IS the deliverable (ADR / architecture call)"
 
+# The STEP within a unit of work (19.7). Routing resolved per ISSUE, which is the right grain for
+# an issue and not the grain the work is actually done at: the steps inside one item differ, so
+# they all inherited the item's route - over-routing the mechanical ones and under-routing the
+# design of a nominally simple item. A step is a third signal kind alongside label: and flag:.
+#
+# Steps RAISE like every other signal and can never lower a route (the only-add-never-relax
+# invariant). So an item that earned a protected floor keeps it in every one of its steps; a step
+# can only ever ask for more, never for less.
+steps:
+  design: "decide the shape - what gets built, and why that way"
+  implement: "build what design settled, against a spec that already exists"
+  test: "exercise the built thing against the spec's acceptance criteria"
+  review: "judge someone else's change and return findings"
+  optimize: "measure-first tuning against a numeric budget"
+
 # The floor: absent any matching rule, work routes to the cheapest tier at the lowest effort
 # (doc fixes, small authoring). Everything above is earned by a signal.
 defaults:
@@ -104,6 +119,26 @@ rules:
     min_effort: max
     why: "a wrong foundational call is the most expensive artifact the factory can produce"
     # re-read: UNCHANGED. The ceiling by design; `extra` exists below it, not in place of it.
+
+  # --- per-step rules (19.7). Only the steps that genuinely earn more carry one; `implement` and
+  # `test` route on their ITEM's signals alone, which is the point - the cheap steps of an
+  # expensive item stop paying for the whole item's tier.
+  - id: step-design
+    when:
+      - "step:design"
+    min_tier: standard
+    min_effort: high
+    why: "the design step decides the shape every later step copies - thinking is the deliverable"
+  - id: step-review
+    when:
+      - "step:review"
+    min_effort: high
+    why: "review is where a missed defect stops being cheap - it raises effort, never tier"
+  - id: step-optimize
+    when:
+      - "step:optimize"
+    min_effort: medium
+    why: "measure-first tuning is bounded work against a numeric budget, but not mechanical"
 
 # The ONLY place model names live.
 #
@@ -258,3 +293,14 @@ examples:
     - input: "First command of a new class - fixes the shape its siblings will copy (sets-pattern)"
       verdict: frontier-reasoning
       why: "sets-pattern - the marginal cost of the best model is amortized across every follower"
+    # Per-step (19.7): the SAME item routes differently across its steps, and a protected item
+    # routes the same across all of them. Both halves of the invariant, as worked cases.
+    - input: "Design step of a small fix - deciding the shape (severity:low, step:design)"
+      verdict: standard
+      why: "the cheap item's one expensive moment; every later step copies what is decided here"
+    - input: "Test step of that same small fix, against a settled spec (severity:low, step:test)"
+      verdict: fast
+      why: "mechanical work against criteria that already exist - the item's own floor is right"
+    - input: "Test step of a SECURITY item (label:security, step:test)"
+      verdict: frontier-reasoning
+      why: "steps only raise - a protected floor holds in every step, including the mechanical ones"

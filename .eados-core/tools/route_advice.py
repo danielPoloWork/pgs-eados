@@ -46,6 +46,7 @@ def spec_problems(spec):
     tiers = spec.get("tiers") or []
     efforts = spec.get("efforts") or []
     flags = spec.get("flags") if isinstance(spec.get("flags"), dict) else {}
+    steps = spec.get("steps") if isinstance(spec.get("steps"), dict) else {}
     if not isinstance(tiers, list) or not tiers:
         problems.append("`tiers` must be a non-empty ordered list")
     if not isinstance(efforts, list) or not efforts:
@@ -70,7 +71,7 @@ def spec_problems(spec):
             problems.append(f"{label}: `when` must be a non-empty list of signals")
             when = []
         for sig in when:
-            problems += _signal_problems(str(sig), flags, where=label)
+            problems += _signal_problems(str(sig), flags, where=label, steps=steps)
         if rule.get("min_tier") is None and rule.get("min_effort") is None:
             problems.append(f"{label}: declares neither min_tier nor min_effort — it can raise nothing")
         if rule.get("min_tier") is not None and rule.get("min_tier") not in tiers:
@@ -155,7 +156,7 @@ def spec_problems(spec):
         problems.append("`protected` is missing — schema v2 requires the signals whose floor "
                         "nothing may reduce, declared as data (use [] to mean none)")
     for sig in spec.get("protected") or []:
-        problems += _signal_problems(str(sig), flags, where="protected")
+        problems += _signal_problems(str(sig), flags, where="protected", steps=steps)
     if not isinstance(spec.get("selection"), dict):
         problems.append("`selection` is missing — schema v2 requires how selection chooses among "
                         "models that already clear the floor")
@@ -172,19 +173,23 @@ def spec_problems(spec):
     return problems
 
 
-def _signal_problems(sig, flags, where):
-    """A signal is `label:<tracker label>` or `flag:<declared flags key>`. Unknown labels are
-    fine (the tracker owns that vocabulary); an unknown FLAG is a typo the spec must catch."""
+def _signal_problems(sig, flags, where, steps=None):
+    """A signal is `label:<tracker label>`, `flag:<declared flags key>` or `step:<declared steps
+    key>`. Unknown labels are fine (the tracker owns that vocabulary); an unknown FLAG or STEP is
+    a typo the spec must catch — those vocabularies are closed and declared here."""
+    steps = steps if isinstance(steps, dict) else {}
     if sig.startswith("label:"):
         return [] if sig[len("label:"):].strip() else [f"{where}: empty label signal"]
-    if sig.startswith("flag:"):
-        fid = sig[len("flag:"):].strip()
-        if not fid:
-            return [f"{where}: empty flag signal"]
-        if fid not in flags:
-            return [f"{where}: flag signal '{fid}' is not declared under `flags:`"]
-        return []
-    return [f"{where}: signal {sig!r} is neither 'label:<name>' nor 'flag:<id>'"]
+    for prefix, vocab, key in (("flag:", flags, "flags"), ("step:", steps, "steps")):
+        if sig.startswith(prefix):
+            sid = sig[len(prefix):].strip()
+            if not sid:
+                return [f"{where}: empty {prefix.rstrip(':')} signal"]
+            if sid not in vocab:
+                return [f"{where}: {prefix.rstrip(':')} signal '{sid}' is not declared "
+                        f"under `{key}:`"]
+            return []
+    return [f"{where}: signal {sig!r} is not 'label:<name>', 'flag:<id>' or 'step:<id>'"]
 
 
 def load_routing(path=ROUTING_SPEC):
@@ -198,11 +203,14 @@ def load_routing(path=ROUTING_SPEC):
 
 
 # --- the pure core ---------------------------------------------------------
-def signals_for(labels=(), flags=(), spec=None):
-    """Build the signal set from tracker label names + asserted flag ids. An asserted flag that
-    the spec does not declare is a typo, rejected loudly (same posture as spec_problems)."""
+def signals_for(labels=(), flags=(), spec=None, step=None):
+    """Build the signal set from tracker label names, asserted flag ids, and an optional STEP
+    within the unit of work (19.7). An asserted flag or step the spec does not declare is a typo,
+    rejected loudly (same posture as spec_problems)."""
     known = (spec.get("flags") if isinstance(spec, dict) and isinstance(spec.get("flags"), dict)
              else {})
+    known_steps = (spec.get("steps") if isinstance(spec, dict) and isinstance(spec.get("steps"), dict)
+                   else {})
     sigs = ["label:" + str(l).strip() for l in labels if str(l).strip()]
     for f in flags:
         fid = str(f).strip()
@@ -211,6 +219,12 @@ def signals_for(labels=(), flags=(), spec=None):
         if spec is not None and fid not in known:
             raise ValueError(f"unknown flag '{fid}' — declared flags: {', '.join(sorted(known)) or 'none'}")
         sigs.append("flag:" + fid)
+    sid = str(step).strip() if step else ""
+    if sid:
+        if spec is not None and sid not in known_steps:
+            raise ValueError(f"unknown step '{sid}' — declared steps: "
+                             f"{', '.join(sorted(known_steps)) or 'none'}")
+        sigs.append("step:" + sid)
     return sigs
 
 
@@ -650,6 +664,9 @@ def main(argv=None):
     ap.add_argument("--flags", default="", help="comma-separated asserted flags "
                                                 "(e.g. sets-pattern,decision-heavy)")
     ap.add_argument("--repo", help="OWNER/REPO (default: the repo gh infers)")
+    ap.add_argument("--step", default=None,
+                    help="the step within the unit of work (design|implement|test|review|optimize)"
+                         " — steps only ever RAISE a route, never lower it")
     ap.add_argument("--host", default=None, help="catalog host (default: the first catalog entry)")
     ap.add_argument("--json", action="store_true", help="emit structured advice as JSON")
     ap.add_argument("--explain", action="store_true",
@@ -695,7 +712,7 @@ def main(argv=None):
                 print("route-advice: note — flags apply to every issue in the batch; per-issue "
                       "flags may raise individual routes further", file=sys.stderr)
             issues = fetch_milestone_issues(args.milestone, repo=args.repo)
-            batch = [dict(advise(signals_for(it["labels"], flags, spec), spec, host=host),
+            batch = [dict(advise(signals_for(it["labels"], flags, spec, step=args.step), spec, host=host),
                           issue=it["number"], title=it["title"]) for it in issues]
             if args.json:
                 print(json.dumps({"milestone": args.milestone, "advice": batch}, indent=2))
@@ -711,11 +728,11 @@ def main(argv=None):
             return 0
         if args.issue is not None:
             it = fetch_issue(args.issue, repo=args.repo)
-            advice = advise(signals_for(it["labels"], flags, spec), spec, host=host)
+            advice = advise(signals_for(it["labels"], flags, spec, step=args.step), spec, host=host)
             heading = f"#{it['number']}  {it['title']}"
         else:
             labels = [l for l in args.labels.split(",") if l.strip()]
-            advice = advise(signals_for(labels, flags, spec), spec, host=host)
+            advice = advise(signals_for(labels, flags, spec, step=args.step), spec, host=host)
             heading = f"labels: {', '.join(l.strip() for l in labels) or 'none'}" \
                       + (f"  flags: {', '.join(f.strip() for f in flags)}" if flags else "")
     except RuntimeError as exc:

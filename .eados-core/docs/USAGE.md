@@ -327,9 +327,41 @@ human keeps final model authority; **no agent ever switches its own session mode
 exists only for work a run *delegates* beneath itself, [`os/routing/delegation.md`](../orchestrator/os/routing/delegation.md)).
 
 **Tiers, not model names.** The policy speaks capability **tiers** (`fast` / `standard` /
-`frontier-reasoning`) × an **effort** (`low` – `max`); concrete model names live only in the
-policy's dated `catalog:`, so a market shift is a one-line catalog edit — never a policy, roadmap,
-or code change.
+`frontier-reasoning`) × an **effort** (`low` / `medium` / `high` / `extra` / `max`); concrete model
+names live only in the policy's dated `catalog:`, so a market shift is a one-line catalog edit —
+never a policy, roadmap, or code change.
+
+**It works under any LLM (ADR-0024).** The catalog is two levels: **providers** say what exists and
+what each model *clears*; **hosts** say which providers a runtime can reach. So a mono-vendor host
+(Claude Code, Codex) and a model-agnostic one (OpenCode driving seven vendors) are both one entry,
+and adding either is configuration — no code, no schema change.
+
+Resolution is by **capability, not by name**, in two phases that do different jobs:
+
+1. **Escalation → the floor.** Your signals raise a quality floor. Monotonic: rules only ever raise.
+2. **Selection → the model.** Among the models your host can reach that *clear* that floor, take
+   the cheapest.
+
+> **Cost may only choose among models that already clear the earned floor. It can never lower it.**
+
+That is how *quality-first with cost awareness* is structural rather than a promise: "use the
+minimum sufficient model" is simply what the floor already computes, and cost picks the cheapest
+way to reach it. A `security` or `adr` route cannot be quietly degraded to save tokens, because
+cost never touches the floor at all.
+
+**Which host you are on is worked out from evidence** — an explicit `--host`, `routing.host` in the
+manifest, or environment markers each host declares as data. Never by asking the agent what model
+it is: models misdescribe their own identity, and a route built on that is wrong *and*
+authoritative-looking. When the host cannot be determined, EADOS says so and still gives you the
+tier and effort — those are vendor-neutral, so only the model *name* is lost.
+
+**Steps route too.** A step inside an item (`design` / `implement` / `test` / `review` /
+`optimize`) can raise the route, never lower it — so a trivial item's design step earns real
+thinking while its test step does not, and a protected item keeps its floor in *every* step:
+
+```bash
+python .eados-core/tools/route_advice.py --labels "severity:low" --step design --explain
+```
 
 **Where you see it:**
 
