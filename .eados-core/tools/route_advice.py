@@ -22,6 +22,7 @@ it never switches the model (no host lets an agent re-route its own session — 
 """
 
 import os
+import re
 import subprocess
 import sys
 
@@ -244,7 +245,11 @@ def advise(signals, spec, host=None):
     protected = [str(s) for s in (spec.get("protected") or []) if str(s) in have]
 
     unresolved = None
-    if best is None:
+    if best is None and entry is None:
+        unresolved = ("the host is unresolved, so no model name can be given — name one with "
+                      "--host or `routing.host` in the manifest. The tier and effort above are "
+                      "vendor-neutral and stand on their own.")
+    elif best is None:
         reachable = ", ".join(entry.get("providers") or []) or "nothing"
         unresolved = (f"no reachable model clears {tier}/{effort} on host '{entry['id']}' "
                       f"(providers: {reachable}) — catalogue and assess one, or run this work on a "
@@ -262,7 +267,7 @@ def advise(signals, spec, host=None):
         "alternatives": ranked[1:],
         "unresolved_reason": unresolved,
         "protected": protected,
-        "host": entry["id"],
+        "host": entry["id"] if entry else None,
         "catalog_as_of": (spec.get("catalog") or {}).get("as_of"),
         "matched": matched,
         "floor": dict(spec["defaults"]),
@@ -295,20 +300,112 @@ def format_selection(advice, spec):
 
 
 def _host_entry(spec, host=None):
-    """The catalog entry for `host` (default: the first host — the reference environment).
+    """The catalog entry for `host`, or None when the host is UNRESOLVED.
 
-    NOTE (#325 / ADR-0024 D4): defaulting to the first host is the very behaviour 19.4 removes —
-    a caller that passes no host silently gets the reference environment's model names. It is left
-    here so this item stays a data+schema change; 19.4 replaces it with the evidence ladder and a
-    loud unknown."""
+    There is deliberately no default (#325, ADR-0024 D4). Returning the first catalog entry for an
+    unknown caller is how every non-Claude host silently received Anthropic model names; the
+    absence of that fallback is asserted by a test, because it is exactly the kind of convenience
+    that gets helpfully re-added. A host that was *named* but does not exist is a different case —
+    that is a typo or a stale config, and it raises."""
     hosts = (spec.get("catalog") or {}).get("hosts") or []
     if host is None:
-        return hosts[0]
+        return None
     for h in hosts:
         if h.get("id") == host:
             return h
     known = ", ".join(str(h.get("id")) for h in hosts)
     raise ValueError(f"unknown host '{host}' — catalog hosts: {known}")
+
+
+# --- host detection (19.4 / ADR-0024 D4) -----------------------------------------------------
+# The OS works out which RUNTIME it is in from the environment. It never asks the agent which
+# MODEL it is: models misdescribe their own identity, most confidently right after a version
+# change — exactly when routing most needs to be right — and a route computed from a hallucinated
+# self-description is worse than no route, because it is wrong AND it looks authoritative.
+#
+# Marker vocabulary (data, so a new host is a catalog edit):
+#   - env: NAME              presence of an environment variable
+#   - env: NAME + matches: R presence AND its value matching regex R
+
+def _marker_hit(rule, environ):
+    if not isinstance(rule, dict):
+        return None
+    name = rule.get("env")
+    if not name or name not in environ:
+        return None
+    pattern = rule.get("matches")
+    if pattern is None:
+        return f"env {name} is set"
+    if re.search(str(pattern), str(environ.get(name) or "")):
+        return f"env {name} matches /{pattern}/"
+    return None
+
+
+def detect_host(spec, environ=None):
+    """`(host_id, evidence)` from environment markers.
+
+    Returns `(None, reason)` when nothing matches, and — importantly — also when MORE THAN ONE
+    host matches. Ambiguity is not resolved by guessing: two runtimes claiming the same session is
+    a state the OS cannot honestly settle, so it says so and lets the explicit rungs decide."""
+    environ = os.environ if environ is None else environ
+    hits = []
+    for h in (spec.get("catalog") or {}).get("hosts") or []:
+        if not isinstance(h, dict):
+            continue
+        found = [ev for rule in (h.get("detect") or []) if (ev := _marker_hit(rule, environ))]
+        if found:
+            hits.append((h.get("id"), found))
+    if not hits:
+        return None, "no host declared a marker present in this environment"
+    if len(hits) > 1:
+        names = ", ".join(str(h) for h, _ in hits)
+        return None, (f"ambiguous — {names} all match this environment; name one explicitly "
+                      "(--host, or `routing.host` in the manifest)")
+    host, evidence = hits[0]
+    return host, "; ".join(evidence)
+
+
+MANIFEST = os.path.join(os.path.dirname(ROOT), "orchestrator", "project.yaml")
+
+
+def manifest_routing_host(path=None):
+    """`routing.host` from the project manifest, or None. Additive: a manifest without the block
+    (or without a manifest at all) is entirely legal and simply contributes nothing to the ladder."""
+    path = MANIFEST if path is None else path
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = render.load_yaml(handle.read())
+    except (OSError, ValueError):
+        return None                      # a broken manifest is another gate's problem, not ours
+    routing = data.get("routing") if isinstance(data, dict) else None
+    host = routing.get("host") if isinstance(routing, dict) else None
+    return str(host).strip() or None if host else None
+
+
+def resolve_host(spec, explicit=None, manifest_host=None, environ=None):
+    """The precedence ladder (ADR-0024 D4). Returns `{host, source, evidence}` where `host` is None
+    when unresolved — never a default.
+
+      1. explicit      a `--host` flag: a direct human instruction
+      2. manifest      `routing.host`: a recorded human declaration
+      3. evidence      environment markers the host declares as data
+      4. unresolved    stated, with the reason
+
+    Rung 4 costs less than it looks: tiers and efforts are vendor-neutral, so an unresolved host
+    loses the model NAME and nothing else — the recommendation stays fully actionable."""
+    if explicit:
+        _host_entry(spec, explicit)          # raises on a named host that does not exist
+        return {"host": explicit, "source": "explicit", "evidence": "--host was given"}
+    if manifest_host:
+        _host_entry(spec, manifest_host)
+        return {"host": manifest_host, "source": "manifest",
+                "evidence": "`routing.host` in the manifest"}
+    host, why = detect_host(spec, environ)
+    if host:
+        return {"host": host, "source": "evidence", "evidence": why}
+    return {"host": None, "source": "unresolved", "evidence": why}
 
 
 def candidates_for(spec, floor_tier, floor_effort, host=None):
@@ -334,6 +431,8 @@ def candidates_for(spec, floor_tier, floor_effort, host=None):
     tier_rank = {t: i for i, t in enumerate(spec.get("tiers") or [])}
     effort_rank = {e: i for i, e in enumerate(spec.get("efforts") or [])}
     entry = _host_entry(spec, host)
+    if entry is None:
+        return []          # unresolved host reaches nothing — never fall back to a default host
     by_id = {p.get("id"): p for p in (spec.get("catalog") or {}).get("providers") or []
              if isinstance(p, dict)}
 
@@ -388,14 +487,14 @@ def normalize_effort(word, spec, host=None):
     word = str(word).strip()
     if word in (spec.get("efforts") or []):
         return word
-    aliases = _host_entry(spec, host).get("effort_aliases") or {}
+    aliases = (_host_entry(spec, host) or {}).get("effort_aliases") or {}
     if word in aliases:
         return aliases[word]
     raise ValueError(f"unknown effort '{word}' — OS scale: {', '.join(spec.get('efforts') or [])}"
                      + (f"; host aliases: {', '.join(sorted(aliases))}" if aliases else ""))
 
 
-def format_advice(advice, heading=None):
+def format_advice(advice, heading=None, host_info=None):
     """One human-readable advice block (the line the triage/status surfaces print)."""
     out = []
     if heading:
@@ -407,8 +506,12 @@ def format_advice(advice, heading=None):
     provider = f", {advice['provider']}" if advice.get("provider") else ""
     cost_note = f", cost {cost}" if cost is not None else ""
     out.append(f"  route: tier={advice['tier']}  effort={advice['effort']}  "
-               f"-> {model} (host: {advice['host']}{provider}{cost_note}, catalog as of "
-               f"{advice['catalog_as_of']})")
+               f"-> {model} (host: {advice['host'] or 'unresolved'}{provider}{cost_note}, "
+               f"catalog as of {advice['catalog_as_of']})")
+    if host_info:
+        # State WHAT decided the host, not just which one — an inferred answer whose basis is
+        # invisible is indistinguishable from a guess (ADR-0024 D4).
+        out.append(f"    host {host_info['source']}: {host_info['evidence']}")
     if advice.get("unresolved_reason"):
         out.append(f"    unresolved: {advice['unresolved_reason']}")
     if advice.get("protected"):
@@ -577,13 +680,22 @@ def main(argv=None):
         return 1
     flags = [f for f in (args.flags or "").split(",") if f.strip()]
 
+    # 19.4: the precedence ladder replaces the silent `hosts[0]` default. An unresolved host is
+    # reported, never guessed — the tier/effort advice is vendor-neutral and stands regardless.
+    try:
+        resolved = resolve_host(spec, explicit=args.host, manifest_host=manifest_routing_host())
+    except ValueError as exc:
+        print(f"route-advice: ERROR — {exc}", file=sys.stderr)
+        return 1
+    host = resolved["host"]
+
     try:
         if args.milestone is not None:
             if flags:
                 print("route-advice: note — flags apply to every issue in the batch; per-issue "
                       "flags may raise individual routes further", file=sys.stderr)
             issues = fetch_milestone_issues(args.milestone, repo=args.repo)
-            batch = [dict(advise(signals_for(it["labels"], flags, spec), spec, host=args.host),
+            batch = [dict(advise(signals_for(it["labels"], flags, spec), spec, host=host),
                           issue=it["number"], title=it["title"]) for it in issues]
             if args.json:
                 print(json.dumps({"milestone": args.milestone, "advice": batch}, indent=2))
@@ -599,11 +711,11 @@ def main(argv=None):
             return 0
         if args.issue is not None:
             it = fetch_issue(args.issue, repo=args.repo)
-            advice = advise(signals_for(it["labels"], flags, spec), spec, host=args.host)
+            advice = advise(signals_for(it["labels"], flags, spec), spec, host=host)
             heading = f"#{it['number']}  {it['title']}"
         else:
             labels = [l for l in args.labels.split(",") if l.strip()]
-            advice = advise(signals_for(labels, flags, spec), spec, host=args.host)
+            advice = advise(signals_for(labels, flags, spec), spec, host=host)
             heading = f"labels: {', '.join(l.strip() for l in labels) or 'none'}" \
                       + (f"  flags: {', '.join(f.strip() for f in flags)}" if flags else "")
     except RuntimeError as exc:
@@ -614,14 +726,14 @@ def main(argv=None):
         return 1
     if args.check:
         # #297: advisory checkpoint — compare the route to the session model, always exit 0.
-        check = check_route(advice, args.current_model, spec, host=args.host)
+        check = check_route(advice, args.current_model, spec, host=host)
         print(json.dumps(check, indent=2) if args.json
-              else format_check(check, host=args.host, heading=heading))
+              else format_check(check, host=host, heading=heading))
         return 0
     if args.json:
         print(json.dumps(advice, indent=2))
     else:
-        print(format_advice(advice, heading=heading))
+        print(format_advice(advice, heading=heading, host_info=resolved))
         if args.explain:
             print(format_selection(advice, spec))
     # An unresolved model does NOT fail by default: the tier/effort half of the advice is

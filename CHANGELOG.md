@@ -11,6 +11,38 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.11.0**.
 
 ### Changed
 
+- **The routing host is now resolved from evidence, and never defaulted (M19 19.4, #325,
+  ADR-0024 D4).** `_host_entry(spec, host=None)` returned `hosts[0]`, so every caller that did not
+  name a host silently received the *first catalog entry's* model names — which is how EADOS
+  running under Codex, Gemini or anything else would confidently recommend Anthropic models.
+  That default is gone; its absence is asserted by a test, because it is exactly the kind of
+  convenience that gets helpfully re-added.
+  - **A precedence ladder replaces it:** `--host` flag → `routing.host` in the manifest →
+    `detect[]` environment markers declared per host as data → **unresolved, stated**. The output
+    always says *what decided the host*, not just which one: an inferred answer whose basis is
+    invisible is indistinguishable from a guess.
+    ```
+    host: claude-code (evidence: env CLAUDECODE is set; env AI_AGENT matches /^claude-code/)
+    ```
+  - **Ambiguity is reported, not settled.** Two hosts matching the same environment is a state the
+    OS cannot honestly resolve, so it names both and falls through to the explicit rungs.
+  - **The OS never asks the agent which model it is.** Detection reads the environment only. Models
+    misdescribe their own identity, most confidently right after a version change — exactly when
+    routing most needs to be right — and a route built on a hallucinated self-description is worse
+    than none, because it is wrong *and* authoritative-looking. This does not reopen M18's decision
+    that the `--check` session model is a *supplied*, labelled self-report: an explicitly supplied
+    model is authoritative input; what the OS must not do is **derive** the host by introspection.
+  - **Unresolved costs the name and nothing else.** Tiers and efforts are vendor-neutral, so the
+    recommendation stands in full and the output states what could not be determined and how to fix
+    it (`--host`, or `routing.host`).
+  - Only markers actually **observed** are shipped: `claude-code` carries three verified ones, and
+    every other host carries `detect: []` — it never auto-detects and must be named. A guessed
+    marker either never fires or fires on the *wrong* host, and the second is worse than no
+    detection at all. Adding one is a data edit.
+  - `routing.host` is a new **optional, additive** manifest block (provenance-exempt: it records
+    the environment the project is worked in, not an interview answer about the project).
+    `/eados status` reports the resolved host, its evidence and the catalog date.
+
 - **Routing resolves by capability instead of looking a name up in a table (M19 19.3, #324,
   ADR-0024 D2/D3).** `advise()` is now two phases with different jobs. **Escalation** computes the
   quality floor — unchanged, monotonic, order-independent, and verified byte-for-byte equivalent to

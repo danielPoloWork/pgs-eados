@@ -39,7 +39,7 @@ catalog:        # the ONLY place concrete model names live
   as_of:        # "YYYY-MM-DD" the catalog was last verified against the market
   max_age_days: # staleness budget; beyond it the catalog needs re-verification
   providers:    # vendors: { id, name, models[], notes? }
-  hosts:        # runtimes: { id, name, providers[], delegation, effort_aliases? }
+  hosts:        # runtimes: { id, name, providers[], delegation, detect[], effort_aliases? }
 examples:       # worked-example decision surface (#224): verdicts = the tiers
 ```
 
@@ -56,6 +56,41 @@ examples:       # worked-example decision surface (#224): verdicts = the tiers
   verified:      # "YYYY-MM-DD" of that judgment
   notes:         # optional free text
 ```
+
+### `hosts[].detect[]` — how the runtime is identified
+
+```yaml
+detect:
+  - env: CLAUDECODE            # the variable is set
+  - env: AI_AGENT              # …and its value matches
+    matches: "^claude-code"
+```
+
+The OS works out which **runtime** it is in from the environment. It **never asks the agent which
+model it is**: models misdescribe their own identity, most confidently right after a version change
+— exactly when routing most needs to be right — and a route built on a hallucinated
+self-description is worse than none, because it is wrong *and* it looks authoritative.
+
+Only markers actually **observed** belong here. A host with `detect: []` never auto-detects and
+must be named — the same honesty as an unassessed model. A guessed marker either never fires
+(useless) or fires on the wrong host (harmful), and the second failure is worse than no detection.
+
+**Host precedence** (ADR-0024 D4), highest first:
+
+| Rung | Source | Why it wins |
+|---|---|---|
+| 1 | `--host` flag | a direct human instruction |
+| 2 | `routing.host` in the manifest | a recorded human declaration |
+| 3 | `detect[]` markers | deterministic environment evidence |
+| 4 | **unresolved** | stated, with the reason — **never** a default |
+
+There is deliberately **no fallback to the first catalog host**: that is how every non-Claude host
+silently received Anthropic model names, and its absence is asserted by a test. Two hosts matching
+is **ambiguous**, not a tie to be broken — it is reported with both named and falls to rung 4.
+
+Rung 4 costs less than it appears: tiers and efforts are vendor-neutral, so an unresolved host
+loses the model **name** and nothing else. The recommendation stays fully actionable, and the
+output says what was determined and what was not.
 
 ## Resolution — two phases (ADR-0024 D2)
 

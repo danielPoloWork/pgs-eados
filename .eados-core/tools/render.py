@@ -351,7 +351,10 @@ _PROVENANCE_VALUES = {"asked", "defaulted", "imported"}
 # manifest must appear in interview.provenance (#201) — a partial block silently starves override
 # derivation (derive_overrides treats an unrecorded key exactly like an explicitly `defaulted` one).
 # `adoption` is exempt because its provenance lives INSIDE the block (#247, ADR-0021 §2).
-PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview", "adoption"}
+# `routing` is exempt because it records the ENVIRONMENT the project is being run in (which host
+# the OS should route for, #325), not an interview answer about the project itself.
+PROVENANCE_EXEMPT = {"schema_version", "manifest_rev", "delivery_state", "interview", "adoption",
+                     "routing"}
 
 # The brownfield adoption goal menu (#247, ADR-0021): what a maintainer may ask of an adopted
 # repository. Closed — extending it takes an ADR, like every command-surface class (ADR-0019).
