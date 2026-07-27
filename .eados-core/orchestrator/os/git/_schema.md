@@ -24,8 +24,12 @@ traceability:       # the artifact lineage the graph + lint (M3/M4) are built fr
 ## Item shapes (runtime-enforced, M3/M4)
 
 - **`branch_naming`** — `{ pattern, types[] }`. `types` is the Conventional-Commit type set.
-- **`commit`** — `{ convention, scopes[], one_logical_change_per_pr, one_pr_at_a_time,
-  one_pr_counts, squash_body{} }`. **`one_pr_counts`** (`authored` | `all`, default `authored`)
+- **`commit`** — `{ convention, scopes[], subject_max, one_logical_change_per_pr,
+  one_pr_at_a_time, one_pr_counts, squash_body{} }`. **`subject_max`** (integer, default 80) caps
+  the subject line **the author writes**: squash-merge appends ` (#PR)`, which no author can
+  prevent, so `git_check` strips one trailing reference before measuring (#363). It is data
+  rather than a constant because it is the one threshold a project might legitimately set for
+  itself — and because a number in code cannot be changed by a repo that only vendors the tool. **`one_pr_counts`** (`authored` | `all`, default `authored`)
   says *whose* open PRs `one_pr_at_a_time` counts. The rule exists so an agent does not stack
   work in flight; it was never meant to cap a dependency bot's queue, and counting bots put a
   generated repo in violation of its own policy minutes after bootstrap (#350). Matched on the

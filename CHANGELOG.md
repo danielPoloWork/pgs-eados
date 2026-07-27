@@ -136,6 +136,33 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Changed
 
+- **The commit-subject cap is policy data, and counts only what the author wrote (#363).** Two
+  defects, and the first is the kind that hides in plain sight: `_SUBJECT_MAX = 72` sat in
+  `git_check.py` while every other part of the commit convention lived in `os/git/git.yaml`. In an
+  OS whose stated invariant is that knowledge is data, the single numeric threshold of the policy was
+  a module constant — and a generated repo could not change it without editing a vendored tool.
+  Second, it counted characters nobody wrote: squash-merge appends ` (#PR)`, so a PR title written
+  exactly to the cap failed the moment it merged — a reported violation with no author.
+  - `commit.subject_max` is now data, read by `git_check`, rendered into a generated repo's
+    `docs/workflow/git-policy.yaml` and stated in its `AGENTS.md` from the same value. **Omitting it
+    does not disable the check** — it falls back to the same default, so a policy that forgot the key
+    still gets a rule.
+  - **80, not 72.** 72 was never this repository's practice: **178 of 255** commits on `main` broke
+    it and the median subject is 80. A rule at 30% compliance is a decision about the rule, not a
+    backlog of bad commits. 80 is the classic line width, leaves room for `type(scope): ` before the
+    subject starts, and **still bites** — 30% of the existing history fails it. A cap nobody meets is
+    not a stricter rule, it is an ignored one, which is exactly how 178 violations accumulated in
+    silence behind an advisory gate.
+  - The cap governs what the author **writes**. One trailing squash reference is stripped before
+    measuring, and only one: `fix(x): y (#350) (#362)` keeps the `(#350)` the author typed. A failure
+    now names both lengths so nobody has to re-derive why they differ. The honest trade is that a
+    subject at the cap renders ~87 chars in `git log`; measuring what someone cannot control was the
+    worse option.
+  - The rule is now in **EADOS's own `AGENTS.md` §6**. It had existed only in the *generated*
+    contract — the factory asked every project it produced to keep a rule it had never written down
+    for itself, and did not follow.
+
+
 - **The factory's own CI now runs on the platforms its users and its maintainer actually use
   (#318).** It was `ubuntu-24.04` + Python 3.12 — **one cell** — while EADOS ships a cross-platform
   installer and its maintainer develops on Windows with Python 3.14, a version CI never touched.

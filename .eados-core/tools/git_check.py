@@ -63,7 +63,20 @@ DEV_MARKER = ".eados-dev"
 
 _KEBAB = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*\Z")
 _SUBJECT = re.compile(r"(?P<type>[a-z]+)(\((?P<scope>[^)]*)\))?(?P<bang>!)?: (?P<desc>.+)\Z")
-_SUBJECT_MAX = 72
+# Fallback only — the cap is policy data (`commit.subject_max`, #363). Kept in step with the shipped
+# git.yaml so a policy-less repo is judged by the same number, not a stricter historical one.
+_SUBJECT_MAX = 80
+# Squash-merge appends this. The author did not write it and cannot prevent it, so it is not theirs
+# to be measured on — counting it made a PR title written exactly to the cap fail the moment it
+# merged, which is a check reporting a violation that never had an author (#363).
+_SQUASH_REF = re.compile(r"\s\(#\d+\)\Z")
+
+
+def authored_subject(subject):
+    """The part of a merged subject its author actually wrote — the trailing ` (#N)` GitHub adds on
+    squash removed. One reference only: `fix(x): y (#350) (#362)` keeps the `(#350)` the author
+    typed and drops the `(#362)` the merge did."""
+    return _SQUASH_REF.sub("", str(subject or "").strip())
 
 
 def load_policy(path=GIT_POLICY):
@@ -171,9 +184,15 @@ def commit_problems(subject, policy):
     if scope is not None and scopes and scope not in scopes:
         problems.append(f"commit scope '{scope}' is not a declared scope "
                         f"({', '.join(scopes)})")
-    if len(subject) > _SUBJECT_MAX:
-        problems.append(f"commit subject is {len(subject)} chars — the convention caps it at "
-                        f"{_SUBJECT_MAX}")
+    cap = commit.get("subject_max")
+    cap = int(cap) if isinstance(cap, int) or str(cap or "").isdigit() else _SUBJECT_MAX
+    authored = authored_subject(subject)
+    if len(authored) > cap:
+        extra = ("" if authored == subject else
+                 f" (measured without the ` {subject[len(authored):].strip()}` the squash-merge "
+                 f"appended; the full line is {len(subject)})")
+        problems.append(f"commit subject is {len(authored)} chars — the policy caps it at "
+                        f"{cap} (commit.subject_max){extra}")
     return problems
 
 

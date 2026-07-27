@@ -167,6 +167,11 @@ changes, but only the owner decides what lands on `main`.
   build, chore, ci}`.
 - Conventional Commits for messages. Scopes for this repo: `interview`, `profiles`,
   `templates`, `lint`, `agent`, `docs`, `adr`, `ci`.
+- **Subject ≤ 80 characters** — the data is `os/git/git.yaml` `commit.subject_max`, which
+  [`git_check.py`](.eados-core/tools/git_check.py) reads. It caps what *you* write: squash-merge
+  appends ` (#PR)`, which no author can prevent, so it is stripped before measuring (#363). Stated
+  here because it was previously only in the *generated* contract — EADOS asked projects to keep a
+  rule it had never written down for itself, and 178 of 255 commits on `main` broke it.
 - One logical change per PR; prefer one PR at a time.
 - **Pre-flight self-check.** Before opening a PR, run
   [`self_check.py`](.eados-core/tools/self_check.py) — a short, spec-derived checklist (ownership,
