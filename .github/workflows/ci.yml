@@ -18,15 +18,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # The factory's own gates, across the platforms its users and its maintainer actually run on
+  # (#318). This was ubuntu-24.04 + Python 3.12 alone — one cell — while EADOS ships a
+  # cross-platform installer and its maintainer develops on Windows with Python 3.14. Two
+  # Windows-specific defects (the cp1252 stdout crash #128, the UTF-8 BOM) were found by hand
+  # under a green CI, and 19.4's host-detection test passed locally and failed on the runner
+  # because it read the environment. One platform cannot validate code that reads its platform.
+  # ---------------------------------------------------------------------------
   self-lint:
-    name: self-lint / factory integrity
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    name: self-lint / ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false        # one red cell must not hide the state of the others
+      matrix:
+        include:
+          - { os: ubuntu-24.04, python: '3.12', baseline: true }   # the historical cell
+          - { os: ubuntu-24.04, python: '3.13' }
+          - { os: ubuntu-24.04, python: '3.14' }
+          - { os: windows-2022, python: '3.12' }
+          - { os: windows-2022, python: '3.14' }   # the maintainer's own configuration
+          - { os: macos-14,     python: '3.12' }
+          - { os: macos-14,     python: '3.14' }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python }}
       - name: EADOS self-lint
         run: python .eados-core/tools/eados_lint.py
       # #168: the suite is DISCOVERED (tools/tests/test_*.py), never enumerated — a new test
@@ -36,14 +55,94 @@ jobs:
         run: python .eados-core/tools/tests/run_all.py
       - name: Byte-compile the factory tooling (recursive - nothing enumerated; #168)
         run: python -m compileall -q .eados-core/tools
-      - name: Installer static analysis (shellcheck for *.sh / *.command; PowerShell parse for *.ps1)
+      # Advisory readouts: they never fail the build, so one cell is enough — running them seven
+      # times would be seven copies of the same advice.
+      - name: Auto-tuner (advisory)
+        if: matrix.baseline
+        run: python .eados-core/tools/autotune.py
+      - name: Lesson audit (advisory — regressions / dead lessons / rubric trends; #173)
+        if: matrix.baseline
+        run: python .eados-core/tools/lesson_audit.py
+
+  # ---------------------------------------------------------------------------
+  # The single stable context branch protection requires. A matrix job reports one check PER CELL
+  # (`self-lint / ubuntu-24.04 / py3.12`, …), so making the matrix the required check would pin the
+  # `protect-main` ruleset to today's cell list — every cell added or removed would silently break
+  # merging until someone edited repo settings. This job's name never changes, it fails when any
+  # cell fails, and it means strictly more than the single-cell check it replaces: all 7 cells plus
+  # both installer jobs.
+  # ---------------------------------------------------------------------------
+  self-lint-gate:
+    name: self-lint / factory integrity
+    needs: [self-lint, installer-static, installer-windows]
+    if: always()        # must still report when a dependency failed — that is the point
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every matrix cell and installer job must have succeeded
+        run: |
+          echo "self-lint matrix   : ${{ needs.self-lint.result }}"
+          echo "installer-static   : ${{ needs.installer-static.result }}"
+          echo "installer-windows  : ${{ needs.installer-windows.result }}"
+          # A matrix job's result is `success` only when EVERY cell succeeded.
+          [ "${{ needs.self-lint.result }}" = "success" ] \
+            && [ "${{ needs.installer-static.result }}" = "success" ] \
+            && [ "${{ needs.installer-windows.result }}" = "success" ] \
+            || { echo "::error::at least one cell or installer job did not succeed"; exit 1; }
+          echo "all cells green"
+
+  # ---------------------------------------------------------------------------
+  # Installer static analysis. Linux-only by nature: shellcheck is not on the Windows/macOS
+  # runners, and a parse check is platform-independent anyway.
+  # ---------------------------------------------------------------------------
+  installer-static:
+    name: installer / static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: shellcheck (*.sh / *.command) + PowerShell parse (*.ps1)
         run: |
           shellcheck -s sh setup/*.sh setup/*.command
           pwsh -NoProfile -Command 'Get-ChildItem setup -Filter *.ps1 | ForEach-Object { $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$null,[ref]$e); if($e){ Write-Error ("parse errors in "+$_.Name); $e | ForEach-Object { Write-Error $_.Message }; exit 1 } }; Write-Host "ps1 parse: clean"'
-      - name: Auto-tuner (advisory)
-        run: python .eados-core/tools/autotune.py
-      - name: Lesson audit (advisory — regressions / dead lessons / rubric trends; #173)
-        run: python .eados-core/tools/lesson_audit.py
+
+  # ---------------------------------------------------------------------------
+  # The Windows installer, exercised on Windows (#318). setup.ps1 targets Windows, whose default
+  # shell is Windows PowerShell 5.1 — a different engine from pwsh 7 with materially different
+  # behaviour. Running the suite only under pwsh on a Linux runner proved the script works
+  # somewhere other than where its users are. setup.bat was never executed at all.
+  # ---------------------------------------------------------------------------
+  installer-windows:
+    name: installer / Windows PowerShell 5.1
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Confirm this really is Windows PowerShell 5.1, not pwsh 7
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+          if ($PSVersionTable.PSVersion.Major -ne 5) { Write-Error "expected 5.x, got $($PSVersionTable.PSVersion)"; exit 1 }
+      # The installer shells out to `tar`, and Windows ships TWO: bsdtar in System32 and GNU tar
+      # under Git's usr/bin. Which one wins is a PATH accident that differs between a developer
+      # box and this runner, so record it — a failure here is otherwise unattributable (#318).
+      - name: Which tar is on PATH (bsdtar vs GNU tar)
+        shell: powershell
+        run: |
+          (Get-Command tar).Source
+          & tar --version
+      - name: setup.ps1 behavioural suite under Windows PowerShell 5.1
+        env:
+          EADOS_PS_EXE: powershell     # pin the engine; pwsh is also present on this runner
+          EADOS_PS_VERBOSE: '1'        # dump the installer's own output on a failed expectation
+        run: python .eados-core/tools/tests/test_setup_ps1.py
+      - name: setup.bat is EXECUTED, not merely parsed
+        shell: cmd
+        # `pause` at the end of setup.bat waits for a key; NUL on stdin returns it immediately.
+        run: setup\setup.bat -PrintPlan -Mode existing -Path . < NUL
 
   render-smoke:
     name: render / reference manifest
