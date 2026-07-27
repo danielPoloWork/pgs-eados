@@ -1005,7 +1005,7 @@ GATE_COVERAGE = [
 # Intentionally NOT machine-validated — prose/config under human review. Each needs a reason; this
 # is the conscious record of "we looked and chose not to gate this", not a blind skip.
 GATE_ALLOWLIST = [
-    ("AGENTS.md",                                  "agent contract — human-reviewed prose"),
+    ("AGENTS.md",                                  "human-reviewed prose, PARTLY gated — interaction-lockstep (§10) + git-scope-lockstep (§6 vocabulary)"),
     ("CLAUDE.md",                                  "agent contract — human-reviewed prose"),
     ("GEMINI.md",                                  "agent contract — human-reviewed prose"),
     ("CONTRIBUTING.md",                            "governance prose — human-reviewed"),
@@ -2065,6 +2065,75 @@ def check_pin_label_truth(fail, resolve=None):
                         + "; ".join(sorted(unverified)))
 
 
+# ---------------------------------------------------------------------------
+# 26. git-scope-lockstep (#365) — the commit-scope vocabulary lives in `os/git/git.yaml`, and
+#     `AGENTS.md` §6 restates it for the agent that has to use it. Nothing held the two together,
+#     and they drifted to **8 vs 21** — the surface an agent reads FIRST being the most wrong,
+#     which is the worst possible direction for a contract to be stale in.
+#
+#     Modelled on `interaction-lockstep` (#279): data is the source of truth, the prose may
+#     elaborate but may never omit. The difference is that this gate is **two-way** — an extra
+#     scope in the prose is just as much a divergence as a missing one, and #202/#327 taught that a
+#     one-way check validates half a relationship and reports it as whole (L-0009).
+#
+#     The generated contract needs no rule here: `templates/AGENTS.md.tmpl` renders its scopes
+#     from the manifest via `{{#EACH_SCOPE}}`, so a generated repo is congruent by construction.
+#     Only the factory hand-maintains two copies — which is how it ended up the one that drifted.
+# ---------------------------------------------------------------------------
+# The list, and ONLY the list: the contiguous comma-separated run of backticked tokens after the
+# marker. Matching the STRUCTURE rather than a span between delimiters is deliberate — the first
+# version bounded the capture by the closing period and swept up every other backticked token
+# nearby, including this gate's own name in the note beneath the list. It failed on the very tree
+# that introduced it, and would have gone on over-reporting whenever the terminator moved.
+# Separator is `\s*,?\s*`, not a required comma: the factory contract writes the list
+# comma-separated and the rendered one space-separated (`{{#EACH_SCOPE}}`), and a gate that only
+# understood one of them would silently capture a single scope from the other and then report every
+# remaining one as "omitted" — a confident wrong answer, which is worse than not checking.
+_SCOPE_PROSE = re.compile(r"Scopes for this repo:\s*((?:`[a-z0-9][a-z0-9-]*`\s*,?\s*)+)")
+
+
+def git_scope_lockstep_problems(scopes, contract_text):
+    """Pure check. `scopes`: `commit.scopes` from git.yaml; `contract_text`: AGENTS.md. The prose
+    list must equal the declared vocabulary, **both ways**. Returns problem strings."""
+    declared = [str(s).strip() for s in (scopes or []) if str(s).strip()]
+    if not declared:
+        return ["os/git/git.yaml declares no commit.scopes to lock AGENTS.md against"]
+    m = _SCOPE_PROSE.search(contract_text or "")
+    if not m:
+        return ["AGENTS.md does not state the commit-scope vocabulary ('Scopes for this repo…') — "
+                "the contract an agent re-grounds against must carry it (#365)"]
+    prose = re.findall(r"`([a-z0-9][a-z0-9-]*)`", m.group(1))
+    problems = []
+    missing = [s for s in declared if s not in prose]
+    extra = [s for s in prose if s not in declared]
+    if missing:
+        problems.append(f"AGENTS.md §6 omits {len(missing)} declared scope(s) "
+                        f"({', '.join(missing)}) — data is the source of truth and the prose may "
+                        "elaborate, never omit (#365)")
+    if extra:
+        # The other direction, and the one a one-way gate misses: prose that outlives its data
+        # sends an agent to a scope git_check will reject (L-0009).
+        problems.append(f"AGENTS.md §6 lists {len(extra)} scope(s) git.yaml does not declare "
+                        f"({', '.join(extra)}) — `git_check` would reject them (#365)")
+    return problems
+
+
+def check_git_scope_lockstep(fail):
+    name = "git-scope-lockstep"
+    spec_path = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
+    contract = os.path.join(REPO_ROOT, "AGENTS.md")
+    if not os.path.exists(spec_path) or not os.path.exists(contract):
+        return  # a partial checkout / a consumer install without the factory contract
+    try:
+        spec = render.load_yaml(read(spec_path)) or {}
+    except ValueError as exc:
+        fail(name, f"os/git/git.yaml did not parse: {exc}")
+        return
+    for problem in git_scope_lockstep_problems((spec.get("commit") or {}).get("scopes"),
+                                               read(contract)):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -2095,6 +2164,7 @@ CHECKS = [
     check_state_writer,
     check_subprocess_timeouts,
     check_pin_label_truth,
+    check_git_scope_lockstep,
 ]
 
 

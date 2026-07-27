@@ -197,6 +197,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **`AGENTS.md` listed 8 commit scopes, `git.yaml` declared 21, and `main` used 52 (#365).** Three
+  surfaces, three answers — and the one an agent reads **first** was the most wrong, which is the
+  worst direction for a contract to be stale in. Nothing watched, because `git-policy` is advisory
+  and reports into a void: the same silence that let #363's 178 subject-length violations
+  accumulate. Measured on 227 scoped commits: **81%** used a scope the contract omitted and **43%**
+  used one *neither* source declared.
+  - **New `git-scope-lockstep` self-lint** (30 checks) modelled on `interaction-lockstep` — data is
+    the source of truth, prose may elaborate but never omit. **Two-way**, because a one-way check
+    validates half a relationship and reports it as whole (L-0009): prose that outlives its data
+    sends an agent to a scope `git_check` will reject. `AGENTS.md` §6 now also names `git.yaml` as
+    the source, so the duplication is safe rather than the next thing to drift.
+  - **The vocabulary widened from 21 to 34**, covering `main` from **57% to 87%**. The rule for
+    admission, stated so the next addition is not a matter of taste: it names a real top-level
+    subsystem or artifact *and* was used more than once. The 31 undeclared scopes were not typos —
+    `render` (12 uses), `readme` (10), `learning` (9), `roadmap` (8), `orchestrator` (7) are real
+    subsystems nobody added. A vocabulary 43% of commits ignore is not being enforced, it is being
+    worked around — the same conclusion #363 reached about the 72-character cap. Deliberately **not**
+    admitted: `install` (a synonym of `setup`; two words for one thing invites the next split),
+    `loader` / `generate` (covered by `tools` / `orchestrator`), `refactor` (a commit *type*).
+  - A **generated** repo needed no fix: both of its surfaces render from the manifest's
+    `governance.scopes`, so it is congruent by construction. Only the factory hand-maintained two
+    copies — which is how it became the one that drifted, while rendering congruence for everyone
+    else.
+
+
 - **A generated repo violated its own git policy minutes after bootstrap (#350).** The factory
   shipped a `dependabot.yml` that opens PRs and a policy allowing **one open PR at a time**. On a
   real scaffold, Dependabot opened three within minutes of the bootstrap PR merging and the repo was

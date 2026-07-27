@@ -165,8 +165,16 @@ changes, but only the owner decides what lands on `main`.
   until then is backed by collaborator role (Triage/Read) plus this policy.
 - Branch naming: `<type>/<short-kebab>`, `type ∈ {feat, fix, refactor, perf, docs, test,
   build, chore, ci}`.
-- Conventional Commits for messages. Scopes for this repo: `interview`, `profiles`,
-  `templates`, `lint`, `agent`, `docs`, `adr`, `ci`.
+- Conventional Commits for messages. Scopes for this repo:
+  `interview`, `profiles`, `templates`, `lint`, `agent`, `docs`, `adr`, `ci`, `os`, `workflow`,
+  `authority`, `git`, `rfc`, `plan`, `risk`, `contribution`, `commands`, `traceability`, `tools`,
+  `setup`, `release`, `render`, `readme`, `learning`, `roadmap`, `orchestrator`, `routing`,
+  `interaction`, `issues`, `changelog`, `manifest`, `bundle`, `i18n`, `maintenance`.
+  <!-- The data is `os/git/git.yaml` `commit.scopes`; the `git-scope-lockstep` self-lint holds this
+  list identical to it, both ways (#365). Add a scope in both places or the gate fails. -->
+- **`git.yaml` is the source of truth for the vocabulary above** — this list restates it for the
+  agent that has to use it, and the gate is what makes the duplication safe rather than the next
+  thing to drift.
 - **Subject ≤ 80 characters** — the data is `os/git/git.yaml` `commit.subject_max`, which
   [`git_check.py`](.eados-core/tools/git_check.py) reads. It caps what *you* write: squash-merge
   appends ` (#PR)`, which no author can prevent, so it is stripped before measuring (#363). Stated
