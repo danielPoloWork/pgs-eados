@@ -105,6 +105,26 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.12.0**.
 
 ### Fixed
 
+- **A generated repository gitignored its own run records, so the #250 audit trail did not survive
+  a clone (#353).** Every phase procedure appends a run record under `.eados-core/learning/runs/`,
+  and the generated `.gitignore` excluded that whole tree — the shipped default from
+  `templates/gitignore.tmpl`, not a consumer deviation. Records were written, **reported as
+  written**, and never committed. The three tools that read them — `autotune.py`,
+  `lesson_audit.py`, and `eados_lint`'s run-record schema gate — therefore saw an empty corpus on
+  every fresh checkout, indistinguishable from a genuinely new project: on a consumer the learning
+  loop was not degraded, it was *absent*, silently.
+  - The records are the project's own delivery audit trail, not factory tooling, so they are now
+    re-included while the rest of the vendored factory stays ignored.
+  - **The obvious fix does not work**, which is why this was worth proving rather than assuming:
+    git cannot re-include a path whose **parent directory** is excluded — it never descends into
+    it — so `/.eados-core/` plus `!` lines leaves the record ignored and says nothing. The rule
+    excludes the *contents* at each level (`/*`) and re-includes the next one down. Both forms were
+    driven through real `git check-ignore`; the naive one is now pinned by a test as the trap it
+    is, so a future "simplification" back to it fails loudly instead of quietly.
+  - Same blind-spot shape as #346: the factory's own repo tracks `.eados-core/` because it *is* the
+    factory, so neither defect was reachable from inside EADOS — only from a consumer.
+
+
 - **`/eados status` reported a `ROADMAP.md` that exists as missing, on the layout the factory
   itself renders (#347).** `doctor.py` and `eados.py` defaulted `--root` to *the manifest's own
   directory*, but the prescribed manifest lives at `orchestrator/project.yaml` while `ROADMAP.md`

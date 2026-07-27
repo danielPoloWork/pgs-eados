@@ -52,4 +52,19 @@ htmlcov/
 
 # EADOS factory tooling — the .eados-core/ bundle is copied in to (re)generate this repo; it is
 # not part of the project's own source.
-/.eados-core/
+#
+# EXCEPT the run records: every phase procedure appends one (record_run.py), and they are the
+# project's own delivery audit trail, not factory tooling. Ignoring them meant they were written,
+# reported as written, and never committed — so the trail did not survive a clone and the tools
+# that read it (autotune, lesson_audit, the run-record schema gate) saw an empty corpus on every
+# fresh checkout, indistinguishable from a genuinely new project (#353).
+#
+# The shape below is NOT stylistic and must not be "simplified" to `/.eados-core/` plus negations:
+# git cannot re-include a path whose PARENT directory is excluded — it never descends into it, so
+# the `!` lines would be silently dead. Excluding the CONTENTS (`/*`) at each level and
+# re-including the next one down is what makes it work. Verified both ways; the naive form leaves
+# the record ignored.
+/.eados-core/*
+!/.eados-core/learning/
+/.eados-core/learning/*
+!/.eados-core/learning/runs/
