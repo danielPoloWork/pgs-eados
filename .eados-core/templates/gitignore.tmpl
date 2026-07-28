@@ -68,3 +68,24 @@ htmlcov/
 !/.eados-core/learning/
 /.eados-core/learning/*
 !/.eados-core/learning/runs/
+
+# EADOS command adapters — generated, per HOST, and not this project's source (#372, ADR-0019
+# addendum 2026-07-27). `adapter_render.py --host <id>` writes them; they are pointers at the
+# procedures inside `.eados-core/`, which the rule above already excludes.
+#
+# Committing them looked helpful and is not, for two reasons that only became visible once trees
+# became per-host:
+#   1. A cloned adapter points at `.eados-core/orchestrator/commands/<cmd>.md`, which is NOT in the
+#      repository. Whoever clones gets slash commands that resolve to a missing file — worse than
+#      absent, because an absent command is obviously absent while a dangling one fails at the
+#      point of use and reads as a broken repo.
+#   2. It would impose the original author's host on everyone. A committed `.claude/` tree does
+#      nothing for a teammate on Gemini, Codex or OpenCode; each generates their own in one command.
+#
+# The commands are still discoverable without them: `AGENTS.md` §13 carries the full table, and
+# `.eados-core/tools/eados.py commands` works on every host, including hosts with no command
+# mechanism at all. Delete these lines if you would rather commit your team's tree.
+/.claude/commands/eados/
+/.gemini/commands/eados/
+/.opencode/commands/eados-*
+/.eados/adapters/

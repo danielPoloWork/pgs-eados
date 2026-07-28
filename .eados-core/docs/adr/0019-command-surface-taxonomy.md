@@ -210,3 +210,64 @@ Recorded here as open. Codex stays `scope: home` until it is decided.
   decides how trees are produced; the factory therefore ships only the Claude tree it already had,
   and the renderer is invoked on demand. Pre-empting an open decision by committing 28 more files
   would have settled #372 by accident.
+
+---
+
+## Addendum — 2026-07-27: a generated repo does not commit its adapter tree (#372)
+
+**Status:** Accepted · **Deciders:** Maintainer, Enterprise Project Architect · **Related:** the
+2026-07-27 adapters-as-data addendum above (#375), #374 (the command table in the generated
+contract), #373 (the host-independent CLI), #353 (the run-record exception this mirrors).
+
+### The question
+
+A generated repository ignores `.eados-core/` — the shipped `.gitignore` says why in its own words:
+*"the bundle is copied in to (re)generate this repo; it is not part of the project's own source."*
+`.claude/commands/eados/` was **tracked**: the one piece of factory tooling landing in a consumer's
+history as if it were theirs. Nothing decided that; it fell out of `.gitattributes` not listing
+`.claude` and `gitignore.tmpl` not mentioning it.
+
+### Decision
+
+**A generated repository does not commit any host's adapter tree.** `gitignore.tmpl` excludes
+`.claude/commands/eados/`, `.gemini/commands/eados/`, `.opencode/commands/eados-*` and
+`.eados/adapters/`, with the reason stated at the point of use — the shape #353 established for the
+run-record exception, so a maintainer can tell an intentional rule from an oversight.
+
+The exclusions are scoped to the **EADOS subtree**, never the host's whole command directory: a
+project's own `.claude/commands/mine.md` stays tracked. Asserted by a test, because "ignore the
+adapters" written carelessly would silently swallow a team's own commands.
+
+### Why this reverses the recommendation the issue was filed with
+
+#372 recommended *keep them tracked*, on the grounds that a teammate who clones should get working
+slash commands. Two facts made that wrong, and neither existed when it was written:
+
+1. **A committed adapter is a dangling pointer.** An adapter names
+   `.eados-core/orchestrator/commands/<cmd>.md` — a path the same `.gitignore` excludes. Verified
+   against a real render: the adapter is tracked, its target is not. Whoever clones gets slash
+   commands that resolve to a **missing file**. That is worse than absence: an absent command is
+   obviously absent, while a dangling one fails at the point of use and reads as a broken repo.
+2. **Trees are now per-host** (#375). Committing one imposes the original author's host on the whole
+   team — a `.claude/` tree does nothing for a teammate on Gemini, Codex or OpenCode, each of whom
+   generates their own in one command.
+
+The cost that argued for tracking has also collapsed. When #372 was filed, an uncommitted tree meant
+the commands were effectively invisible. Since then **#374** put the full command table in the
+generated `AGENTS.md` §13, and **#373** gave every host a CLI covering all 14 verbs. A teammate who
+clones now finds the commands in the contract they already read, and one command away.
+
+### The factory is not a consumer
+
+EADOS keeps its own `.claude/commands/eados/` tracked and shipped in the bundle. That tree is the
+factory's working copy *and* what the installer places; the decision above governs **generated**
+repositories. Conflating the two is what made this look like an inconsistency in the first place.
+
+### Consequences
+
+- `gitignore.tmpl` carries the exclusions and the reason; deleting those lines is the supported way
+  for a team that *does* want a shared tree, and the comment says so.
+- The generated `AGENTS.md` §13 tells the reader their host's tree is not committed and how to
+  generate it — the contract is where they already are.
+- The installers state that the adapters they place will not be committed, so the additive
+  `--with-adapters` prompt does not imply otherwise.

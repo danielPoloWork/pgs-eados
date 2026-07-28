@@ -395,6 +395,19 @@ not need to go and find it in the vendored `.eados-core/` bundle, which is not c
 Commands marked *agent-authored* produce code, tests or a ledger entry — a CLI cannot run them. Read
 the procedure and follow it.
 
+**Your host's command tree is not committed** (ADR-0019, 2026-07-27 addendum). It is generated, and
+it is generated *per host* — so a tree committed by whoever set this repo up would do nothing for a
+teammate on a different one, and its pointers would dangle for anyone who has not installed the
+`.eados-core/` bundle (which this repo also does not commit). Generate your own:
+
+```bash
+python .eados-core/tools/adapter_render.py --list          # what your host supports
+python .eados-core/tools/adapter_render.py --host <id>     # your tree, in one command
+```
+
+Nothing above depends on it: the table you are reading is the list, and the CLI works everywhere.
+A team that would rather share one tree deletes the matching lines from `.gitignore`.
+
 ## 14. Tool-Specific Notes
 
 - **Claude Code** — `CLAUDE.md` defers here; config under `.claude/`.

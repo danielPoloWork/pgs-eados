@@ -9,6 +9,31 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
 
 ## [Unreleased]
 
+### Changed
+
+- **A generated repo no longer commits its adapter tree (#372, ADR-0019 addendum).** It ignores
+  `.eados-core/` because *"it is not part of the project's own source"*, yet `.claude/commands/eados/`
+  was tracked — the one piece of factory tooling landing in a consumer's history as if it were
+  theirs, decided by nobody. `gitignore.tmpl` now excludes every host's generated tree, with the
+  reason at the point of use (the shape #353 set for the run-record exception).
+  - **This reverses the recommendation the issue was filed with**, on two facts that did not exist
+    when it was written. First, **a committed adapter is a dangling pointer**: it names
+    `.eados-core/orchestrator/commands/<cmd>.md`, a path the same `.gitignore` excludes — verified
+    against a real render, the adapter tracked and its target not. Whoever clones would get slash
+    commands resolving to a **missing file**, which is worse than absence: an absent command is
+    obviously absent, a dangling one fails at the point of use and reads as a broken repo. Second,
+    trees are now **per-host** (#375), so committing one imposes the author's host on the whole team.
+  - The cost that argued for tracking has collapsed meanwhile: **#374** put the full command table in
+    the generated `AGENTS.md` §13 and **#373** gave every host a CLI covering all 14 verbs, so a
+    teammate who clones finds the commands in the contract they already read, one command away.
+  - **Scoped to the EADOS subtree, never the host's whole command directory** — a project's own
+    `.claude/commands/mine.md` stays tracked. Asserted against real `git check-ignore`, and proven to
+    bite: widening the pattern by one path segment turns the test red.
+  - The generated contract says the tree is not committed and how to generate one; both installers
+    say the adapters they place will not be committed, so the `--with-adapters` prompt cannot imply
+    otherwise. **The factory keeps its own tree** — the decision governs *generated* repositories,
+    and conflating the two is what made this look like an inconsistency.
+
 ### Added
 
 - **A command tree for whichever host you use — adapters as data (#375, ADR-0019 addendum).** The

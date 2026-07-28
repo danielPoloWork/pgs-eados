@@ -179,6 +179,8 @@ if [ "$want_interactive" = 1 ]; then
     path=$ANSWER
   fi
   if [ -z "$with_adapters" ]; then
+    info "  (a generated repo does not commit its adapter tree - it is per-host and its"
+    info "   pointers need the .eados-core/ bundle, which is not committed either; ADR-0019)"
     ask "Also install the /eados slash-command adapters for Claude Code (.claude/commands/eados)? (y/n)" "y"
     case "$ANSWER" in [yY]|[yY][eE][sS]) with_adapters=1 ;; *) with_adapters=0 ;; esac
   fi
