@@ -1,22 +1,35 @@
-# EADOS — Enterprise Agentic Delivery OS
+# EADOS — guardrails for AI coding agents
+
+> **Enterprise Agentic Delivery OS** — one opt-in pipeline, `init → design → plan → scaffold →
+> audit → migrate`, governing a project from its first RFC to its release.
+
+**Give your AI coding agent a contract it can't skip.** Point it at a repo and EADOS generates the
+whole governance layer — agent spec, ADRs, CI gates, SemVer rules, and a six-phase delivery
+pipeline — for any of **19 languages**, then enforces it with **16 lint gates** on every commit.
+The agent drafts; a human merges. Always.
+
+Works with **Claude Code, Codex, and Gemini** — or with no agent at all (deterministic render).
+
+<!-- DEMO SLOT — drop the 90-second recording here, as the first thing under the pitch:
+       <p align="center"><img src="docs/assets/demo.gif" alt="EADOS rendering a governed repo, then catching a violation" width="820"></p>
+     Deliberately a comment until the asset exists: a broken image reads worse than no image.
+     The recording must end on the gate firing red — that beat is what makes "can't skip" a
+     demonstration rather than a claim. -->
+
+```bash
+curl -fsSL https://github.com/danielPoloWork/pgs-eados/releases/latest/download/setup.sh -o setup.sh && sh setup.sh
+```
+
+<sub>Windows, manual bundle download, and air-gapped verification: [Getting started](#getting-started).</sub>
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v2.13.0-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
-[![Downloads](https://img.shields.io/github/downloads/danielPoloWork/pgs-eados/total.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](.eados-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> [!TIP]
-> **Finding EADOS useful? Please [give it a ⭐ on GitHub](https://github.com/danielPoloWork/pgs-eados)** — a star helps others discover the project and supports its continued development.
-
 > **🌐 Translations:** [简体中文](.eados-core/docs/i18n/zh-Hans/README.md) · [日本語](.eados-core/docs/i18n/ja/README.md) — derived from this English source. Policy & freshness: [`.eados-core/docs/i18n/`](.eados-core/docs/i18n/README.md).
-
-> A language-agnostic **delivery operating system** for enterprise software, web, games, and mobile
-> apps: an opt-in phase pipeline — `init → design → plan → scaffold → audit → migrate` — that
-> governs a project from its first RFC to release. Its `scaffold` phase stamps out an **enterprise
-> agent system** for *any* language, from a single manifest and parameterized templates.
 
 EADOS is not a product you ship; it is the **operating system for how the work flows** — a
 declarative, gate-enforced, human-in-the-loop governance layer (not a runtime kernel). Its
@@ -461,6 +474,9 @@ placeholder**. The render-smoke job in EADOS's own CI runs this against
 | [`tools/render.py`](.eados-core/tools/render.py) | Renders a manifest into a repository (deterministic). |
 | [`tools/eados_lint.py`](.eados-core/tools/eados_lint.py) | Self-lint: placeholder integrity, profile completeness, playbook references. |
 | `templates/tools/consistency_lint.py` | Shipped *into* each generated repo; enforces its cross-artifact congruence. |
+
+> [!TIP]
+> **Did that work for you? Please [give EADOS a ⭐ on GitHub](https://github.com/danielPoloWork/pgs-eados)** — a star is how other people find the project, and it is what keeps it developed in the open.
 
 ---
 
