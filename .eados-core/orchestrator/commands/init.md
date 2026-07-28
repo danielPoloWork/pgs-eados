@@ -69,6 +69,32 @@ or commits anything on its own.
 evidence (`certain`/`likely`/`guessing`), and when you would steer the maintainer away from the
 path they named, lead with the dissent template — position / alternative / risk.
 
+## Command surface — generate the tree for the host in use (#375)
+
+`/eados <cmd>` is a native slash command only where the host has one. Once the manifest exists,
+offer to generate that host's tree:
+
+```bash
+python .eados-core/tools/adapter_render.py --list            # what each declared host supports
+python .eados-core/tools/adapter_render.py --host <id>       # generate this repo's tree
+```
+
+**Resolve the host explicitly, and say which one you used** — manifest `routing.host` → the
+catalog's `detect[]` markers → **ask the maintainer**. Never default: a silent default is how every
+non-Claude host quietly received Anthropic model names before #325, and the same mistake here writes
+a tree the maintainer's actual host will never read.
+
+Three outcomes, all of them stated rather than implied:
+
+- **`scope: project`** — written into the repo; invoke with the host's own notation.
+- **`scope: home`** (Codex) — rendered *inside* the project with the one command to install it.
+  EADOS never writes outside the target.
+- **`scope: none`** — no verified mechanism. Say so: the surface is `AGENTS.md` §13 plus
+  `eados.py commands`, which works on every host including those with no command mechanism at all.
+
+Whether the generated tree is *committed* is the maintainer's call (see #372) — `adapter_render.py`
+is additive and never clobbers an existing adapter without `--force`.
+
 ## Backward compatibility
 
 `init` is additive. A maintainer who ignores the pipeline and runs the classic interview →

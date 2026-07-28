@@ -39,7 +39,7 @@ catalog:        # the ONLY place concrete model names live
   as_of:        # "YYYY-MM-DD" the catalog was last verified against the market
   max_age_days: # staleness budget; beyond it the catalog needs re-verification
   providers:    # vendors: { id, name, models[], notes? }
-  hosts:        # runtimes: { id, name, providers[], delegation, detect[], effort_aliases? }
+  hosts:        # runtimes: { id, name, providers[], delegation, detect[], commands?, effort_aliases? }
 examples:       # worked-example decision surface (#224): verdicts = the tiers
 ```
 
@@ -74,6 +74,38 @@ self-description is worse than none, because it is wrong *and* it looks authorit
 Only markers actually **observed** belong here. A host with `detect: []` never auto-detects and
 must be named — the same honesty as an unassessed model. A guessed marker either never fires
 (useless) or fires on the wrong host (harmful), and the second failure is worse than no detection.
+
+### `hosts[].commands` — how the runtime surfaces the `/eados` verbs (#375)
+
+```yaml
+commands:
+  scope: project              # project | home | none
+  dir: ".gemini/commands/eados"
+  ext: ".toml"
+  format: toml                # md-frontmatter | toml | md-yaml-frontmatter
+  nest: true                  # a subdirectory namespaces the command
+  invocation: "/eados:<name>"
+  install_to: "~/.codex/prompts"   # `scope: home` only — where the USER copies them
+```
+
+Adapters are **data, not code**. One renderer ([`adapter_render.py`](../../../tools/adapter_render.py))
+emits a tree for any host declaring `scope: project`, from the canonical command registry — 14
+commands across 4 hosts is one generator instead of 56 hand-maintained files and guaranteed drift.
+
+**The three scopes, and the middle one is a constraint rather than an omission:**
+
+| `scope` | meaning |
+|---|---|
+| `project` | EADOS writes the tree into the repository. |
+| `home` | the host reads its commands from **outside** the project (Codex: `~/.codex/prompts`, documented as *"not shared through your repository"*). EADOS renders them inside the project and prints the command the user runs. **It never writes outside the target.** |
+| `none` | no verified mechanism. The host's surface is `AGENTS.md` §13 plus `eados.py`. |
+
+Same honesty rule as `detect[]`: every block above was **verified against the host's current
+documentation**, and a host whose format could not be confirmed declares `scope: none` rather than a
+guess. Shipping a directory a host does not read is worse than shipping none — it looks like support.
+`nest: false` likewise records a *verified limit* (OpenCode does not document subdirectory
+namespacing) rather than a preference, because getting it wrong yields a tree the host silently
+ignores.
 
 **Host precedence** (ADR-0024 D4), highest first:
 

@@ -129,3 +129,84 @@ and exits cleanly. The manifest boundary exists because a command's *artifacts* 
 surface to land in and an owner to resolve; a command that produces no artifact has nothing to
 govern, and routing an old repo to `/eados init` would be advice to overwrite the very repository
 it came to inform.
+
+---
+
+## Addendum — 2026-07-27: adapters are data, and every host gets a tree (#375)
+
+**Status:** Accepted · **Deciders:** Maintainer, Enterprise Project Architect · **Related:**
+ADR-0024 (Host → Provider → Models), #239 (the Claude adapters), #373 (the host-independent CLI),
+#374 (the command table in the generated contract), #372 (whether a consumer *tracks* the tree).
+
+### What this addendum decides
+
+The Delivery paragraph above describes adapters for **one** host. `os/routing/routing.yaml`
+declares **four**, and since M19 / ADR-0024 provider-agnosticism is an explicit commitment: EADOS
+resolves tier, effort and model for any host. The command surface never followed — `codex`,
+`gemini` and `opencode` shipped **zero** adapters, so the OS was built to know which host it is on
+and did nothing with that knowledge where a user feels it most.
+
+**Adapters become data.** Each host declares a `commands:` block — `scope`, `dir`, `ext`, `format`,
+`nest`, `invocation` — and one renderer (`adapter_render.py`) emits a tree from the canonical
+command registry. Hand-maintaining 14 commands across 4 hosts would be 56 files and guaranteed
+drift, which is the failure #365 and #366 each closed with a gate; here it is closed by not creating
+the copies at all.
+
+**The class boundary is unchanged.** An adapter remains *surfacing, not semantics* (class 4): every
+generated file is a **pointer** naming the canonical procedure. No procedure body is copied, so
+`orchestrator/commands/` stays the single source of truth for every host.
+
+### Three scopes, and the middle one is the interesting decision
+
+| `scope` | behaviour | who |
+|---|---|---|
+| `project` | EADOS writes the tree into the repository | Claude Code, Gemini, OpenCode |
+| `home` | the host reads from **outside** the project; EADOS renders inside it and prints the install command | Codex |
+| `none` | no verified mechanism; the surface is `AGENTS.md` §13 + `eados.py` | — |
+
+**Codex is a constraint, not an oversight**, and it is recorded so it stops looking like a gap
+nobody got to. Its custom prompts live in `~/.codex/prompts` and the documentation states they are
+*"not shared through your repository"*. Writing there would break the containment posture the
+installer is built on — the same rule that makes a bundle install additive and no-clobber. So EADOS
+renders the tree into the project and the **user** installs it with one command.
+
+### Verification is part of the decision
+
+Every `commands:` block was verified against the host's **current documentation** on 2026-07-27, and
+that requirement is now part of the schema rather than a one-off diligence:
+
+- **Gemini** — project commands in `<project>/.gemini/commands/`, TOML, `prompt` required and
+  `description` optional, subdirectory namespacing via `:` (so `eados/init.toml` → `/eados:init`).
+- **OpenCode** — `.opencode/commands/<name>.md` with YAML frontmatter; the filename becomes the
+  command name. **Subdirectory namespacing is not documented**, so names are flat (`/eados-init`)
+  and `nest: false` records that as a verified limit rather than a preference.
+- **Codex** — `~/.codex/prompts`, home-scoped (see above).
+
+A host whose format cannot be confirmed declares **`scope: none`**, never a guess. Shipping a
+directory a host does not read is worse than shipping none: it looks like support, and the failure
+is silent. This mirrors the `detect[]` rule — only observed markers belong in the catalog.
+
+### One question this addendum deliberately does NOT answer
+
+Verification surfaced it: **Codex custom prompts are deprecated**, and the documented successor is
+**skills** — which *are* project-scoped and would remove the `home` constraint entirely. But skills
+are invocable **implicitly** (model-triggered by description matching), and the Decision above
+rejected `.claude/skills/` for exactly that reason: it is the fuzzy-intent routing RFC-0001 D2
+rules out.
+
+That is a real trade — a project-scoped surface bought with a mechanism this ADR declined — and it
+is **the maintainer's to make**, not one to settle in passing while implementing something else.
+Recorded here as open. Codex stays `scope: home` until it is decided.
+
+### Consequences
+
+- `adapter_render.py --host <id>` generates the tree; `--list` shows what each host supports. The
+  `init` procedure resolves the host explicitly (manifest `routing.host` → `detect[]` → ask) and
+  **states which host it generated for** — a silent default is how every non-Claude host quietly
+  received Anthropic model names before #325.
+- `command-adapters` covers **every** project-scoped host, symmetrically (missing adapter, orphan
+  adapter, non-pointer), for whichever trees are present.
+- **Whether a consumer commits a generated tree is #372's question, not this one.** This addendum
+  decides how trees are produced; the factory therefore ships only the Claude tree it already had,
+  and the renderer is invoked on demand. Pre-empting an open decision by committing 28 more files
+  would have settled #372 by accident.

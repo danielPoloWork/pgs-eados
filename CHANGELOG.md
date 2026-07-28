@@ -11,6 +11,41 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
 
 ### Added
 
+- **A command tree for whichever host you use — adapters as data (#375, ADR-0019 addendum).** The
+  routing catalog declares **four** hosts; the command surface shipped adapters for **one**. Since
+  M19 made provider-agnosticism an explicit commitment, the OS resolved tier, effort and model for
+  any host while the command surface stayed one host wide.
+  - Each host now declares a `commands:` block in `os/routing/routing.yaml` — `scope`, `dir`, `ext`,
+    `format`, `nest`, `invocation` — and **one** renderer (`adapter_render.py`) emits the tree from
+    the canonical registry. 14 commands across 4 hosts by hand would be 56 files and guaranteed
+    drift; here that is closed by not creating the copies at all, asserted by a test that adds a
+    command and finds it in every tree.
+  - **Three scopes, and the middle one is a constraint rather than an omission.** `project` — EADOS
+    writes it into the repo (Claude Code, Gemini, OpenCode). `home` — Codex reads from
+    `~/.codex/prompts`, documented as *"not shared through your repository"*, so EADOS renders the
+    tree **inside** the project and prints the command the user runs; it never writes outside the
+    target. `none` — no verified mechanism, and it says so.
+  - **Formats verified against each host's current documentation**, and that is now a schema rule
+    rather than one-off diligence: Gemini `.gemini/commands/` TOML with `prompt` required and `:`
+    namespacing; OpenCode `.opencode/commands/*.md` with YAML frontmatter and **flat names**,
+    because subdirectory namespacing is *not documented* — `nest: false` records a verified limit,
+    not a preference. A host that cannot be confirmed declares `scope: none`: shipping a directory a
+    host does not read looks like support and fails silently. The generated TOML is parsed with
+    `tomllib` in the test, not eyeballed.
+  - **`command-adapters` now covers every project-scoped host**, in that host's own path vocabulary
+    — a Gemini finding naming a `.claude` file would send the reader to a file that does not exist.
+  - `/eados init` resolves the host **explicitly** (manifest `routing.host` → `detect[]` → ask) and
+    states which one it generated for. A silent default is how every non-Claude host quietly
+    received Anthropic model names before #325.
+  - **Recorded open, not settled in passing:** Codex custom prompts are deprecated in favour of
+    **skills**, which *are* project-scoped and would remove the `home` constraint — but skills are
+    invocable implicitly, which ADR-0019 rejected as the fuzzy-intent routing RFC-0001 D2 rules out.
+    That trade is the maintainer's; Codex stays `scope: home` until it is decided.
+  - The factory ships **only the Claude tree it already had**: whether a consumer *commits* a
+    generated tree is #372's open question, and committing 28 more files would have settled it by
+    accident.
+
+
 - **The generated contract lists the commands (#374).** `AGENTS.md` is the one file every host
   auto-loads — the only thing a Codex, Gemini or OpenCode session is guaranteed to read. In a
   generated repo it carried **no command list at all**, while the canonical registry lives inside
