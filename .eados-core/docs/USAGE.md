@@ -88,6 +88,41 @@ _New to the phases? Walk the whole pipeline once against a tiny worked example �
 the [phase-by-phase walkthrough](walkthrough.md) runs every command (`init → audit`) and shows the
 human gate at each step._
 
+### The command surface on any host
+
+`/eados <cmd>` is a native slash command **only where the host has one** — today that is Claude
+Code. Under Codex, Gemini, OpenCode, or a model driven through a plain API, the host-independent
+surface is the CLI, and it covers **every** command the
+[registry](../orchestrator/commands/README.md) declares:
+
+```bash
+python .eados-core/tools/eados.py commands        # every verb, and how this CLI treats it
+```
+
+Three kinds of answer, and the readout says which one you got:
+
+| | |
+|---|---|
+| the phases + `status` | runs that phase's deterministic gates |
+| `adopt` · `review` · `upgrade` | delegates to the tool that does the work |
+| `debug` · `refactor` · `optimize` · `testcases` | **agent-authored** — these produce code and tests, so the CLI prints the procedure, its summary and its class, and stops |
+
+That last row is a boundary, not a shortfall: a CLI cannot write your fix. Naming the procedure
+turns "find the right file inside a vendored bundle" into one command.
+
+**Real autocomplete, no memorising.** The completion script is generated from the same registry —
+never checked in, because a stale completion offers commands that no longer exist:
+
+```bash
+eval "$(python .eados-core/tools/eados.py completion bash)"     # or: zsh
+```
+
+```powershell
+python .eados-core/tools/eados.py completion powershell | Out-String | Invoke-Expression
+```
+
+Each defines an `eados` shim as well, so it is `eados plan <manifest>` from then on.
+
 ---
 
 ## 4. What is FIXED — strict, do not change

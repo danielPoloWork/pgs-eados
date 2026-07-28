@@ -33,6 +33,7 @@ TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import render  # noqa: E402  — the dependency-free YAML loader, reused to parse the OS specs
 import record_run  # noqa: E402  — the run-record schema authority (OUTCOMES, RUBRIC_DIMENSIONS)
+import command_registry  # noqa: E402  — the ONE parser for the /eados command table (#373)
 
 ROOT = os.path.dirname(TOOLS)
 TEMPLATES = os.path.join(ROOT, "templates")
@@ -1423,9 +1424,9 @@ def check_safe_write(fail):
 #     in the factory checkout (the `.eados-dev` sentinel): a consumer who installed the bundle
 #     and declined the adapters must not fail their own self-lint.
 # ---------------------------------------------------------------------------
-_COMMAND_ROW_RE = re.compile(
-    r"^\|\s*`/eados (\w+)`\s*\|[^|]*\|[^|]*\*\*available\*\*[^|]*\|\s*\[[^\]]+\]\(([^)]+)\)",
-    re.MULTILINE)
+# The command table is parsed by `command_registry` (#373) — the CLI reads the same rows, and a
+# second matcher for the same table is a second list to drift, which is the defect #365/#366 each
+# spent a gate closing. The alias table below is this check's alone, so it stays here.
 # Alias-table rows: `| <verb(s)> | ... `/eados <target>` ... | <class> | <ref> |`. The verbs cell
 # may carry several backticked verbs (the design sub-modes row); the ref cell's `planned` marker
 # excludes a row (the alias is not live yet). Command-table rows cannot match: their SECOND cell
@@ -1438,35 +1439,20 @@ _ALIAS_ROW_RE = re.compile(
 _ALIAS_VERB_RE = re.compile(r"`(\w+)`")
 
 
-def _canonical_procedure(link):
-    """Resolve a commands/README.md Procedure-cell link (relative to orchestrator/commands/) to
-    the repo-relative path an adapter must point at, e.g. `init.md` ->
-    `.eados-core/orchestrator/commands/init.md`, `../generate.md` ->
-    `.eados-core/orchestrator/generate.md`."""
-    parts = [".eados-core", "orchestrator", "commands"] + link.split("/")
-    out = []
-    for p in parts:
-        if p == "..":
-            out.pop()
-        elif p not in ("", "."):
-            out.append(p)
-    return "/".join(out)
-
-
 def command_adapter_problems(readme_text, adapters):
     """Pure check. `readme_text`: orchestrator/commands/README.md; `adapters`: {name: file text}
     for .claude/commands/eados/*.md. Every available `/eados <name>` row needs an adapter whose
     text carries the row's own canonical procedure path (the pointer contract). A LIVE alias-table
     verb (#241) may optionally ship an adapter pointing at its TARGET's procedure. Every adapter
     needs one of the two (no orphans). Returns problem strings (empty == covered)."""
-    rows = _COMMAND_ROW_RE.findall(readme_text)
+    rows = [(c["name"], c["procedure"]) for c in command_registry.parse(readme_text)]
     if not rows:
         return ["could not parse any available `/eados <name>` rows from commands/README.md — "
                 "the adapter-coverage contract has nothing to check against"]
     problems = []
     available = {}
-    for cmd, link in rows:
-        available[cmd] = _canonical_procedure(link)
+    for cmd, procedure in rows:
+        available[cmd] = procedure
     # Live aliases: verb -> the TARGET command's canonical procedure. A `planned` ref cell or a
     # target that is not itself available keeps the alias out (not live yet).
     aliases = {}

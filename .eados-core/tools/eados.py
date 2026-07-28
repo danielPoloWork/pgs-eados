@@ -28,8 +28,32 @@ import phase_runner    # noqa: E402  — workflow + legal transitions (the deter
 import traceability    # noqa: E402  — roadmap-covers-rfcs
 import rfc_check        # noqa: E402  — rfc-approved
 import doctor          # noqa: E402  — the `status` readout (reused, not re-implemented)
+import command_registry  # noqa: E402  — the canonical verb list (#373), parsed once
 
 PHASES = ("init", "design", "plan", "scaffold", "audit", "migrate")
+
+# The host-independent command surface (#373). Only `claude-code` ships slash-command adapters, so
+# for every other host — and for a model driven through a plain API, which has no command mechanism
+# at all — THIS is the command surface. It exposed 7 of the registry's 14 verbs.
+#
+# Commands split into two kinds, and the split is the design rather than an omission:
+#   * DELEGATES  — a tool does the work; the CLI forwards the remaining argv to it, so each tool's
+#                  flags stay declared in ONE place (re-stating them here would be a second copy of
+#                  every signature, which is how the surface fell behind in the first place);
+#   * the rest   — `debug`/`refactor`/`optimize`/`testcases` AUTHOR code and tests. A CLI cannot run
+#                  them; an agent does. So they are *addressable*: the CLI prints the procedure, its
+#                  owning role and its class, and stops. For a host with no slash commands that
+#                  turns "find the right file inside a vendored bundle" into one command.
+DELEGATES = {
+    "adopt":   ("brownfield", "<repo-dir>"),
+    "review":  ("pr_review", "--pr N [--repo OWNER/REPO]"),
+    "upgrade": ("upgrade_advice", "[<repo-path>]"),
+}
+# Declared, not inferred. Falling back to "agent-authored" for anything unrecognised would let a NEW
+# command that *should* be runnable land silently in the weakest bucket — the CLI would keep looking
+# complete while quietly demoting it. A command must be classified on purpose, so an unlisted verb
+# is reported as unclassified and `test_cli_command_parity` fails until someone decides.
+AGENT_AUTHORED = ("debug", "refactor", "optimize", "testcases")
 
 
 def _rfcs(manifest):
@@ -264,14 +288,132 @@ def _read(path):
         return handle.read()
 
 
+def _procedure_card(name, registry):
+    """What the CLI can honestly offer for a command it cannot run: where the procedure is, who owns
+    it, and what it does. `debug`/`refactor`/`optimize`/`testcases` author code and tests — an agent
+    does that. Saying so beats a command that appears to work and does nothing."""
+    entry = next((c for c in registry if c["name"] == name), None)
+    if entry is None:
+        print(f"eados: unknown command {name!r}", file=sys.stderr)
+        return 2
+    print(f"EADOS {name} - agent-authored (this CLI cannot run it)")
+    print(f"  {entry['summary']}")
+    print(f"  procedure: {entry['procedure']}")
+    print("  class:     cross-cutting - advisory, never advances delivery_state (ADR-0019 class 3)")
+    # The owning role is stated in the procedure's own prose, not a parseable field. A
+    # regex over it would fire for some commands and not others, and a reader could not
+    # tell "no owner" from "could not find one" - so the card points at the file instead.
+    print("  It produces code, tests or a ledger entry, so an AGENT follows the procedure above.")
+    print("  Open this repository with your agent and ask for it by name; the contract "
+          "(AGENTS.md) points at the same file.")
+    return 0
+
+
+def _command_list(registry):
+    """Every command the registry declares, with how this CLI treats it. The list an agent or a
+    human reads on a host that ships no slash commands."""
+    lines = ["EADOS commands (from orchestrator/commands/README.md):"]
+    for c in registry:
+        if c["name"] in PHASES or c["name"] == "status":
+            how = "runs gates"
+        elif c["name"] in DELEGATES:
+            how = f"runs {DELEGATES[c['name']][0]}.py"
+        elif c["name"] in AGENT_AUTHORED:
+            how = "agent-authored"
+        else:
+            how = "UNCLASSIFIED"
+        lines.append(f"  {c['name']:<10} [{how:<20}] {c['summary'][:78]}")
+    lines.append("")
+    lines.append("  eados.py <phase|status> <manifest>      run a phase's deterministic gates")
+    for name, (_mod, usage) in sorted(DELEGATES.items()):
+        lines.append(f"  eados.py {name} {usage}".ljust(42) + " delegate to its tool")
+    return lines
+
+
+def completion_script(shell, registry, tool=None):
+    """A shell snippet defining an `eados` command and completing the registry's verbs.
+
+    **Generated, never hand-written.** A checked-in completion file is a second copy of the verb
+    list, and a stale completion is worse than none — it offers a command that no longer exists and
+    hides one that does. This is the same reasoning that put the registry parser in one module.
+
+    Emitted to stdout for the caller to `eval` or append; nothing is written to disk, so there is no
+    file to fall out of date between releases."""
+    verbs = " ".join(c["name"] for c in registry) + " commands"
+    tool = (tool or os.path.join(HERE, "eados.py")).replace("\\", "/")
+    if shell == "bash":
+        return (f'# eval "$(python {tool} completion bash)"\n'
+                f'eados() {{ python "{tool}" "$@"; }}\n'
+                f'_eados_complete() {{\n'
+                f'  local cur="${{COMP_WORDS[COMP_CWORD]}}"\n'
+                f'  if [ "$COMP_CWORD" -eq 1 ]; then\n'
+                f'    COMPREPLY=( $(compgen -W "{verbs}" -- "$cur") )\n'
+                f'  else\n'
+                f'    COMPREPLY=( $(compgen -f -- "$cur") )\n'
+                f'  fi\n'
+                f'}}\n'
+                f'complete -F _eados_complete eados\n')
+    if shell == "zsh":
+        return (f'# eval "$(python {tool} completion zsh)"\n'
+                f'eados() {{ python "{tool}" "$@"; }}\n'
+                f'_eados_complete() {{\n'
+                f'  if (( CURRENT == 2 )); then\n'
+                f'    compadd -- {verbs}\n'
+                f'  else\n'
+                f'    _files\n'
+                f'  fi\n'
+                f'}}\n'
+                f'compdef _eados_complete eados\n')
+    if shell == "powershell":
+        quoted = ", ".join(f"'{c['name']}'" for c in registry) + ", 'commands'"
+        return (f'# python {tool} completion powershell | Out-String | Invoke-Expression\n'
+                f'function eados {{ python "{tool}" @args }}\n'
+                f'Register-ArgumentCompleter -CommandName eados -Native -ScriptBlock {{\n'
+                f'  param($wordToComplete, $commandAst, $cursorPosition)\n'
+                f'  @({quoted}) |\n'
+                f'    Where-Object {{ $_ -like "$wordToComplete*" }} |\n'
+                f'    ForEach-Object {{ [System.Management.Automation.CompletionResult]::new('
+                f'$_, $_, "ParameterValue", $_) }}\n'
+                f'}}\n')
+    return ""
+
+
+COMPLETION_SHELLS = ("bash", "zsh", "powershell")
+
+
 def main(argv=None):
     # issue #128: force UTF-8 stdio so non-ASCII output won't mojibake or crash on cp1252 (Windows)
     for _stream in (sys.stdout, sys.stderr):
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
+    argv = sys.argv[1:] if argv is None else list(argv)
+    registry = command_registry.load()
+    known = [c["name"] for c in registry]
+    # The command set comes from the REGISTRY, never a tuple maintained here — a surface that keeps
+    # its own copy of the verb list is a surface that falls behind it (#373).
+    if argv and argv[0] in DELEGATES:
+        module, _usage = DELEGATES[argv[0]]
+        return __import__(module).main(argv[1:])
+    if argv and argv[0] in known and argv[0] not in PHASES + ("status",):
+        return _procedure_card(argv[0], registry)
+    if argv and argv[0] in ("--commands", "commands"):
+        for line in _command_list(registry):
+            print(line)
+        return 0
+    if argv and argv[0] == "completion":
+        shell = argv[1] if len(argv) > 1 else ""
+        if shell not in COMPLETION_SHELLS:
+            print(f"eados: completion needs a shell ({'|'.join(COMPLETION_SHELLS)})",
+                  file=sys.stderr)
+            return 2
+        sys.stdout.write(completion_script(shell, registry))
+        return 0
+
     import argparse
-    ap = argparse.ArgumentParser(description="EADOS thin phase orchestrator - run a phase's "
-                                             "deterministic gates, or `status` for the doctor.")
+    ap = argparse.ArgumentParser(
+        description="EADOS command surface - run a phase's deterministic gates, delegate to a "
+                    "command's tool, or print a procedure. `eados.py commands` lists every verb.",
+        epilog="every /eados command is accepted; see `eados.py commands`")
     ap.add_argument("command", choices=PHASES + ("status",),
                     help="a phase (init|design|plan|scaffold|audit|migrate) or 'status'")
     ap.add_argument("manifest", help="path to a project manifest (project.yaml)")
