@@ -1,24 +1,32 @@
-# EADOS —— 企业级智能体交付操作系统
+# EADOS —— 为 AI 编码智能体设立的护栏
+
+> **企业级智能体交付操作系统** —— 一条可选用的流水线，`init → design → plan → scaffold →
+> audit → migrate`，从项目的第一份 RFC 一直治理到发布。
+
+**给你的 AI 编码智能体一份它无法绕过的契约。** 把它指向一个仓库，EADOS 就会生成整套治理层
+—— 智能体规约、ADR、CI 门禁、SemVer 规则，以及一条六阶段交付流水线 —— 适配 **19 种语言**中的
+任意一种，随后由 **16 道 lint 门禁**在每一次提交上强制执行。智能体起草；由人类合并。始终如此。
+
+支持 **Claude Code、Codex 与 Gemini** —— 或者完全不用智能体（确定性渲染）。
+
+<!-- DEMO SLOT — mirrors README.md; see the English source for the shot list and the rationale. -->
+
+```bash
+curl -fsSL https://github.com/danielPoloWork/pgs-eados/releases/latest/download/setup.sh -o setup.sh && sh setup.sh
+```
+
+<sub>Windows、手动下载 bundle 与离线校验：见[快速上手](#快速上手)。</sub>
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v2.13.0-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
-[![Downloads](https://img.shields.io/github/downloads/danielPoloWork/pgs-eados/total.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../../LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../../.eados-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> [!TIP]
-> **觉得 EADOS 有用？欢迎[在 GitHub 上点亮 ⭐](https://github.com/danielPoloWork/pgs-eados)** —— 一颗 Star 能帮助更多人发现本项目，也是对持续开发的支持。
-
 > 🌐 本页面是项目 [`README.md`](../../../../README.md) 的简体中文翻译。
 > **英文版本为唯一权威来源** —— 如本译文与原文不一致，以英文版为准。
 > 用其他语言阅读：[English](../../../../README.md) · [日本語](../ja/README.md)。
-
-> 一个与语言无关的**交付操作系统**，面向企业级软件、Web、游戏与移动应用：一条可选用的阶段流水线
-> —— `init → design → plan → scaffold → audit → migrate` —— 从第一份 RFC 一直治理到发布。其
-> `scaffold` 阶段为*任何*语言批量生成一套**企业级智能体系统**，只需单一 manifest 与参数化的
-> template。
 
 EADOS 不是你交付的产品；它是**关于工作如何流转的操作系统** —— 一个声明式、由门禁强制、保留
 人工确认的治理层（并非运行时内核）。其 **`scaffold` 阶段就是那座工厂**，批量生产共享同样企业级
@@ -439,6 +447,9 @@ placeholder 时中止**。EADOS 自身 CI 中的 render-smoke 任务会在每次
 | [`tools/render.py`](../../../../.eados-core/tools/render.py) | 将 manifest 渲染成一个仓库（确定性）。 |
 | [`tools/eados_lint.py`](../../../../.eados-core/tools/eados_lint.py) | 自检：placeholder 完整性、profile 完整性、手册引用。 |
 | `templates/tools/consistency_lint.py` | 随每个生成仓库一并交付；强制其跨产物一致性。 |
+
+> [!TIP]
+> **它对你有用吗？欢迎[给 EADOS 点亮 ⭐](https://github.com/danielPoloWork/pgs-eados)** —— 一颗 Star 是别人发现本项目的方式，也是它得以持续公开开发的动力。
 
 ---
 

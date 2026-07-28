@@ -1,25 +1,33 @@
-# EADOS —— エンタープライズ・エージェント型デリバリー OS
+# EADOS —— AI コーディングエージェントのためのガードレール
+
+> **エンタープライズ・エージェント型デリバリー OS** —— オプトインのパイプライン
+> `init → design → plan → scaffold → audit → migrate` が、最初の RFC からリリースまでを統治します。
+
+**AI コーディングエージェントに、迂回できない契約を渡す。** リポジトリに向けるだけで、EADOS は
+統治レイヤ一式 —— エージェント規約・ADR・CI ゲート・SemVer ルール、そして六フェーズのデリバリー・
+パイプライン —— を **19 言語**のいずれかに向けて生成し、**16 個の lint ゲート**が毎コミットで
+それを強制します。エージェントは起草し、マージするのは人間。常にそうです。
+
+**Claude Code・Codex・Gemini** で動作します —— エージェントを一切使わない決定論的レンダリングも可能です。
+
+<!-- DEMO SLOT — mirrors README.md; see the English source for the shot list and the rationale. -->
+
+```bash
+curl -fsSL https://github.com/danielPoloWork/pgs-eados/releases/latest/download/setup.sh -o setup.sh && sh setup.sh
+```
+
+<sub>Windows・bundle の手動ダウンロード・オフライン検証は[はじめかた](#はじめかた)へ。</sub>
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v2.13.0-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
-[![Downloads](https://img.shields.io/github/downloads/danielPoloWork/pgs-eados/total.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../../LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../../.eados-core/orchestrator/profiles/)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196.svg)](https://www.conventionalcommits.org/)
 
-> [!TIP]
-> **EADOS が役に立ったら、ぜひ [GitHub で ⭐ を](https://github.com/danielPoloWork/pgs-eados)** —— スターは他の人がプロジェクトを見つける助けになり、継続的な開発の支えになります。
-
 > 🌐 本ページはプロジェクト [`README.md`](../../../../README.md) の日本語訳です。
 > **英語版が唯一の正典** —— 本訳が原文と食い違う場合は英語版が優先されます。
 > 他の言語で読む：[English](../../../../README.md) · [简体中文](../zh-Hans/README.md)。
-
-> 言語非依存の**デリバリー・オペレーティング・システム**。エンタープライズのソフトウェア・ウェブ・
-> ゲーム・モバイルアプリ向けに、オプトインのフェーズ・パイプライン
-> —— `init → design → plan → scaffold → audit → migrate` —— で、最初の RFC からリリースまで
-> プロジェクトを統治します。その `scaffold` フェーズは、単一の manifest とパラメータ化された
-> template から、*あらゆる*言語向けに**エンタープライズ・エージェント型システム**を打ち出します。
 
 EADOS は出荷する製品ではなく、**仕事の流れ方そのものを司るオペレーティング・システム**です
 —— 宣言的で、ゲートで強制され、人間が確認する統治層（ランタイムのカーネルではありません）。
@@ -472,6 +480,9 @@ python tools/consistency_lint.py     # the generated repo's own gate (now at the
 | [`tools/render.py`](../../../../.eados-core/tools/render.py) | manifest をリポジトリへレンダリング（決定的）。 |
 | [`tools/eados_lint.py`](../../../../.eados-core/tools/eados_lint.py) | 自己 lint：placeholder の整合性、profile の完全性、プレイブック参照。 |
 | `templates/tools/consistency_lint.py` | 各生成リポジトリへ同梱され、その成果物間の整合性を強制。 |
+
+> [!TIP]
+> **役に立ちましたか？ ぜひ [EADOS に ⭐ を](https://github.com/danielPoloWork/pgs-eados)** —— スターは他の人がプロジェクトを見つける手段であり、オープンな開発を続ける力になります。
 
 ---
 

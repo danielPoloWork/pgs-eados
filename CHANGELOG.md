@@ -34,6 +34,27 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
     otherwise. **The factory keeps its own tree** — the decision governs *generated* repositories,
     and conflating the two is what made this look like an inconsistency.
 
+- **The first screen now sells the job, not the architecture (#380).** At v2.13.0 the repository's
+  own traffic API reported **3 unique visitors in 14 days and zero external referrers** — and the
+  65 recorded asset downloads are almost all ours, since `v2.12.0`, `v2.11.0` and `v2.5.0` each show
+  an *identical* count on all seven assets, the signature of the post-release check that hits every
+  `releases/latest/download/` URL. Nothing was underperforming; nothing had been announced.
+  - **The repo description named a phase that no longer exists** — it ended `audit → refactor`,
+    which ADR-0020 renamed to `migrate`. The public description advertised a removed pipeline.
+  - The README opened with eight badges, a star request, and two definitional paragraphs before
+    saying what EADOS does *for you*. The fold now carries a concrete H1, the pitch, and the install
+    one-liner; badges, translations and depth follow. **The star request moves below Quickstart** —
+    it previously sat at line 12, asking for payment before delivery — and the **Downloads badge is
+    dropped**, because publishing `65` argues against us at this stage.
+  - **Topics traded for search intent**: `procedural-generation` was recruiting game developers.
+  - **No product claim changed.** Every count in the new pitch — 19 languages, 16 lint gates, six
+    phases, agent-drafts-human-merges — is something the repository already enforces. The brand line
+    *Enterprise Agentic Delivery OS* is kept as the subtitle.
+  - **"A contract it can't skip" is a promise that something is prevented, and prose cannot prove
+    that.** A demo slot is reserved in all three READMEs as an HTML comment — deliberately not a
+    broken `<img>` — for a recording that must end on a deliberate violation and the gate firing
+    red. Until it lands, the wording is a claim carrying a debt.
+
 ### Added
 
 - **A command tree for whichever host you use — adapters as data (#375, ADR-0019 addendum).** The
