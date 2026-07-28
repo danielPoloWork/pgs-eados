@@ -47,6 +47,15 @@ def main(argv=None):
         if hasattr(_stream, "reconfigure"):
             _stream.reconfigure(encoding="utf-8")
     argv = sys.argv[1:] if argv is None else argv
+    # `--help` answers (#373). This is reachable as `eados adopt --help`, and on a host with no
+    # slash commands the CLI is the whole command surface — a tool there that treats `--help` as a
+    # path and reports "not a directory: --help" teaches the user the surface is broken.
+    if any(a in ("-h", "--help") for a in argv):
+        print("usage: brownfield.py <repo-path>\n\n"
+              "Read-only brownfield gap map: which standard EADOS artifacts an existing\n"
+              "repository already has. Reports; writes nothing. The `/eados adopt` intake\n"
+              "(orchestrator/commands/adopt.md) turns the map into a manifest.")
+        return 0
     if len(argv) != 1:
         print("usage: brownfield.py <repo-path>", file=sys.stderr)
         return 2

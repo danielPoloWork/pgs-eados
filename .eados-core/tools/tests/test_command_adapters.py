@@ -16,7 +16,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
-import eados_lint as lint  # noqa: E402  (the module under test)
+import eados_lint as lint  # noqa: E402
+import command_registry    # noqa: E402  — the ONE registry parser (#373)  (the module under test)
 
 REPO_ROOT = os.path.dirname(lint.ROOT)
 
@@ -55,10 +56,10 @@ def main():
 
     # --- link resolution: plain and ../-style Procedure links both canonicalize ---
     check("a plain link resolves under orchestrator/commands/",
-          lint._canonical_procedure("init.md") == ".eados-core/orchestrator/commands/init.md",
+          command_registry.canonical_procedure("init.md") == ".eados-core/orchestrator/commands/init.md",
           failures)
     check("a ../ link resolves beside orchestrator/ (the scaffold case)",
-          lint._canonical_procedure("../generate.md") == ".eados-core/orchestrator/generate.md",
+          command_registry.canonical_procedure("../generate.md") == ".eados-core/orchestrator/generate.md",
           failures)
 
     # --- happy path: every available row has a pointing adapter; planned rows demand nothing ---

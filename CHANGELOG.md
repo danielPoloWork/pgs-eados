@@ -7,6 +7,42 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
 in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
 
+## [Unreleased]
+
+### Added
+
+- **The host-independent command surface covers every command (#373).** Only `claude-code` ships
+  slash-command adapters. For `codex`, `gemini`, `opencode` — and for a model driven through a plain
+  API, which has **no** command mechanism at all — `eados.py` *is* the command surface, and it
+  exposed **7 of the registry's 14** verbs with no completion and no discoverability.
+  - **One parser, two consumers.** `command_registry.py` reads
+    `orchestrator/commands/README.md`; the CLI and the `command-adapters` gate both use it. A second
+    matcher for the same table is a second list to drift — the defect #365 and #366 each spent a
+    gate closing.
+  - **Three kinds of answer, and the readout says which you got.** Phases + `status` run gates;
+    `adopt`/`review`/`upgrade` delegate to their tool (forwarding argv, so each tool's flags stay
+    declared once); `debug`/`refactor`/`optimize`/`testcases` are **agent-authored** — they produce
+    code and tests, so the CLI prints the procedure, summary and class and stops. A boundary, not a
+    shortfall: naming the procedure turns "find the right file inside a vendored bundle" into one
+    command.
+  - **Classification is declared, never inferred.** An unrecognised verb reports `UNCLASSIFIED` and
+    fails the parity test rather than defaulting into the weakest bucket — the first version of that
+    test passed with an unknown command precisely because it fell back silently.
+  - **`eados.py completion {bash,zsh,powershell}`** emits an `eados` shim plus real tab-completion,
+    generated from the same registry and written to no file: a checked-in completion is a second
+    copy of the verb list, and a stale one offers commands that no longer exist. Verified by running
+    the bash shim and parse-checking the PowerShell snippet.
+  - `brownfield.py` answers `--help` (reachable as `eados adopt --help`); a tool that reports
+    *"not a directory: --help"* teaches the user the surface is broken.
+  - `USAGE.md` §3 presents the CLI as the surface for any host.
+
+### Fixed
+
+- **The command-table parser dropped every second row.** Its cells used `[^|]`, which crosses a line
+  break and swallows the **next** row's leading `|` — so the table parsed as half its size with
+  nothing reporting it. Caught by the adapter gate's 4-column fixture while making the parser
+  shared, and pinned by a test, since it is invisible against the real table.
+
 ## [2.13.0] - 2026-07-27
 
 The consumer-experience release. Seven consecutive issues had been found by a **downstream
