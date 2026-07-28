@@ -1439,7 +1439,8 @@ _ALIAS_ROW_RE = re.compile(
 _ALIAS_VERB_RE = re.compile(r"`(\w+)`")
 
 
-def command_adapter_problems(readme_text, adapters):
+def command_adapter_problems(readme_text, adapters, where=".claude/commands/eados", ext=".md",
+                             host="Claude Code", prefix=""):
     """Pure check. `readme_text`: orchestrator/commands/README.md; `adapters`: {name: file text}
     for .claude/commands/eados/*.md. Every available `/eados <name>` row needs an adapter whose
     text carries the row's own canonical procedure path (the pointer contract). A LIVE alias-table
@@ -1464,10 +1465,10 @@ def command_adapter_problems(readme_text, adapters):
                 aliases[verb] = available[target]
     for cmd, proc in sorted(available.items()):
         if cmd not in adapters:
-            problems.append(f".claude/commands/eados/{cmd}.md is missing — every available "
-                            f"`/eados {cmd}` row must ship its Claude Code adapter (#239)")
+            problems.append(f"{where}/{prefix}{cmd}{ext} is missing — every available "
+                            f"`/eados {cmd}` row must ship its {host} adapter (#239)")
         elif proc not in adapters[cmd]:
-            problems.append(f".claude/commands/eados/{cmd}.md does not point at its canonical "
+            problems.append(f"{where}/{prefix}{cmd}{ext} does not point at its canonical "
                             f"procedure `{proc}` — an adapter is a pointer, never a copy "
                             "(ADR-0019 class 4)")
     for cmd in sorted(adapters):
@@ -1475,14 +1476,31 @@ def command_adapter_problems(readme_text, adapters):
             continue
         if cmd in aliases:
             if aliases[cmd] not in adapters[cmd]:
-                problems.append(f".claude/commands/eados/{cmd}.md is an alias adapter but does "
+                problems.append(f"{where}/{prefix}{cmd}{ext} is an alias adapter but does "
                                 f"not point at its target's canonical procedure `{aliases[cmd]}` "
                                 "— an alias routes, never adds behavior (ADR-0019 class 4, #241)")
             continue
-        problems.append(f".claude/commands/eados/{cmd}.md matches no available `/eados {cmd}` row "
+        problems.append(f"{where}/{prefix}{cmd}{ext} matches no available `/eados {cmd}` row "
                         "and no live alias-table verb — a planned command/alias must not ship an "
                         "adapter before it flips live (orphan adapter)")
     return problems
+
+
+def _adapter_hosts():
+    """`[(host_id, commands_block)]` for every host declaring a PROJECT-scoped command tree — read
+    from `os/routing/routing.yaml`, so admitting a host is a data change (#375, ADR-0019 addendum).
+    A `home`/`none` host has no tree in the repository to hold to anything."""
+    try:
+        import route_advice
+        spec = route_advice.load_routing()
+    except Exception:      # noqa: BLE001 — an unreadable routing spec is os-spec-completeness's report
+        return []
+    out = []
+    for h in (spec.get("catalog") or {}).get("hosts") or []:
+        block = h.get("commands") if isinstance(h, dict) else None
+        if isinstance(block, dict) and block.get("scope") == "project" and block.get("dir"):
+            out.append((h.get("id"), block))
+    return out
 
 
 def check_command_adapters(fail):
@@ -1492,14 +1510,26 @@ def check_command_adapters(fail):
     readme_path = os.path.join(ROOT, "orchestrator", "commands", "README.md")
     if not os.path.exists(readme_path):
         return  # a partial checkout without the command surface
-    adapters = {}
-    adapter_dir = os.path.join(REPO_ROOT, ".claude", "commands", "eados")
-    if os.path.isdir(adapter_dir):
+    readme = read(readme_path)
+    # EVERY project-scoped host, not just Claude Code (#375). The trees are generated on demand
+    # (`adapter_render.py`), and whether a consumer COMMITS one is #372's open question — so a
+    # declared-but-absent tree is fine, and only a tree that EXISTS is held to the contract. A
+    # present tree that has fallen behind the registry is exactly the drift this gate is for.
+    for host, block in _adapter_hosts():
+        adapter_dir = os.path.join(REPO_ROOT, *block["dir"].split("/"))
+        if not os.path.isdir(adapter_dir):
+            continue
+        ext = block.get("ext") or ".md"
+        prefix = "" if block.get("nest") else "eados-"
+        adapters = {}
         for fn in sorted(os.listdir(adapter_dir)):
-            if fn.endswith(".md"):
-                adapters[fn[:-3]] = read(os.path.join(adapter_dir, fn))
-    for problem in command_adapter_problems(read(readme_path), adapters):
-        fail(name, problem)
+            if fn.endswith(ext) and fn.startswith(prefix):
+                adapters[fn[:-len(ext)][len(prefix):]] = read(os.path.join(adapter_dir, fn))
+        if not adapters:
+            continue
+        for problem in command_adapter_problems(readme, adapters, where=block["dir"], ext=ext,
+                                                host=host, prefix=prefix):
+            fail(name, problem)
 
 
 # A host matrix ROW: a table line whose first cell bolds the host id. Anchored to `|` + `**…**` so

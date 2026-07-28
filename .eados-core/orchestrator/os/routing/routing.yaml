@@ -241,10 +241,29 @@ catalog:
   # a guessed marker either never fires, or fires on the wrong host, and the second is worse than
   # no detection at all. Adding one is a data edit, no code change.
   hosts:
+    # `commands:` declares HOW a host surfaces the /eados verbs, as data (#375, ADR-0019
+    # addendum 2026-07-27). One renderer emits a tree for any host whose scope is `project`;
+    # 14 commands x 4 hosts maintained by hand would be 56 files and guaranteed drift.
+    #   scope       project = EADOS may write it into the repo | home = it lives outside the
+    #               project and EADOS must never write there | none = no verified mechanism
+    #   dir/ext     where the files go and what extension the host discovers
+    #   format      md-frontmatter | toml | md-yaml-frontmatter
+    #   nest        true when a subdirectory namespaces the command, false when names must be flat
+    #   invocation  what the user actually types
+    # Every entry below was verified against the host's current documentation on 2026-07-27; an
+    # unverified host declares `scope: none` rather than a guess, because shipping a directory a
+    # host does not read looks like support.
     - id: claude-code
       name: "Claude Code"
       providers: [anthropic]
       delegation: applied
+      commands:
+        scope: project
+        dir: ".claude/commands/eados"
+        ext: ".md"
+        format: md-frontmatter
+        nest: true
+        invocation: "/eados:<name>"
       detect:
         - env: CLAUDECODE
         - env: CLAUDE_CODE_ENTRYPOINT
@@ -258,16 +277,52 @@ catalog:
       providers: [openai]
       delegation: advisory-only
       detect: []      # no marker observed yet - name it explicitly
+      # HOME-scoped, and that is a constraint rather than an omission: custom prompts live in
+      # ~/.codex/prompts and are documented as "not shared through your repository". EADOS writing
+      # there would break the containment posture its installer is built on, so it renders the tree
+      # INSIDE the project and prints the one command to install it.
+      # Also verified 2026-07-27: custom prompts are DEPRECATED in favour of skills, which ARE
+      # project-scoped - but skills are invocable implicitly (model-triggered), which ADR-0019
+      # deliberately rejected for exactly that reason. Left open for the maintainer; see the ADR.
+      commands:
+        scope: home
+        dir: ".eados/adapters/codex"
+        install_to: "~/.codex/prompts"
+        ext: ".md"
+        format: md-frontmatter
+        nest: false
+        invocation: "/eados-<name>"
     - id: gemini
       name: "Gemini Antigravity"
       providers: [google]
       delegation: advisory-only
       detect: []      # no marker observed yet - name it explicitly
+      # Verified 2026-07-27: project commands live in <project>/.gemini/commands/, TOML, `prompt`
+      # required and `description` optional, and a subdirectory namespaces the command with `:` -
+      # so eados/init.toml surfaces as /eados:init, exactly parallel to Claude Code.
+      commands:
+        scope: project
+        dir: ".gemini/commands/eados"
+        ext: ".toml"
+        format: toml
+        nest: true
+        invocation: "/eados:<name>"
     - id: opencode
       name: "OpenCode (model-agnostic)"
       providers: [anthropic, openai, google, mistral, alibaba-qwen, moonshot, sakana]
       delegation: advisory-only
       detect: []      # no marker observed yet - name it explicitly
+      # Verified 2026-07-27: project commands are .opencode/commands/<name>.md with YAML
+      # frontmatter, and the filename becomes the command name. The NESTING rule is NOT documented,
+      # so names are flat (`eados-init`) rather than relying on behaviour nobody wrote down -
+      # `nest: false` records that this is a verified limit, not a preference.
+      commands:
+        scope: project
+        dir: ".opencode/commands"
+        ext: ".md"
+        format: md-yaml-frontmatter
+        nest: false
+        invocation: "/eados-<name>"
 
 # Worked-example decision surface (#224) - the judgment call is WHICH TIER a unit of work
 # deserves. Shape-checked by the `examples` gate; drawn from the maintainer-reviewed M15
