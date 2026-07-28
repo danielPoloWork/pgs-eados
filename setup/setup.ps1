@@ -159,6 +159,8 @@ if ($wantInteractive) {
     $Path = Ask 'Path to the existing repo' '.'
   }
   if ($null -eq $wantAdapters) {
+    Info '  (a generated repo does not commit its adapter tree - it is per-host and its'
+    Info '   pointers need the .eados-core/ bundle, which is not committed either; ADR-0019)'
     $a = Ask 'Also install the /eados slash-command adapters for Claude Code (.claude/commands/eados)? (y/n)' 'y'
     $wantAdapters = ($a.Trim() -match '^(y|yes)$')
   }
