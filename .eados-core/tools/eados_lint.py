@@ -2120,6 +2120,60 @@ def check_git_scope_lockstep(fail):
         fail(name, problem)
 
 
+# ---------------------------------------------------------------------------
+# 27. command-table-lockstep (#374) — the generated `AGENTS.md` carries the `/eados` command table,
+#     and it must stay GENERATED. `AGENTS.md` is the one file every host auto-loads; in a generated
+#     repo it listed no commands at all, while the registry that has them lives inside the
+#     gitignored `.eados-core/` — the contract guaranteed to be read pointing at a file guaranteed
+#     not to be committed.
+#
+#     There is nothing to compare two lists against, because there is only one: the template holds
+#     `{{EADOS_COMMANDS}}` and `render.commands_table()` fills it from the registry. So what this
+#     gate protects is exactly that — that nobody "simplifies" the placeholder into a literal table.
+#     A hand-written copy would be the second list, and a STALE command table is worse than none: it
+#     sends an agent at a command that no longer exists.
+# ---------------------------------------------------------------------------
+_LITERAL_CMD_ROW = re.compile(r"(?m)^\|\s*`/eados \w+`\s*\|")
+
+
+def command_table_lockstep_problems(template_text, rendered=None, registry=None):
+    """Pure check. `template_text`: templates/AGENTS.md.tmpl. `rendered`: an optional rendered
+    contract to verify the table actually landed in. `registry`: the canonical command list."""
+    problems = []
+    if "{{EADOS_COMMANDS}}" not in template_text:
+        problems.append("templates/AGENTS.md.tmpl no longer carries {{EADOS_COMMANDS}} — the "
+                        "command table must be RENDERED from orchestrator/commands/README.md, "
+                        "never typed into the template (#374)")
+    if _LITERAL_CMD_ROW.search(template_text):
+        problems.append("templates/AGENTS.md.tmpl contains a literal `| `/eados …` |` table row — "
+                        "that is a second copy of the registry, and a stale command table sends an "
+                        "agent at a command that no longer exists (#374)")
+    if rendered is not None and registry:
+        missing = [c["name"] for c in registry if f"`/eados {c['name']}`" not in rendered]
+        if missing:
+            problems.append(f"the rendered AGENTS.md omits {len(missing)} declared command(s) "
+                            f"({', '.join(missing)}) — the contract every host reads must list "
+                            "them all (#374)")
+    return problems
+
+
+def check_command_table_lockstep(fail):
+    name = "command-table-lockstep"
+    tmpl = os.path.join(TEMPLATES, "AGENTS.md.tmpl")
+    if not os.path.exists(tmpl):
+        return  # a partial checkout without the contract template
+    registry = command_registry.load()
+    rendered = None
+    if registry:
+        try:
+            rendered = render.commands_table(registry)
+        except Exception as exc:  # noqa: BLE001 — a broken renderer is the render-smoke's report
+            fail(name, f"could not render the command table: {exc!r}")
+            return
+    for problem in command_table_lockstep_problems(read(tmpl), rendered, registry):
+        fail(name, problem)
+
+
 CHECKS = [
     check_placeholder_integrity,
     check_profile_completeness,
@@ -2151,6 +2205,7 @@ CHECKS = [
     check_subprocess_timeouts,
     check_pin_label_truth,
     check_git_scope_lockstep,
+    check_command_table_lockstep,
 ]
 
 

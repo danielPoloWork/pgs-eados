@@ -11,6 +11,28 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
 
 ### Added
 
+- **The generated contract lists the commands (#374).** `AGENTS.md` is the one file every host
+  auto-loads — the only thing a Codex, Gemini or OpenCode session is guaranteed to read. In a
+  generated repo it carried **no command list at all**, while the canonical registry lives inside
+  the gitignored `.eados-core/`: the contract guaranteed to be read pointed at a file guaranteed not
+  to be committed.
+  - New **§13 EADOS commands** — every available command with its class and one-line description,
+    plus how to invoke one *in order of what the host supports*: a native slash command where there
+    is one, the CLI everywhere else (including hosts with no command mechanism at all), and asking
+    by name. Commands a CLI cannot run are marked **agent-authored**, and the class is imported from
+    `eados.AGENT_AUTHORED` rather than restated — the contract and the tool cannot disagree about
+    what a CLI can do.
+  - **Rendered, never typed.** `{{EADOS_COMMANDS}}` is filled by `render.commands_table()` from
+    `orchestrator/commands/README.md` through the shared `command_registry` (#373). A new registry
+    row flows into every future render with no code or template change.
+  - **`command-table-lockstep`** (31 checks) guards the property that actually matters here: there
+    is only one list, so what can go wrong is someone "simplifying" the placeholder into a literal
+    table. The gate fails on a missing placeholder, on a hand-written `| `/eados …` |` row, and on a
+    rendered contract that omits a declared command. Proven to bite by doing exactly that.
+  - Contract sections renumbered: Tool-Specific Notes 13 → 14, House Rules 14 → 15, with the two
+    cross-references updated.
+
+
 - **The host-independent command surface covers every command (#373).** Only `claude-code` ships
   slash-command adapters. For `codex`, `gemini`, `opencode` — and for a model driven through a plain
   API, which has **no** command mechanism at all — `eados.py` *is* the command surface, and it

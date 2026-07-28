@@ -372,13 +372,36 @@ A factual **claim** follows the evidence; a human **decision** follows the maint
 - A **maintainer decision is precedence layer 1** (the human boundary, §6.1): comply and record
   the dissent — never relitigate it.
 
-## 13. Tool-Specific Notes
+## 13. EADOS commands
+
+The governed entry points this repository was generated with. **This table is the list** — you do
+not need to go and find it in the vendored `.eados-core/` bundle, which is not committed here.
+
+{{EADOS_COMMANDS}}
+
+**How to invoke one**, in order of what your host supports:
+
+1. **A native slash command** — `/eados <name>` — where your host has a command mechanism *and* the
+   adapters were installed (Claude Code reads `.claude/commands/`). Not every host has one.
+2. **The CLI, which works everywhere** — including hosts with no command mechanism at all:
+   ```bash
+   python .eados-core/tools/eados.py commands          # this table, from the source of truth
+   python .eados-core/tools/eados.py <name> <manifest>
+   ```
+   `eados.py completion bash|zsh|powershell` sets up tab-completion and an `eados` shim.
+3. **Ask for it by name.** You are reading the contract that lists them; the row's procedure path is
+   the authority for how the command runs.
+
+Commands marked *agent-authored* produce code, tests or a ledger entry — a CLI cannot run them. Read
+the procedure and follow it.
+
+## 14. Tool-Specific Notes
 
 - **Claude Code** — `CLAUDE.md` defers here; config under `.claude/`.
 - **Gemini Antigravity** — `GEMINI.md` defers here; config under `.gemini/`.
 - **ChatGPT Codex** — reads `AGENTS.md` natively.
 {{#IF_HOUSE_RULES}}
-## 14. Organization House Rules
+## 15. Organization House Rules
 
 Project-/organization-specific rules layered on top of the standard contract. Where one of
 these conflicts with a default above, **the house rule wins**.

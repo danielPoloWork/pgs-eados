@@ -95,6 +95,39 @@ def routing_scalars(routing):
 GIT_SPEC = os.path.join(ROOT, "orchestrator", "os", "git", "git.yaml")
 
 
+def commands_table(registry=None):
+    """The `/eados` command table for the generated `AGENTS.md` (#374).
+
+    Rendered from the canonical registry (`orchestrator/commands/README.md`) via
+    `command_registry`, never retyped into the template — a hand-written copy is a second list to
+    drift, and a *stale* command table is worse than none: it sends an agent at a command that no
+    longer exists.
+
+    It matters most where there are no slash commands. `AGENTS.md` is the one file every host
+    auto-loads, and in a generated repo it carried no command list at all — while the registry that
+    has one lives inside the gitignored `.eados-core/`, so the contract guaranteed to be read
+    pointed at a file guaranteed not to be committed."""
+    if registry is None:
+        import command_registry   # noqa: E402 — lazy, matching the routing import's cycle-break
+        registry = command_registry.load()
+    if not registry:
+        return ""
+    # `agent-authored` is the CLI's own classification (eados.py), imported rather than restated so
+    # the contract and the tool cannot disagree about which commands a CLI can run.
+    try:
+        import eados
+        authored = set(eados.AGENT_AUTHORED)
+    except Exception:                       # noqa: BLE001 — the table must render without the CLI
+        authored = set()
+    rows = ["| Command | Class | What it does |", "|---|---|---|"]
+    for c in registry:
+        phase = str(c.get("phase") or "")
+        klass = ("phase" if phase and "any" not in phase and not phase.startswith("—")
+                 else "agent-authored" if c["name"] in authored else "cross-cutting")
+        rows.append(f"| `/eados {c['name']}` | {klass} | {c['summary']} |")
+    return "\n".join(rows)
+
+
 def git_policy_scalars(manifest, spec_path=GIT_SPEC):
     """The two lists a generated repo's `git-policy.yaml` needs, as single-line YAML flow bodies.
 
@@ -358,6 +391,8 @@ def build_context(m):
     # #358: the generated repo's own git policy as data. The manifest is gitignored downstream, so
     # `governance.scopes` survives a clone only if it is RENDERED somewhere committed.
     scalars.update(git_policy_scalars(m))
+    # #374: the command table the generated contract carries, from the canonical registry.
+    scalars["EADOS_COMMANDS"] = commands_table()
 
     sections = {
         "EACH_CI_CELL": ci.get("matrix", []) or [],
