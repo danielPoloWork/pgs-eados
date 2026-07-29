@@ -5,9 +5,41 @@ All notable changes to `pgs-eados` (EADOS) are documented here, following
 [Semantic Versioning 2.0.0](https://semver.org/).
 
 Every PR that introduces a user- or maintainer-visible change adds a line to `[Unreleased]`
-in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
+in the same PR. Releases follow Semantic Versioning; the latest is **v2.14.0**.
 
-## [Unreleased]
+## [2.14.0] - 2026-07-29
+
+The provider-agnostic release — the one that makes the commitment true where a user actually types.
+M19 declared that EADOS must work under any LLM, and the routing catalog had named **four** hosts
+for two milestones while the command surface shipped adapters for **one**. Off Claude Code the only
+surface was the CLI, and the CLI exposed **7 of 13** commands. The promise was real in the routing
+layer and hollow at the point of use.
+
+**One registry, every host.** Adapters are data now: each host declares a `commands:` block and a
+single renderer emits its tree in that host's own format. Fourteen commands across four hosts by
+hand would be 56 files and guaranteed drift — closed by never creating the copies. Formats are
+verified against each host's current documentation rather than assumed, and a host that cannot be
+confirmed declares `scope: none`, because shipping a directory a host does not read looks like
+support and fails silently. The CLI now covers every command, on any host.
+
+**The contract carries the commands.** `AGENTS.md` is the one file every host auto-loads — and in a
+generated repo it listed no commands at all, while the canonical registry sat inside the gitignored
+`.eados-core/`. The file guaranteed to be read pointed at a file guaranteed not to be committed. It
+now ships the table itself, with invocation ordered by what the host supports.
+
+**A generated repo no longer commits its adapter tree**, which *reverses the recommendation its own
+issue was filed with*. The committed adapter named a path the same `.gitignore` excluded, so anyone
+cloning got slash commands resolving to a missing file — worse than absence, since an absent command
+is obviously absent and a dangling one reads as a broken repo.
+
+**The front door was rebuilt.** The README opened with eight badges and two definitional paragraphs
+before saying what EADOS does for anyone; it now leads with the job, the pitch and the install
+command. The repository description had also been advertising `audit → refactor` — a phase ADR-0020
+renamed to `migrate`. Repo-visible only: `README.md` is `export-ignore`d and never was part of the
+bundle.
+
+Additive throughout: three new command surfaces, one ADR addendum, and no breaking change to any
+existing surface.
 
 ### Changed
 
