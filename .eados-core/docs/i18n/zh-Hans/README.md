@@ -19,6 +19,7 @@ curl -fsSL https://github.com/danielPoloWork/pgs-eados/releases/latest/download/
 
 [![CI](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml/badge.svg)](https://github.com/danielPoloWork/pgs-eados/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-v2.13.0-blue.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
+[![Downloads](https://img.shields.io/github/downloads/danielPoloWork/pgs-eados/total.svg)](https://github.com/danielPoloWork/pgs-eados/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../../LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![Language profiles: 19](https://img.shields.io/badge/language%20profiles-19-success.svg)](../../../../.eados-core/orchestrator/profiles/)
