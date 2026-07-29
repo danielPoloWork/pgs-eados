@@ -44,8 +44,12 @@ in the same PR. Releases follow Semantic Versioning; the latest is **v2.13.0**.
   - The README opened with eight badges, a star request, and two definitional paragraphs before
     saying what EADOS does *for you*. The fold now carries a concrete H1, the pitch, and the install
     one-liner; badges, translations and depth follow. **The star request moves below Quickstart** —
-    it previously sat at line 12, asking for payment before delivery — and the **Downloads badge is
-    dropped**, because publishing `65` argues against us at this stage.
+    it previously sat at line 12, asking for payment before delivery.
+  - **The Downloads badge stays.** It was dropped mid-review on the argument that publishing `65`
+    is social proof against us, then restored once the layout change had already answered the
+    objection: the badge row now sits *below* the pitch and the install command, so a reader has the
+    value proposition before any number. Recorded because the counter still includes our own
+    post-release verification of all seven assets — it measures releases checked, not people.
   - **Topics traded for search intent**: `procedural-generation` was recruiting game developers.
   - **No product claim changed.** Every count in the new pitch — 19 languages, 16 lint gates, six
     phases, agent-drafts-human-merges — is something the repository already enforces. The brand line
